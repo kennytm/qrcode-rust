@@ -65,6 +65,17 @@ mod ec_tests {
 
 // TODO Make Vec implements ImmutableVector, or &[T] implements Index.
 trait InterleaveSupport<T> {
+    /// Equivalent to
+    ///
+    /// ```ignore
+    /// if i < self.len() {
+    ///     v.push(self[i]);
+    /// }
+    /// ```
+    ///
+    /// This trait exists solely because `Vec<T>` does not implement
+    /// ImmutableVector, or `&[T]` does not implement Index. This trait can be
+    /// deprecated once either of above are implemented.
     fn push_item_to(&self, i: uint, v: &mut Vec<T>);
 }
 
@@ -270,7 +281,7 @@ static GENERATOR_POLYNOMIALS: [&'static [u8], ..70] = [
 /// correction per block in each version.
 ///
 /// This is a copy of ISO/IEC 18004:2006, §6.5.1, Table 9.
-pub static EC_BYTES_PER_BLOCK: [[uint, ..4], ..44] = [
+static EC_BYTES_PER_BLOCK: [[uint, ..4], ..44] = [
     // Normal versions.
     [7, 10, 13, 17],
     [10, 16, 22, 28],
@@ -328,7 +339,7 @@ pub static EC_BYTES_PER_BLOCK: [[uint, ..4], ..44] = [
 /// Every entry is a 4-tuple. Take `DATA_BYTES_PER_BLOCK[39][3] == (15, 20, 16, 61)`
 /// as an example, this means in version 40 with correction level H, there are
 /// 20 blocks with 15 bytes in size, and 61 blocks with 16 bytes in size.
-pub static DATA_BYTES_PER_BLOCK: [[(uint, uint, uint, uint), ..4], ..44] = [
+static DATA_BYTES_PER_BLOCK: [[(uint, uint, uint, uint), ..4], ..44] = [
     // Normal versions.
     [(19, 1, 0, 0), (16, 1, 0, 0), (13, 1, 0, 0), (9, 1, 0, 0)],
     [(34, 1, 0, 0), (28, 1, 0, 0), (22, 1, 0, 0), (16, 1, 0, 0)],

@@ -44,34 +44,80 @@ impl QrCode {
     /// Constructs a new QR code which automatically encodes the given data.
     ///
     /// This method uses the "medium" error correction level and automatically
-    /// chooses the smallest QR code. Please use `.with_error_correction()` and
-    /// `.with_version()` for finer adjustment.
+    /// chooses the smallest QR code.
+    ///
+    ///     use qrcode::QrCode;
+    ///
+    ///     let code = QrCode::new(b"Some data").unwrap();
+    ///
     pub fn new(data: &[u8]) -> QrResult<QrCode> {
-        QrCode::with_error_correction(data, M)
+        QrCode::with_error_correction_level(data, M)
     }
 
     /// Constructs a new QR code which automatically encodes the given data at a
     /// specific error correction level.
     ///
     /// This method automatically chooses the smallest QR code.
-    pub fn with_error_correction(data: &[u8], ec_level: ErrorCorrectionLevel) -> QrResult<QrCode> {
-        let (encoded_data, version) = try!(bits::encode_auto(data, ec_level));
-        QrCode::with_encoded_data(encoded_data.as_slice(), version, ec_level)
+    ///
+    ///     use qrcode::{QrCode, H};
+    ///
+    ///     let code = QrCode::with_error_correction_level(b"Some data", H).unwrap();
+    ///
+    pub fn with_error_correction_level(data: &[u8], ec_level: ErrorCorrectionLevel) -> QrResult<QrCode> {
+        let bits = try!(bits::encode_auto(data, ec_level));
+        QrCode::with_bits(bits, ec_level)
     }
 
     /// Constructs a new QR code for the given version and error correction
     /// level.
+    ///
+    ///     use qrcode::{QrCode, Version, M};
+    ///
+    ///     let code = QrCode::with_version(b"Some data", Version(5), M).unwrap();
+    ///
+    /// This method can also be used to generate Micro QR code.
+    ///
+    ///     use qrcode::{QrCode, MicroVersion, L};
+    ///
+    ///     let micro_code = QrCode::with_version(b"123", MicroVersion(1), L).unwrap();
+    ///
     pub fn with_version(data: &[u8],
                         version: Version,
                         ec_level: ErrorCorrectionLevel) -> QrResult<QrCode> {
-        let encoded_data = try!(bits::encode(data, version, ec_level));
-        QrCode::with_encoded_data(encoded_data.as_slice(), version, ec_level)
+        let mut bits = bits::Bits::new(version);
+        try!(bits.push_optimal_data(data));
+        try!(bits.push_terminator(ec_level));
+        QrCode::with_bits(bits, ec_level)
     }
 
-    fn with_encoded_data(data: &[u8],
-                         version: Version,
-                         ec_level: ErrorCorrectionLevel) -> QrResult<QrCode> {
-        let (encoded_data, ec_data) = try!(ec::construct_codewords(data, version, ec_level));
+    /// Constructs a new QR code with encoded bits.
+    ///
+    /// Use this method only if there are very special need to manipulate the
+    /// raw bits before encoding. Some examples are:
+    ///
+    /// * Encode data using specific character set with ECI
+    /// * Use the FNC1 modes
+    /// * Avoid the optimal segmentation algorithm
+    ///
+    /// See the `Bits` structure for detail.
+    ///
+    ///     #![allow(unused_must_use)];
+    ///
+    ///     use qrcode::{QrCode, Version, L};
+    ///     use qrcode::bits::Bits;
+    ///
+    ///     let mut bits = Bits::new(Version(1));
+    ///     bits.push_eci_designator(9);
+    ///     bits.push_byte_data(b"\xca\xfe\xe4\xe9\xea\xe1\xf2 QR");
+    ///     bits.push_terminator(L);
+    ///     let qrcode = QrCode::with_bits(bits, L);
+    ///
+    pub fn with_bits(bits: bits::Bits,
+                     ec_level: ErrorCorrectionLevel) -> QrResult<QrCode> {
+        let version = bits.version();
+        let data = bits.into_bytes();
+        let (encoded_data, ec_data) = try!(ec::construct_codewords(data.as_slice(),
+                                                                   version, ec_level));
         let mut canvas = canvas::Canvas::new(version, ec_level);
         canvas.draw_all_functional_patterns();
         canvas.draw_data(encoded_data.as_slice(), ec_data.as_slice());

@@ -21,7 +21,6 @@ pub enum QrError {
 
     /// The provided ECI designator is invalid. A valid designator should be
     /// between 0 and 999999.
-    #[experimental]
     InvalidEciDesignator,
 
     /// A character not belonging to the character set is found.
@@ -72,10 +71,6 @@ pub enum Version {
     Version(i16),
 
     /// A Micro QR code version. The parameter should be between 1 and 4.
-    ///
-    /// This crate currently does not fully support Micro QR code yet, and using
-    /// these versions will likely result in `Err(InvalidVersion)`.
-    #[experimental]
     MicroVersion(i16),
 }
 

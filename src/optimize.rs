@@ -1,4 +1,4 @@
-#![experimental]
+#![unstable]
 
 //! Find the optimal data mode sequence to encode a piece of data.
 
@@ -233,17 +233,23 @@ pub struct Optimizer<I> {
 }
 
 impl<I: Iterator<Segment>> Optimizer<I> {
-    pub fn new(mut parser: I, version: Version) -> Optimizer<I> {
-        match parser.next() {
+    /// Optimize the segments by combining adjacent segments when possible.
+    ///
+    /// Currently this method uses a greedy algorithm by combining segments from
+    /// left to right until the new segment is longer than before. This method
+    /// does *not* use Annex J from the ISO standard.
+    ///
+    pub fn new(mut segments: I, version: Version) -> Optimizer<I> {
+        match segments.next() {
             None => Optimizer {
-                parser: parser,
+                parser: segments,
                 last_segment: Segment { mode: Numeric, begin: 0, end: 0 },
                 last_segment_size: 0,
                 version: version,
                 ended: true,
             },
             Some(segment) => Optimizer {
-                parser: parser,
+                parser: segments,
                 last_segment: segment,
                 last_segment_size: segment.encoded_len(version),
                 version: version,
@@ -254,12 +260,6 @@ impl<I: Iterator<Segment>> Optimizer<I> {
 }
 
 impl<'a> Parser<'a> {
-    /// Optimize the segments by combining adjacent segments when possible.
-    ///
-    /// Currently this method uses a greedy algorithm by combining segments from
-    /// left to right until the new segment is longer than before. This method
-    /// does *not* use Annex J from the ISO standard.
-    ///
     pub fn optimize(self, version: Version) -> Optimizer<Parser<'a>> {
         Optimizer::new(self, version)
     }

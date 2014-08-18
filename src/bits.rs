@@ -97,6 +97,11 @@ impl Bits {
             (self.data.len() - 1) * 8 + self.bit_offset
         }
     }
+
+    /// Version of the QR code.
+    pub fn version(&self) -> Version {
+        self.version
+    }
 }
 
 #[test]
@@ -227,7 +232,6 @@ impl Bits {
     ///
     /// If the designator is outside of the expected range, this method will
     /// return `Err(InvalidECIDesignator)`.
-    #[experimental]
     pub fn push_eci_designator(&mut self, eci_designator: u32) -> QrResult<()> {
         self.reserve_additional(12); // assume the common case that eci_designator <= 127.
         try!(self.push_mode_indicator(Eci));
@@ -568,7 +572,6 @@ impl Bits {
     ///     bits.push_alphanumeric_data(b"%10ABC123");
     ///
     /// In QR code, the character `%` is used as the data field separator (0x1D).
-    #[experimental]
     pub fn push_fnc1_first_position(&mut self) -> QrResult<()> {
         self.push_mode_indicator(Fnc1First)
     }
@@ -593,7 +596,6 @@ impl Bits {
     /// ```ignore
     /// bits.push_fnc1_second_position(b'A' + 100);
     /// ```
-    #[experimental]
     pub fn push_fnc1_second_position(&mut self, application_indicator: u8) -> QrResult<()> {
         try!(self.push_mode_indicator(Fnc1Second));
         self.push_number(8, application_indicator as u16);
@@ -755,13 +757,9 @@ mod finish_tests {
 
 impl Bits {
     /// Push a segmented data to the bits, and then terminate it.
-    #[experimental]
-    pub fn push_segments_terminated<I: Iterator<Segment>>(&mut self,
-                                                          data: &[u8],
-                                                          mut segments_iter: I,
-                                                          ec_level: ErrorCorrectionLevel,
-                                                          data_length: uint) -> QrResult<()> {
-        self.data.reserve(data_length);
+    pub fn push_segments<I: Iterator<Segment>>(&mut self,
+                                               data: &[u8],
+                                               mut segments_iter: I) -> QrResult<()> {
         for segment in segments_iter {
             let slice = data.slice(segment.begin, segment.end);
             try!(match segment.mode {
@@ -771,26 +769,29 @@ impl Bits {
                 Kanji => self.push_kanji_data(slice),
             });
         }
-        try!(self.push_terminator(ec_level));
         Ok(())
+    }
+
+    /// Pushes the data the bits, using the optimal encoding.
+    pub fn push_optimal_data(&mut self, data: &[u8]) -> QrResult<()> {
+        let segments = Parser::new(data).optimize(self.version);
+        self.push_segments(data, segments)
     }
 
 }
 
-/// Encodes a binary string to the raw QR code bits.
-#[experimental]
-pub fn encode(data: &[u8], version: Version, ec_level: ErrorCorrectionLevel) -> QrResult<Vec<u8>> {
-    let segments = Parser::new(data);
-    let opt_segments = segments.optimize(version);
-    let mut bits = Bits::new(version);
-    try!(bits.push_segments_terminated(data, opt_segments, ec_level, 0u));
-    Ok(bits.into_bytes())
-}
-
 #[cfg(test)]
 mod encode_tests {
-    use bits::encode;
-    use types::{Version, MicroVersion, DataTooLong, L, Q, H};
+    use bits::Bits;
+    use types::{Version, MicroVersion, DataTooLong, QrResult,
+                L, Q, H, ErrorCorrectionLevel};
+
+    fn encode(data: &[u8], version: Version, ec_level: ErrorCorrectionLevel) -> QrResult<Vec<u8>> {
+        let mut bits = Bits::new(version);
+        try!(bits.push_optimal_data(data));
+        try!(bits.push_terminator(ec_level));
+        Ok(bits.into_bytes())
+    }
 
     #[test]
     fn test_alphanumeric() {
@@ -824,8 +825,7 @@ mod encode_tests {
 /// the result.
 ///
 /// This method will not consider any Micro QR code versions.
-#[experimental]
-pub fn encode_auto(data: &[u8], ec_level: ErrorCorrectionLevel) -> QrResult<(Vec<u8>, Version)> {
+pub fn encode_auto(data: &[u8], ec_level: ErrorCorrectionLevel) -> QrResult<Bits> {
     let segments = Parser::new(data).collect::<Vec<Segment>>();
     for version in [Version(9), Version(26), Version(40)].iter() {
         let opt_segments = Optimizer::new(segments.iter().map(|s| *s), *version).collect::<Vec<Segment>>();
@@ -834,9 +834,10 @@ pub fn encode_auto(data: &[u8], ec_level: ErrorCorrectionLevel) -> QrResult<(Vec
         if total_len <= data_capacity {
             let min_version = find_min_version(total_len, ec_level);
             let mut bits = Bits::new(min_version);
-            try!(bits.push_segments_terminated(data, opt_segments.move_iter(),
-                                               ec_level, total_len));
-            return Ok((bits.into_bytes(), min_version));
+            bits.reserve_additional(total_len);
+            try!(bits.push_segments(data, opt_segments.move_iter()));
+            try!(bits.push_terminator(ec_level));
+            return Ok(bits);
         }
     }
     Err(DataTooLong)
@@ -878,26 +879,20 @@ mod encode_auto_tests {
 
     #[test]
     fn test_alpha_q() {
-        match encode_auto(b"HELLO WORLD", Q) {
-            Ok((_, Version(1))) => {},
-            x => fail!("{}", x),
-        }
+        let bits = encode_auto(b"HELLO WORLD", Q).unwrap();
+        assert_eq!(bits.version(), Version(1));
     }
 
     #[test]
     fn test_alpha_h() {
-        match encode_auto(b"HELLO WORLD", H) {
-            Ok((_, Version(2))) => {},
-            x => fail!("{}", x),
-        }
+        let bits = encode_auto(b"HELLO WORLD", H).unwrap();
+        assert_eq!(bits.version(), Version(2));
     }
 
     #[test]
     fn test_mixed() {
-        match encode_auto(b"This is a mixed data test. 1234567890", H) {
-            Ok((_, Version(4))) => {},
-            x => fail!("{}", x),
-        }
+        let bits = encode_auto(b"This is a mixed data test. 1234567890", H).unwrap();
+        assert_eq!(bits.version(), Version(4));
     }
 }
 
