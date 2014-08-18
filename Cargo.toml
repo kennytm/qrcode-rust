@@ -1,0 +1,4 @@
+[package]
+name = "qrcode"
+version = "0.0.1"
+authors = ["kennytm <kennytm@gmail.com>"]
