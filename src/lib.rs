@@ -165,7 +165,7 @@ impl QrCode {
 }
 
 impl Index<(uint, uint), bool> for QrCode {
-    fn index<'a>(&'a self, &(x, y): &(uint, uint)) -> &'a bool {
+    fn index(&self, &(x, y): &(uint, uint)) -> &bool {
         let index = y * self.width + x;
         self.content.index(&index)
     }

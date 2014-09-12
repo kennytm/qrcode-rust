@@ -102,8 +102,9 @@ impl<'a, T: Copy> InterleaveSupport<T> for &'a [T] {
 ///
 /// The longest slice must be at the last of `blocks`, and `blocks` must not be
 /// empty.
-fn interleave<'a, 'b, T: Copy,
-              V: InterleaveSupport<T> + Collection>(blocks: &Vec<V>) -> Vec<T> {
+fn interleave<T: Copy, V>(blocks: &Vec<V>) -> Vec<T>
+    where V: InterleaveSupport<T> + Collection
+{
     let last_block_len = blocks.last().unwrap().len();
     let mut res = Vec::with_capacity(last_block_len * blocks.len());
     for i in range(0, last_block_len) {

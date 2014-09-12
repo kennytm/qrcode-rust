@@ -95,9 +95,9 @@ impl Version {
     ///
     /// If the entry compares equal to the default value of T, this method
     /// returns `Err(InvalidVersion)`.
-    pub fn fetch<T: PartialEq + Default + Copy>(&self,
-                                                ec_level: ErrorCorrectionLevel,
-                                                table: &[[T, ..4]]) -> QrResult<T> {
+    pub fn fetch<T>(&self, ec_level: ErrorCorrectionLevel, table: &[[T, ..4]]) -> QrResult<T>
+        where T: PartialEq + Default + Copy
+    {
         match *self {
             Version(v @ 1..40) => Ok(table[v as uint - 1][ec_level as uint]),
             MicroVersion(v @ 1..4) => {
