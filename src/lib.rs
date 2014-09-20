@@ -153,7 +153,7 @@ impl QrCode {
         let width = self.width;
         let mut k = 0;
         let mut res = String::with_capacity(width * (width + 1));
-        for i in range(0, width) {
+        for _ in range(0, width) {
             res.push_char('\n');
             for _ in range(0, width) {
                 res.push_char(if self.content[k] { on_char } else { off_char });

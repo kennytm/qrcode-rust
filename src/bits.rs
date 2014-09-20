@@ -50,14 +50,14 @@ impl Bits {
                 self.data.push((number << (16-b)) as u8);
             }
             (_, 0..8) => {
-                *self.data.mut_last().unwrap() |= (number << (8-b)) as u8;
+                *self.data.last_mut().unwrap() |= (number << (8-b)) as u8;
             }
             (_, 9..16) => {
-                *self.data.mut_last().unwrap() |= (number >> (b-8)) as u8;
+                *self.data.last_mut().unwrap() |= (number >> (b-8)) as u8;
                 self.data.push((number << (16-b)) as u8);
             }
             _ => {
-                *self.data.mut_last().unwrap() |= (number >> (b-8)) as u8;
+                *self.data.last_mut().unwrap() |= (number >> (b-8)) as u8;
                 self.data.push((number >> (b-16)) as u8);
                 self.data.push((number << (24-b)) as u8);
             }

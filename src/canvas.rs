@@ -1483,7 +1483,7 @@ impl Canvas {
                 |j| self.get(i, j)
             };
 
-            let mut colors = range(0, self.width).map(map_fn).chain(Some(Empty).move_iter());
+            let mut colors = range(0, self.width).map(map_fn).chain(Some(Empty).into_iter());
 
             let mut last_color = Empty;
             let mut consecutive_len = 1u16;
