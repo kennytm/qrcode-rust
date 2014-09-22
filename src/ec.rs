@@ -1,6 +1,6 @@
 //! The `ec` module applies the Reed-Solomon error correction codes.
 
-use types::{QrResult, Version, ErrorCorrectionLevel};
+use types::{QrResult, QrVersion, ErrorCorrectionLevel};
 
 //------------------------------------------------------------------------------
 //{{{ Error correction primitive
@@ -128,7 +128,7 @@ fn test_interleave() {
 /// Constructs data and error correction codewords ready to be put in the QR
 /// code matrix.
 pub fn construct_codewords(rawbits: &[u8],
-                           version: Version,
+                           version: QrVersion,
                            ec_level: ErrorCorrectionLevel) -> QrResult<(Vec<u8>, Vec<u8>)> {
     let (block_1_size, block_1_count, block_2_size, block_2_count) =
         try!(version.fetch(ec_level, DATA_BYTES_PER_BLOCK.as_slice()));

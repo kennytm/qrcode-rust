@@ -65,7 +65,7 @@ pub enum ErrorCorrectionLevel {
 /// `Version(40)` of size 177×177.
 #[unstable]
 #[deriving(Show, PartialEq, Eq, Copy, Clone)]
-pub enum Version {
+pub enum QrVersion {
     /// A normal QR code version. The parameter should be between 1 and 40.
     #[unstable]
     Version(i16),
@@ -74,7 +74,7 @@ pub enum Version {
     MicroVersion(i16),
 }
 
-impl Version {
+impl QrVersion {
     /// Get the number of "modules" on each size of the QR code, i.e. the width
     /// and height of the code.
     #[unstable]
@@ -163,7 +163,7 @@ impl Mode {
     /// This method will return `Err(UnsupportedCharacterSet)` if the is not
     /// supported in the given version.
     #[unstable]
-    pub fn length_bits_count(&self, version: Version) -> uint {
+    pub fn length_bits_count(&self, version: QrVersion) -> uint {
         match version {
             MicroVersion(a) => {
                 let a = a as uint;

@@ -23,7 +23,8 @@
 extern crate test;
 
 use std::slice::CloneableVector;
-pub use types::{QrResult, ErrorCorrectionLevel, L, M, Q, H, Version, MicroVersion};
+pub use types::{QrResult, ErrorCorrectionLevel, L, M, Q, H,
+                QrVersion, Version, MicroVersion};
 
 pub mod types;
 pub mod bits;
@@ -35,7 +36,7 @@ pub mod canvas;
 #[deriving(Clone)]
 pub struct QrCode {
     content: Vec<bool>,
-    version: Version,
+    version: QrVersion,
     ec_level: ErrorCorrectionLevel,
     width: uint,
 }
@@ -82,7 +83,7 @@ impl QrCode {
     ///     let micro_code = QrCode::with_version(b"123", MicroVersion(1), L).unwrap();
     ///
     pub fn with_version(data: &[u8],
-                        version: Version,
+                        version: QrVersion,
                         ec_level: ErrorCorrectionLevel) -> QrResult<QrCode> {
         let mut bits = bits::Bits::new(version);
         try!(bits.push_optimal_data(data));
@@ -131,7 +132,7 @@ impl QrCode {
     }
 
     /// Gets the version of this QR code.
-    pub fn version(&self) -> Version {
+    pub fn version(&self) -> QrVersion {
         self.version
     }
 

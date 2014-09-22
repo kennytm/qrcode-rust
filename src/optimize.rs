@@ -7,7 +7,7 @@ use std::slice::Items;
 #[cfg(test)]
 use test::Bencher;
 
-use types::{Mode, Version, Numeric, Alphanumeric, Byte, Kanji};
+use types::{Mode, QrVersion, Numeric, Alphanumeric, Byte, Kanji};
 
 //------------------------------------------------------------------------------
 //{{{ Segment
@@ -28,7 +28,7 @@ pub struct Segment {
 impl Segment {
     /// Compute the number of bits (including the size of the mode indicator and
     /// length bits) when this segment is encoded.
-    pub fn encoded_len(&self, version: Version) -> uint {
+    pub fn encoded_len(&self, version: QrVersion) -> uint {
         let byte_size = self.end - self.begin;
         let chars_count = if self.mode == Kanji { byte_size / 2 } else { byte_size };
 
@@ -228,7 +228,7 @@ pub struct Optimizer<I> {
     parser: I,
     last_segment: Segment,
     last_segment_size: uint,
-    version: Version,
+    version: QrVersion,
     ended: bool,
 }
 
@@ -239,7 +239,7 @@ impl<I: Iterator<Segment>> Optimizer<I> {
     /// left to right until the new segment is longer than before. This method
     /// does *not* use Annex J from the ISO standard.
     ///
-    pub fn new(mut segments: I, version: Version) -> Optimizer<I> {
+    pub fn new(mut segments: I, version: QrVersion) -> Optimizer<I> {
         match segments.next() {
             None => Optimizer {
                 parser: segments,
@@ -260,7 +260,7 @@ impl<I: Iterator<Segment>> Optimizer<I> {
 }
 
 impl<'a> Parser<'a> {
-    pub fn optimize(self, version: Version) -> Optimizer<Parser<'a>> {
+    pub fn optimize(self, version: QrVersion) -> Optimizer<Parser<'a>> {
         Optimizer::new(self, version)
     }
 }
@@ -303,7 +303,7 @@ impl<I: Iterator<Segment>> Iterator<Segment> for Optimizer<I> {
 }
 
 /// Computes the total encoded length of all segments.
-pub fn total_encoded_len(segments: &[Segment], version: Version) -> uint {
+pub fn total_encoded_len(segments: &[Segment], version: QrVersion) -> uint {
     use std::iter::AdditiveIterator;
     segments.iter().map(|seg| seg.encoded_len(version)).sum()
 }
@@ -311,9 +311,9 @@ pub fn total_encoded_len(segments: &[Segment], version: Version) -> uint {
 #[cfg(test)]
 mod optimize_tests {
     use optimize::{Optimizer, total_encoded_len, Segment};
-    use types::{Numeric, Alphanumeric, Byte, Kanji, Version, MicroVersion};
+    use types::{Numeric, Alphanumeric, Byte, Kanji, QrVersion, Version, MicroVersion};
 
-    fn test_optimization_result(given: Vec<Segment>, expected: Vec<Segment>, version: Version) {
+    fn test_optimization_result(given: Vec<Segment>, expected: Vec<Segment>, version: QrVersion) {
         let prev_len = total_encoded_len(given.as_slice(), version);
         let opt_segs = Optimizer::new(given.iter().map(|seg| *seg), version).collect::<Vec<Segment>>();
         let new_len = total_encoded_len(opt_segs.as_slice(), version);
@@ -437,6 +437,8 @@ mod optimize_tests {
 
 #[bench]
 fn bench_optimize(bencher: &mut Bencher) {
+    use types::Version;
+
     let data = b"QR\x83R\x81[\x83h\x81i\x83L\x83\x85\x81[\x83A\x81[\x83\x8b\x83R\x81[\x83h\x81j\x82\xc6\x82\xcd\x81A1994\x94N\x82\xc9\x83f\x83\x93\x83\\\x81[\x82\xcc\x8aJ\x94\xad\x95\x94\x96\xe5\x81i\x8c\xbb\x8d\xdd\x82\xcd\x95\xaa\x97\xa3\x82\xb5\x83f\x83\x93\x83\\\x81[\x83E\x83F\x81[\x83u\x81j\x82\xaa\x8aJ\x94\xad\x82\xb5\x82\xbd\x83}\x83g\x83\x8a\x83b\x83N\x83X\x8c^\x93\xf1\x8e\x9f\x8c\xb3\x83R\x81[\x83h\x82\xc5\x82\xa0\x82\xe9\x81B\x82\xc8\x82\xa8\x81AQR\x83R\x81[\x83h\x82\xc6\x82\xa2\x82\xa4\x96\xbc\x8f\xcc\x81i\x82\xa8\x82\xe6\x82\xd1\x92P\x8c\xea\x81j\x82\xcd\x83f\x83\x93\x83\\\x81[\x83E\x83F\x81[\x83u\x82\xcc\x93o\x98^\x8f\xa4\x95W\x81i\x91\xe64075066\x8d\x86\x81j\x82\xc5\x82\xa0\x82\xe9\x81BQR\x82\xcdQuick Response\x82\xc9\x97R\x97\x88\x82\xb5\x81A\x8d\x82\x91\xac\x93\xc7\x82\xdd\x8e\xe6\x82\xe8\x82\xaa\x82\xc5\x82\xab\x82\xe9\x82\xe6\x82\xa4\x82\xc9\x8aJ\x94\xad\x82\xb3\x82\xea\x82\xbd\x81B\x93\x96\x8f\x89\x82\xcd\x8e\xa9\x93\xae\x8e\xd4\x95\x94\x95i\x8dH\x8f\xea\x82\xe2\x94z\x91\x97\x83Z\x83\x93\x83^\x81[\x82\xc8\x82\xc7\x82\xc5\x82\xcc\x8eg\x97p\x82\xf0\x94O\x93\xaa\x82\xc9\x8aJ\x94\xad\x82\xb3\x82\xea\x82\xbd\x82\xaa\x81A\x8c\xbb\x8d\xdd\x82\xc5\x82\xcd\x83X\x83}\x81[\x83g\x83t\x83H\x83\x93\x82\xcc\x95\x81\x8by\x82\xc8\x82\xc7\x82\xc9\x82\xe6\x82\xe8\x93\xfa\x96{\x82\xc9\x8c\xc0\x82\xe7\x82\xb8\x90\xa2\x8aE\x93I\x82\xc9\x95\x81\x8by\x82\xb5\x82\xc4\x82\xa2\x82\xe9\x81B";
     bencher.iter(|| {
         Parser::new(data).optimize(Version(15))

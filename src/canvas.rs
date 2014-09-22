@@ -14,7 +14,7 @@ use std::iter::order::equals;
 use std::num::zero;
 use std::cmp::max;
 
-use types::{Version, MicroVersion, ErrorCorrectionLevel, L, M, Q};
+use types::{QrVersion, Version, MicroVersion, ErrorCorrectionLevel, L, M, Q};
 
 //------------------------------------------------------------------------------
 //{{{ Modules
@@ -84,7 +84,7 @@ pub struct Canvas {
     width: i16,
 
     /// The version of the QR code.
-    version: Version,
+    version: QrVersion,
 
     /// The error correction level of the QR code.
     ec_level: ErrorCorrectionLevel,
@@ -96,7 +96,7 @@ pub struct Canvas {
 
 impl Canvas {
     /// Constructs a new canvas big enough for a QR code of the given version.
-    pub fn new(version: Version, ec_level: ErrorCorrectionLevel) -> Canvas {
+    pub fn new(version: QrVersion, ec_level: ErrorCorrectionLevel) -> Canvas {
         let width = version.width();
         Canvas {
             width: width,
@@ -945,7 +945,7 @@ struct DataModuleIter {
 }
 
 impl DataModuleIter {
-    fn new(version: Version) -> DataModuleIter {
+    fn new(version: QrVersion) -> DataModuleIter {
         let width = version.width();
         DataModuleIter {
             x: width - 1,

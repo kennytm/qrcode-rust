@@ -10,7 +10,7 @@ use test::Bencher;
 use types::{QrResult, DataTooLong, UnsupportedCharacterSet, InvalidEciDesignator,
             InvalidCharacter,
             Mode, Numeric, Alphanumeric, Byte, Kanji,
-            ErrorCorrectionLevel, Version, MicroVersion};
+            ErrorCorrectionLevel, QrVersion, Version, MicroVersion};
 use optimize::{Parser, Optimizer, total_encoded_len, Segment};
 
 //------------------------------------------------------------------------------
@@ -20,12 +20,12 @@ use optimize::{Parser, Optimizer, total_encoded_len, Segment};
 pub struct Bits {
     data: Vec<u8>,
     bit_offset: uint,
-    version: Version,
+    version: QrVersion,
 }
 
 impl Bits {
     /// Constructs a new, empty bits structure.
-    pub fn new(version: Version) -> Bits {
+    pub fn new(version: QrVersion) -> Bits {
         Bits { data: Vec::new(), bit_offset: 0, version: version }
     }
 
@@ -35,10 +35,8 @@ impl Bits {
     /// `n` bit in size. Otherwise the excess bits may stomp on the existing
     /// ones.
     fn push_number(&mut self, n: uint, number: u16) {
-        /*
         debug_assert!(n == 16 || n < 16 && number < (1 << n),
                       "{} is too big as a {}-bit number", number, n);
-        */
 
         let b = self.bit_offset + n;
         match (self.bit_offset, b) {
@@ -99,7 +97,7 @@ impl Bits {
     }
 
     /// Version of the QR code.
-    pub fn version(&self) -> Version {
+    pub fn version(&self) -> QrVersion {
         self.version
     }
 }
@@ -783,10 +781,12 @@ impl Bits {
 #[cfg(test)]
 mod encode_tests {
     use bits::Bits;
-    use types::{Version, MicroVersion, DataTooLong, QrResult,
+    use types::{QrVersion, Version, MicroVersion, DataTooLong, QrResult,
                 L, Q, H, ErrorCorrectionLevel};
 
-    fn encode(data: &[u8], version: Version, ec_level: ErrorCorrectionLevel) -> QrResult<Vec<u8>> {
+    fn encode(data: &[u8],
+              version: QrVersion,
+              ec_level: ErrorCorrectionLevel) -> QrResult<Vec<u8>> {
         let mut bits = Bits::new(version);
         try!(bits.push_optimal_data(data));
         try!(bits.push_terminator(ec_level));
@@ -846,7 +846,7 @@ pub fn encode_auto(data: &[u8], ec_level: ErrorCorrectionLevel) -> QrResult<Bits
 /// Finds the smallest version (QR code only) that can store N bits of data
 /// in the given error correction level.
 #[unstable]
-fn find_min_version(length: uint, ec_level: ErrorCorrectionLevel) -> Version {
+fn find_min_version(length: uint, ec_level: ErrorCorrectionLevel) -> QrVersion {
     let mut min = 0u;
     let mut max = 39u;
     while min < max {
