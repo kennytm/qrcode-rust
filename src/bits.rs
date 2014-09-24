@@ -835,7 +835,7 @@ pub fn encode_auto(data: &[u8], ec_level: ErrorCorrectionLevel) -> QrResult<Bits
             let min_version = find_min_version(total_len, ec_level);
             let mut bits = Bits::new(min_version);
             bits.reserve_additional(total_len);
-            try!(bits.push_segments(data, opt_segments.move_iter()));
+            try!(bits.push_segments(data, opt_segments.into_iter()));
             try!(bits.push_terminator(ec_level));
             return Ok(bits);
         }

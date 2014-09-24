@@ -15,8 +15,8 @@ use types::{QrResult, QrVersion, ErrorCorrectionLevel};
 /// GF(256), and then computes the polynomial modulus with a generator
 /// polynomial of degree N.
 pub fn create_error_correction_code(data: &[u8], ec_code_size: uint) -> Vec<u8> {
-    let mut res = Vec::from_slice(data);
-    res.grow(ec_code_size, &0);
+    let mut res = data.to_vec();
+    res.grow(ec_code_size, 0);
 
     let data_len = data.len();
     let log_den = GENERATOR_POLYNOMIALS[ec_code_size];
