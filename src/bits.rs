@@ -40,17 +40,17 @@ impl Bits {
 
         let b = self.bit_offset + n;
         match (self.bit_offset, b) {
-            (0, 0..8) => {
+            (0, 0...8) => {
                 self.data.push((number << (8-b)) as u8);
             }
             (0, _) => {
                 self.data.push((number >> (b-8)) as u8);
                 self.data.push((number << (16-b)) as u8);
             }
-            (_, 0..8) => {
+            (_, 0...8) => {
                 *self.data.last_mut().unwrap() |= (number << (8-b)) as u8;
             }
-            (_, 9..16) => {
+            (_, 9...16) => {
                 *self.data.last_mut().unwrap() |= (number >> (b-8)) as u8;
                 self.data.push((number << (16-b)) as u8);
             }
@@ -234,14 +234,14 @@ impl Bits {
         self.reserve_additional(12); // assume the common case that eci_designator <= 127.
         try!(self.push_mode_indicator(Eci));
         match eci_designator {
-            0..127 => {
+            0...127 => {
                 self.push_number(8, eci_designator as u16);
             }
-            128..16383 => {
+            128...16383 => {
                 self.push_number(2, 0b10);
                 self.push_number(14, eci_designator as u16);
             }
-            16384..999999 => {
+            16384...999999 => {
                 self.push_number(3, 0b110);
                 self.push_number(5, (eci_designator >> 16) as u16);
                 self.push_number(16, (eci_designator & 0xffff) as u16);
@@ -387,8 +387,8 @@ mod numeric_tests {
 #[inline]
 fn alphanumeric_digit(character: u8) -> u16 {
     match character {
-        b'0' .. b'9' => (character - b'0') as u16,
-        b'A' .. b'Z' => (character - b'A') as u16 + 10,
+        b'0' ... b'9' => (character - b'0') as u16,
+        b'A' ... b'Z' => (character - b'A') as u16 + 10,
         b' ' => 36,
         b'$' => 37,
         b'%' => 38,
@@ -666,7 +666,7 @@ impl Bits {
         };
 
         let cur_length = self.len();
-        let data_length = try!(self.version.fetch(ec_level, DATA_LENGTHS.as_slice()));
+        let data_length = try!(self.version.fetch(ec_level, DATA_LENGTHS[]));
         if cur_length > data_length {
             return Err(DataTooLong);
         }
@@ -759,7 +759,7 @@ impl Bits {
                                                data: &[u8],
                                                mut segments_iter: I) -> QrResult<()> {
         for segment in segments_iter {
-            let slice = data.slice(segment.begin, segment.end);
+            let slice = data[segment.begin..segment.end];
             try!(match segment.mode {
                 Numeric => self.push_numeric_data(slice),
                 Alphanumeric => self.push_alphanumeric_data(slice),
@@ -829,8 +829,8 @@ pub fn encode_auto(data: &[u8], ec_level: ErrorCorrectionLevel) -> QrResult<Bits
     let segments = Parser::new(data).collect::<Vec<Segment>>();
     for version in [Version(9), Version(26), Version(40)].iter() {
         let opt_segments = Optimizer::new(segments.iter().map(|s| *s), *version).collect::<Vec<Segment>>();
-        let total_len = total_encoded_len(opt_segments.as_slice(), *version);
-        let data_capacity = version.fetch(ec_level, DATA_LENGTHS.as_slice()).unwrap();
+        let total_len = total_encoded_len(opt_segments[], *version);
+        let data_capacity = version.fetch(ec_level, DATA_LENGTHS[]).unwrap();
         if total_len <= data_capacity {
             let min_version = find_min_version(total_len, ec_level);
             let mut bits = Bits::new(min_version);

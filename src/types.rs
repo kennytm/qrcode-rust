@@ -99,8 +99,8 @@ impl QrVersion {
         where T: PartialEq + Default + Copy
     {
         match *self {
-            Version(v @ 1..40) => Ok(table[v as uint - 1][ec_level as uint]),
-            MicroVersion(v @ 1..4) => {
+            Version(v @ 1...40) => Ok(table[v as uint - 1][ec_level as uint]),
+            MicroVersion(v @ 1...4) => {
                 let obj = table[v as uint + 39][ec_level as uint];
                 if obj != Default::default() {
                     Ok(obj)
@@ -173,13 +173,13 @@ impl Mode {
                     Kanji => a,
                 }
             }
-            Version(1..9) => match *self {
+            Version(1...9) => match *self {
                 Numeric => 10,
                 Alphanumeric => 9,
                 Byte => 8,
                 Kanji => 8,
             },
-            Version(10..26) => match *self {
+            Version(10...26) => match *self {
                 Numeric => 12,
                 Alphanumeric => 11,
                 Byte => 16,

@@ -314,15 +314,15 @@ mod optimize_tests {
     use types::{Numeric, Alphanumeric, Byte, Kanji, QrVersion, Version, MicroVersion};
 
     fn test_optimization_result(given: Vec<Segment>, expected: Vec<Segment>, version: QrVersion) {
-        let prev_len = total_encoded_len(given.as_slice(), version);
+        let prev_len = total_encoded_len(given[], version);
         let opt_segs = Optimizer::new(given.iter().map(|seg| *seg), version).collect::<Vec<Segment>>();
-        let new_len = total_encoded_len(opt_segs.as_slice(), version);
+        let new_len = total_encoded_len(opt_segs[], version);
         if given != opt_segs {
             assert!(prev_len > new_len, "{} > {}", prev_len, new_len);
         }
         assert!(opt_segs == expected,
                 "Optimization gave something better: {} < {} ({})",
-                new_len, total_encoded_len(expected.as_slice(), version), opt_segs);
+                new_len, total_encoded_len(expected[], version), opt_segs);
     }
 
     #[test]
@@ -500,14 +500,14 @@ impl ExclusiveCharacterSet {
     /// Determines which character set a byte is in.
     fn from_u8(c: u8) -> ExclusiveCharacterSet {
         match c {
-            0x20 | 0x24 | 0x25 | 0x2a | 0x2b | 0x2d .. 0x2f | 0x3a => ESymbol,
-            0x30 .. 0x39 => ENumeric,
-            0x41 .. 0x5a => EAlpha,
-            0x81 .. 0x9f => EKanjiHi1,
-            0xe0 .. 0xea => EKanjiHi2,
+            0x20 | 0x24 | 0x25 | 0x2a | 0x2b | 0x2d ... 0x2f | 0x3a => ESymbol,
+            0x30 ... 0x39 => ENumeric,
+            0x41 ... 0x5a => EAlpha,
+            0x81 ... 0x9f => EKanjiHi1,
+            0xe0 ... 0xea => EKanjiHi2,
             0xeb => EKanjiHi3,
-            0x40 | 0x5b .. 0x7e | 0x80 | 0xa0 .. 0xbf => EKanjiLo1,
-            0xc0 .. 0xdf | 0xec .. 0xfc => EKanjiLo2,
+            0x40 | 0x5b ... 0x7e | 0x80 | 0xa0 ... 0xbf => EKanjiLo1,
+            0xc0 ... 0xdf | 0xec ... 0xfc => EKanjiLo2,
             _ => EByte
         }
     }

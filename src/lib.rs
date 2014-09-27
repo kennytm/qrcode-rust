@@ -117,11 +117,10 @@ impl QrCode {
                      ec_level: ErrorCorrectionLevel) -> QrResult<QrCode> {
         let version = bits.version();
         let data = bits.into_bytes();
-        let (encoded_data, ec_data) = try!(ec::construct_codewords(data.as_slice(),
-                                                                   version, ec_level));
+        let (encoded_data, ec_data) = try!(ec::construct_codewords(data[], version, ec_level));
         let mut canvas = canvas::Canvas::new(version, ec_level);
         canvas.draw_all_functional_patterns();
-        canvas.draw_data(encoded_data.as_slice(), ec_data.as_slice());
+        canvas.draw_data(encoded_data[], ec_data[]);
         let canvas = canvas.apply_best_mask();
         Ok(QrCode {
             content: canvas.to_bools(),
@@ -155,9 +154,9 @@ impl QrCode {
         let mut k = 0;
         let mut res = String::with_capacity(width * (width + 1));
         for _ in range(0, width) {
-            res.push_char('\n');
+            res.push('\n');
             for _ in range(0, width) {
-                res.push_char(if self.content[k] { on_char } else { off_char });
+                res.push(if self.content[k] { on_char } else { off_char });
                 k += 1;
             }
         }

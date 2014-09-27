@@ -112,9 +112,9 @@ impl Canvas {
         let width = self.width;
         let mut res = String::with_capacity((width * (width + 1)) as uint);
         for y in range(0, width) {
-            res.push_char('\n');
+            res.push('\n');
             for x in range(0, width) {
-                res.push_char(match self.get(x, y) {
+                res.push(match self.get(x, y) {
                     Empty => '?',
                     Light => '.',
                     Dark => '#',
@@ -654,7 +654,7 @@ impl Canvas {
     /// Draws the version information patterns.
     fn draw_version_info_patterns(&mut self) {
         match self.version {
-            MicroVersion(_) | Version(1..6) => { return; }
+            MicroVersion(_) | Version(1...6) => { return; }
             Version(a) => {
                 let version_info = VERSION_INFOS[(a - 7) as uint] << 14;
                 self.draw_number(version_info, Dark, Light, VERSION_INFO_COORDS_BL);
