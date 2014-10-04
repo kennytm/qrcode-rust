@@ -333,7 +333,7 @@ impl Canvas {
     fn draw_alignment_patterns(&mut self) {
         match self.version {
             MicroVersion(_) | Version(1) => { return; }
-            Version(2..6) => self.draw_alignment_pattern_at(-7, -7),
+            Version(2...6) => self.draw_alignment_pattern_at(-7, -7),
             Version(a) => {
                 let positions = ALIGNMENT_PATTERN_POSITIONS[a as uint - 7];
                 for x in positions.iter() {
