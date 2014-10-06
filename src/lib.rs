@@ -189,7 +189,7 @@ mod tests {
     fn test_annex_i_qr() {
         // This uses the ISO Annex I as test vector.
         let code = QrCode::with_version(b"01234567", Version(1), M).unwrap();
-        assert_eq!(code.to_debug_str('#', '.').as_slice(), "\n\
+        assert_eq!(code.to_debug_str('#', '.')[], "\n\
                     #######..#.##.#######\n\
                     #.....#..####.#.....#\n\
                     #.###.#.#.....#.###.#\n\
@@ -216,7 +216,7 @@ mod tests {
     #[test]
     fn test_annex_i_micro_qr() {
         let code = QrCode::with_version(b"01234567", MicroVersion(2), L).unwrap();
-        assert_eq!(code.to_debug_str('#', '.').as_slice(), "\n\
+        assert_eq!(code.to_debug_str('#', '.')[], "\n\
                     #######.#.#.#\n\
                     #.....#.###.#\n\
                     #.###.#..##.#\n\

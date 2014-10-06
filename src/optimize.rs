@@ -561,7 +561,7 @@ enum ParserAction {
     AKanjiAndSingleByte,
 }
 
-static STATE_TRANSITION: [(SegmentParseState, ParserAction), ..70] = [
+const STATE_TRANSITION: [(SegmentParseState, ParserAction), ..70] = [
     // STATE_TRANSITION[current_state + next_character] == (next_state, what_to_do)
 
     // Init state:

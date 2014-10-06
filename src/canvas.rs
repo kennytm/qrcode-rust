@@ -190,7 +190,7 @@ mod basic_canvas_tests {
             }
         }
 
-        assert_eq!(c.to_debug_str().as_slice(), "\n\
+        assert_eq!(c.to_debug_str()[], "\n\
                     ?????????????????????\n\
                     ?????????????????????\n\
                     ?????????????????????\n\
@@ -263,7 +263,7 @@ mod finder_pattern_tests {
     fn test_qr() {
         let mut c = Canvas::new(Version(1), L);
         c.draw_finder_patterns();
-        assert_eq!(c.to_debug_str().as_slice(), "\n\
+        assert_eq!(c.to_debug_str()[], "\n\
                     #######.?????.#######\n\
                     #.....#.?????.#.....#\n\
                     #.###.#.?????.#.###.#\n\
@@ -291,7 +291,7 @@ mod finder_pattern_tests {
     fn test_micro_qr() {
         let mut c = Canvas::new(MicroVersion(1), L);
         c.draw_finder_patterns();
-        assert_eq!(c.to_debug_str().as_slice(), "\n\
+        assert_eq!(c.to_debug_str()[], "\n\
                     #######.???\n\
                     #.....#.???\n\
                     #.###.#.???\n\
@@ -356,7 +356,7 @@ mod alignment_pattern_tests {
         let mut c = Canvas::new(Version(1), L);
         c.draw_finder_patterns();
         c.draw_alignment_patterns();
-        assert_eq!(c.to_debug_str().as_slice(), "\n\
+        assert_eq!(c.to_debug_str()[], "\n\
                     #######.?????.#######\n\
                     #.....#.?????.#.....#\n\
                     #.###.#.?????.#.###.#\n\
@@ -385,7 +385,7 @@ mod alignment_pattern_tests {
         let mut c = Canvas::new(Version(3), L);
         c.draw_finder_patterns();
         c.draw_alignment_patterns();
-        assert_eq!(c.to_debug_str().as_slice(), "\n\
+        assert_eq!(c.to_debug_str()[], "\n\
                     #######.?????????????.#######\n\
                     #.....#.?????????????.#.....#\n\
                     #.###.#.?????????????.#.###.#\n\
@@ -422,7 +422,7 @@ mod alignment_pattern_tests {
         let mut c = Canvas::new(Version(7), L);
         c.draw_finder_patterns();
         c.draw_alignment_patterns();
-        assert_eq!(c.to_debug_str().as_slice(), "\n\
+        assert_eq!(c.to_debug_str()[], "\n\
                     #######.?????????????????????????????.#######\n\
                     #.....#.?????????????????????????????.#.....#\n\
                     #.###.#.?????????????????????????????.#.###.#\n\
@@ -475,7 +475,7 @@ mod alignment_pattern_tests {
 /// `ALIGNMENT_PATTERN_POSITIONS` describes the x- and y-coordinates of the
 /// center of the alignment patterns. Since the QR code is symmetric, only one
 /// coordinate is needed.
-static ALIGNMENT_PATTERN_POSITIONS: [&'static [i16], ..34] = [
+const ALIGNMENT_PATTERN_POSITIONS: [&'static [i16], ..34] = [
     &[6, 22, 38],
     &[6, 24, 42],
     &[6, 26, 46],
@@ -567,7 +567,7 @@ mod timing_pattern_tests {
     fn test_draw_timing_patterns_qr() {
         let mut c = Canvas::new(Version(1), L);
         c.draw_timing_patterns();
-        assert_eq!(c.to_debug_str().as_slice(), "\n\
+        assert_eq!(c.to_debug_str()[], "\n\
                     ?????????????????????\n\
                     ?????????????????????\n\
                     ?????????????????????\n\
@@ -595,7 +595,7 @@ mod timing_pattern_tests {
     fn test_draw_timing_patterns_micro_qr() {
         let mut c = Canvas::new(MicroVersion(1), L);
         c.draw_timing_patterns();
-        assert_eq!(c.to_debug_str().as_slice(), "\n\
+        assert_eq!(c.to_debug_str()[], "\n\
                     ????????#.#\n\
                     ???????????\n\
                     ???????????\n\
@@ -673,7 +673,7 @@ mod draw_version_info_tests {
     fn test_draw_number() {
         let mut c = Canvas::new(MicroVersion(1), L);
         c.draw_number(0b10101101u8, Dark, Light, [(0,0), (0,-1), (-2,-2), (-2,0)]);
-        assert_eq!(c.to_debug_str().as_slice(), "\n\
+        assert_eq!(c.to_debug_str()[], "\n\
                     #????????.?\n\
                     ???????????\n\
                     ???????????\n\
@@ -691,7 +691,7 @@ mod draw_version_info_tests {
     fn test_draw_version_info_1() {
         let mut c = Canvas::new(Version(1), L);
         c.draw_version_info_patterns();
-        assert_eq!(c.to_debug_str().as_slice(), "\n\
+        assert_eq!(c.to_debug_str()[], "\n\
                     ?????????????????????\n\
                     ?????????????????????\n\
                     ?????????????????????\n\
@@ -720,7 +720,7 @@ mod draw_version_info_tests {
         let mut c = Canvas::new(Version(7), L);
         c.draw_version_info_patterns();
 
-        assert_eq!(c.to_debug_str().as_slice(), "\n\
+        assert_eq!(c.to_debug_str()[], "\n\
                     ??????????????????????????????????..#????????\n\
                     ??????????????????????????????????.#.????????\n\
                     ??????????????????????????????????.#.????????\n\
@@ -772,7 +772,7 @@ mod draw_version_info_tests {
     fn test_draw_reserved_format_info_patterns_qr() {
         let mut c = Canvas::new(Version(1), L);
         c.draw_reserved_format_info_patterns();
-        assert_eq!(c.to_debug_str().as_slice(), "\n\
+        assert_eq!(c.to_debug_str()[], "\n\
                     ????????.????????????\n\
                     ????????.????????????\n\
                     ????????.????????????\n\
@@ -800,7 +800,7 @@ mod draw_version_info_tests {
     fn test_draw_reserved_format_info_patterns_micro_qr() {
         let mut c = Canvas::new(MicroVersion(1), L);
         c.draw_reserved_format_info_patterns();
-        assert_eq!(c.to_debug_str().as_slice(), "\n\
+        assert_eq!(c.to_debug_str()[], "\n\
                     ???????????\n\
                     ????????.??\n\
                     ????????.??\n\
@@ -815,7 +815,7 @@ mod draw_version_info_tests {
     }
 }
 
-static VERSION_INFO_COORDS_BL: [(i16, i16), ..18] = [
+const VERSION_INFO_COORDS_BL: [(i16, i16), ..18] = [
     (5, -9), (5, -10), (5, -11),
     (4, -9), (4, -10), (4, -11),
     (3, -9), (3, -10), (3, -11),
@@ -824,7 +824,7 @@ static VERSION_INFO_COORDS_BL: [(i16, i16), ..18] = [
     (0, -9), (0, -10), (0, -11),
 ];
 
-static VERSION_INFO_COORDS_TR: [(i16, i16), ..18] = [
+const VERSION_INFO_COORDS_TR: [(i16, i16), ..18] = [
     (-9, 5), (-10, 5), (-11, 5),
     (-9, 4), (-10, 4), (-11, 4),
     (-9, 3), (-10, 3), (-11, 3),
@@ -833,23 +833,23 @@ static VERSION_INFO_COORDS_TR: [(i16, i16), ..18] = [
     (-9, 0), (-10, 0), (-11, 0),
 ];
 
-static FORMAT_INFO_COORDS_QR_MAIN: [(i16, i16), ..15] = [
+const FORMAT_INFO_COORDS_QR_MAIN: [(i16, i16), ..15] = [
     (0, 8), (1, 8), (2, 8), (3, 8), (4, 8), (5, 8),
     (7, 8), (8, 8), (8, 7),
     (8, 5), (8, 4), (8, 3), (8, 2), (8, 1), (8, 0),
 ];
 
-static FORMAT_INFO_COORDS_QR_SIDE: [(i16, i16), ..15] = [
+const FORMAT_INFO_COORDS_QR_SIDE: [(i16, i16), ..15] = [
     (8, -1), (8, -2), (8, -3), (8, -4), (8, -5), (8, -6), (8, -7),
     (-8, 8), (-7, 8), (-6, 8), (-5, 8), (-4, 8), (-3, 8), (-2, 8), (-1, 8),
 ];
 
-static FORMAT_INFO_COORDS_MICRO_QR: [(i16, i16), ..15] = [
+const FORMAT_INFO_COORDS_MICRO_QR: [(i16, i16), ..15] = [
     (1, 8), (2, 8), (3, 8), (4, 8), (5, 8), (6, 8), (7, 8), (8, 8),
     (8, 7), (8, 6), (8, 5), (8, 4), (8, 3), (8, 2), (8, 1),
 ];
 
-static VERSION_INFOS: [u32, ..34] = [
+const VERSION_INFOS: [u32, ..34] = [
     0x07c94, 0x085bc, 0x09a99, 0x0a4d3, 0x0bbf6, 0x0c762, 0x0d847, 0x0e60d,
     0x0f928, 0x10b78, 0x1145d, 0x12a17, 0x13532, 0x149a6, 0x15683, 0x168c9,
     0x177ec, 0x18ec4, 0x191e1, 0x1afab, 0x1b08e, 0x1cc1a, 0x1d33f, 0x1ed75,
@@ -886,7 +886,7 @@ mod all_functional_patterns_tests {
     fn test_all_functional_patterns_qr() {
         let mut c = Canvas::new(Version(2), L);
         c.draw_all_functional_patterns();
-        assert_eq!(c.to_debug_str().as_slice(), "\n\
+        assert_eq!(c.to_debug_str()[], "\n\
                     #######..????????.#######\n\
                     #.....#..????????.#.....#\n\
                     #.###.#..????????.#.###.#\n\
@@ -918,7 +918,7 @@ mod all_functional_patterns_tests {
     fn test_all_functional_patterns_micro_qr() {
         let mut c = Canvas::new(MicroVersion(1), L);
         c.draw_all_functional_patterns();
-        assert_eq!(c.to_debug_str().as_slice(), "\n\
+        assert_eq!(c.to_debug_str()[], "\n\
                     #######.#.#\n\
                     #.....#..??\n\
                     #.###.#..??\n\
@@ -1208,7 +1208,7 @@ mod draw_codewords_test {
         let mut c = Canvas::new(MicroVersion(1), L);
         c.draw_all_functional_patterns();
         c.draw_data(b"\x6e\x5d\xe2", b"\x2b\x63");
-        assert_eq!(c.to_debug_str().as_slice(), "\n\
+        assert_eq!(c.to_debug_str()[], "\n\
                     #######.#.#\n\
                     #.....#..-*\n\
                     #.###.#..**\n\
@@ -1227,7 +1227,7 @@ mod draw_codewords_test {
         let mut c = Canvas::new(Version(2), L);
         c.draw_all_functional_patterns();
         c.draw_data(b"\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$", b"");
-        assert_eq!(c.to_debug_str().as_slice(), "\n\
+        assert_eq!(c.to_debug_str()[], "\n\
                     #######..--*---*-.#######\n\
                     #.....#..-*-*-*-*.#.....#\n\
                     #.###.#..*---*---.#.###.#\n\
@@ -1376,7 +1376,7 @@ mod mask_tests {
         c.draw_all_functional_patterns();
         c.apply_mask(Checkerboard);
 
-        assert_eq!(c.to_debug_str().as_slice(), "\n\
+        assert_eq!(c.to_debug_str()[], "\n\
                     #######...#.#.#######\n\
                     #.....#..#.#..#.....#\n\
                     #.###.#.#.#.#.#.###.#\n\
@@ -1404,7 +1404,7 @@ mod mask_tests {
     fn test_draw_format_info_patterns_qr() {
         let mut c = Canvas::new(Version(1), L);
         c.draw_format_info_patterns(LargeCheckerboard);
-        assert_eq!(c.to_debug_str().as_slice(), "\n\
+        assert_eq!(c.to_debug_str()[], "\n\
                     ????????#????????????\n\
                     ????????#????????????\n\
                     ????????#????????????\n\
@@ -1432,7 +1432,7 @@ mod mask_tests {
     fn test_draw_format_info_patterns_micro_qr() {
         let mut c = Canvas::new(MicroVersion(2), L);
         c.draw_format_info_patterns(LargeCheckerboard);
-        assert_eq!(c.to_debug_str().as_slice(), "\n\
+        assert_eq!(c.to_debug_str()[], "\n\
                     ?????????????\n\
                     ????????#????\n\
                     ????????.????\n\
@@ -1449,14 +1449,14 @@ mod mask_tests {
     }
 }
 
-static FORMAT_INFOS_QR: [u16, ..32] = [
+const FORMAT_INFOS_QR: [u16, ..32] = [
     0x5412, 0x5125, 0x5e7c, 0x5b4b, 0x45f9, 0x40ce, 0x4f97, 0x4aa0,
     0x77c4, 0x72f3, 0x7daa, 0x789d, 0x662f, 0x6318, 0x6c41, 0x6976,
     0x1689, 0x13be, 0x1ce7, 0x19d0, 0x0762, 0x0255, 0x0d0c, 0x083b,
     0x355f, 0x3068, 0x3f31, 0x3a06, 0x24b4, 0x2183, 0x2eda, 0x2bed,
 ];
 
-static FORMAT_INFOS_MICRO_QR: [u16, ..32] = [
+const FORMAT_INFOS_MICRO_QR: [u16, ..32] = [
     0x4445, 0x4172, 0x4e2b, 0x4b1c, 0x55ae, 0x5099, 0x5fc0, 0x5af7,
     0x6793, 0x62a4, 0x6dfd, 0x68ca, 0x7678, 0x734f, 0x7c16, 0x7921,
     0x06de, 0x03e9, 0x0cb0, 0x0987, 0x1735, 0x1202, 0x1d5b, 0x186c,
@@ -1628,7 +1628,7 @@ mod penalty_tests {
     #[test]
     fn check_penalty_canvas() {
         let c = create_test_canvas();
-        assert_eq!(c.to_debug_str().as_slice(), "\n\
+        assert_eq!(c.to_debug_str()[], "\n\
                     #######.##....#######\n\
                     #.....#.#..#..#.....#\n\
                     #.###.#.#..##.#.###.#\n\
