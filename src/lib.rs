@@ -19,6 +19,7 @@
 //!
 
 #![unstable]
+#![feature(slicing_syntax)]
 
 extern crate test;
 
