@@ -20,6 +20,7 @@
 
 #![unstable]
 #![feature(slicing_syntax)]
+#![feature(while_let)] 
 
 extern crate test;
 
@@ -175,10 +176,6 @@ impl Index<(uint, uint), bool> for QrCode {
 impl CloneableVector<bool> for QrCode {
     fn to_vec(&self) -> Vec<bool> {
         self.content.clone()
-    }
-
-    fn into_vec(self) -> Vec<bool> {
-        self.content
     }
 }
 

@@ -1163,24 +1163,32 @@ mod data_iter_tests {
 //------------------------------------------------------------------------------
 //{{{ Data placement
 
-fn draw_codewords<'a, I>(codewords: &[u8], is_half_codeword_at_end: bool, modules: &mut I)
-    where I: Iterator<&'a mut Module>
-{
-    let length = codewords.len();
-    let last_word = if is_half_codeword_at_end { length-1 } else { length };
-    for (i, b) in codewords.iter().enumerate() {
-        let bits_end = if i == last_word { 4 } else { 0 };
-        for j in range_inclusive(bits_end, 7u).rev() {
-            let color = if (*b & (1 << j)) != 0 { DarkUnmasked } else { LightUnmasked };
-            match modules.next() {
-                Some(module) => { *module = color; }
-                None => { return; }
+impl Canvas {
+    fn draw_codewords<'a, I>(&mut self,
+                             codewords: &[u8],
+                             is_half_codeword_at_end: bool,
+                             coords: &mut I)
+        where I: Iterator<(i16, i16)>
+    {
+        let length = codewords.len();
+        let last_word = if is_half_codeword_at_end { length-1 } else { length };
+        for (i, b) in codewords.iter().enumerate() {
+            let bits_end = if i == last_word { 4 } else { 0 };
+        'outside:
+            for j in range_inclusive(bits_end, 7u).rev() {
+                let color = if (*b & (1 << j)) != 0 { DarkUnmasked } else { LightUnmasked };
+                while let Some((x, y)) = coords.next() {
+                    let r = self.get_mut(x, y);
+                    if *r == Empty {
+                        *r = color;
+                        continue 'outside;
+                    }
+                }
+                return;
             }
         }
     }
-}
 
-impl Canvas {
     /// Draws the encoded data and error correction codes to the empty modules.
     pub fn draw_data(&mut self, data: &[u8], ec: &[u8]) {
         let is_half_codeword_at_end = match (self.version, self.ec_level) {
@@ -1188,13 +1196,9 @@ impl Canvas {
             _ => false,
         };
 
-        let mut coords = DataModuleIter::new(self.version)
-                                       .filter_map(|(x, y)| {
-                                            let r = self.get_mut(x, y);
-                                            if *r != Empty { None } else { Some(r) }
-                                       });
-        draw_codewords(data, is_half_codeword_at_end, &mut coords);
-        draw_codewords(ec, false, &mut coords);
+        let mut coords = DataModuleIter::new(self.version);
+        self.draw_codewords(data, is_half_codeword_at_end, &mut coords);
+        self.draw_codewords(ec, false, &mut coords);
     }
 }
 
