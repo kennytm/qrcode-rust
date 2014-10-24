@@ -606,7 +606,7 @@ impl Bits {
 //{{{ Finish
 
 // This table is copied from ISO/IEC 18004:2006 §6.4.10, Table 7.
-const DATA_LENGTHS: [[uint, ..4], ..44] = [
+static DATA_LENGTHS: [[uint, ..4], ..44] = [
     // Normal versions
     [152, 128, 104, 72],
     [272, 224, 176, 128],
