@@ -142,7 +142,7 @@ impl Canvas {
     /// negative coordinates will wrap around.
     pub fn get_mut(&mut self, x: i16, y: i16) -> &mut Module {
         let index = self.coords_to_index(x, y);
-        self.modules.get_mut(index)
+        self.modules.index_mut(&index)
     }
 
     /// Sets the color of a module at the given coordinates. For convenience,
@@ -185,7 +185,7 @@ mod basic_canvas_tests {
                     2 => Dark,
                     3 => LightUnmasked,
                     4 => DarkUnmasked,
-                    _ => fail!(),
+                    _ => panic!(),
                 });
             }
         }
@@ -1348,7 +1348,7 @@ impl Canvas {
                     LargeCheckerboard => 0b01,
                     Diamonds => 0b10,
                     Meadow => 0b11,
-                    _ => fail!("Unsupported mask pattern in Micro QR code"),
+                    _ => panic!("Unsupported mask pattern in Micro QR code"),
                 };
                 let symbol_number = match (a, self.ec_level) {
                     (1, L) => 0b000,
@@ -1359,7 +1359,7 @@ impl Canvas {
                     (4, L) => 0b101,
                     (4, M) => 0b110,
                     (4, Q) => 0b111,
-                    _ => fail!("Unsupported version/ec_level combination in Micro QR code"),
+                    _ => panic!("Unsupported version/ec_level combination in Micro QR code"),
                 };
                 let simple_format_number = symbol_number << 2 | micro_pattern_number;
                 FORMAT_INFOS_MICRO_QR[simple_format_number]

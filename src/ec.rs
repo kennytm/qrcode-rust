@@ -8,7 +8,7 @@ use types::{QrResult, QrVersion, ErrorCorrectionLevel};
 /// Creates the error correction code in N bytes.
 ///
 /// This method only supports computing the error-correction code up to
-/// 69 bytes. Longer blocks will result in failure.
+/// 69 bytes. Longer blocks will result in task panic.
 ///
 /// This method treats the data as a polynomial of the form
 /// (a[0] x<sup>m+n</sup> + a[1] x<sup>m+n-1</sup> + … + a[m] x<sup>n</sup>) in

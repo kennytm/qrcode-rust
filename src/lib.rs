@@ -6,7 +6,7 @@
 //!
 //!     let code = QrCode::new(b"Some content here.");
 //!     match code {
-//!         Err(err) => fail!("Failed to encode the QR code: {}", err),
+//!         Err(err) => panic!("Failed to encode the QR code: {}", err),
 //!         Ok(code) => {
 //!             for y in range(0, code.width()) {
 //!                 for x in range(0, code.width()) {
@@ -20,7 +20,7 @@
 
 #![unstable]
 #![feature(slicing_syntax)]
-#![feature(while_let)] 
+#![feature(while_let)]
 
 extern crate test;
 
