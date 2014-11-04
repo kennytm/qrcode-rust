@@ -63,35 +63,20 @@ mod ec_tests {
 //------------------------------------------------------------------------------
 //{{{ Interleave support
 
-// TODO Make Vec implements ImmutableVector, or &[T] implements Index.
-trait InterleaveSupport<T> {
-    /// Equivalent to
-    ///
-    /// ```ignore
-    /// if i < self.len() {
-    ///     v.push(self[i]);
-    /// }
-    /// ```
-    ///
-    /// This trait exists solely because `Vec<T>` does not implement
-    /// ImmutableVector, or `&[T]` does not implement Index. This trait can be
-    /// deprecated once either of above are implemented.
-    fn push_item_to(&self, i: uint, v: &mut Vec<T>);
+// TODO Make &[T] implement Deref<[T]>
+trait XDeref<Sized? T> {
+    fn deref2(&self) -> &T;
 }
 
-impl<T: Copy> InterleaveSupport<T> for Vec<T> {
-    fn push_item_to(&self, i: uint, v: &mut Vec<T>) {
-        if i < self.len() {
-            v.push(self[i]);
-        }
+impl<T> XDeref<[T]> for Vec<T> {
+    fn deref2(&self) -> &[T] {
+        self.deref()
     }
 }
 
-impl<'a, T: Copy> InterleaveSupport<T> for &'a [T] {
-    fn push_item_to(&self, i: uint, v: &mut Vec<T>) {
-        if i < self.len() {
-            v.push(self[i]);
-        }
+impl<'a, Sized? T> XDeref<T> for &'a T {
+    fn deref2(&self) -> &T {
+        *self
     }
 }
 
@@ -103,13 +88,16 @@ impl<'a, T: Copy> InterleaveSupport<T> for &'a [T] {
 /// The longest slice must be at the last of `blocks`, and `blocks` must not be
 /// empty.
 fn interleave<T: Copy, V>(blocks: &Vec<V>) -> Vec<T>
-    where V: InterleaveSupport<T> + Collection
+    where V: XDeref<[T]>
 {
-    let last_block_len = blocks.last().unwrap().len();
+    let last_block_len = blocks.last().unwrap().deref2().len();
     let mut res = Vec::with_capacity(last_block_len * blocks.len());
     for i in range(0, last_block_len) {
         for t in blocks.iter() {
-            t.push_item_to(i, &mut res);
+            let tref = t.deref2();
+            if i < tref.len() {
+                res.push(tref[i]);
+            }
         }
     }
     res
