@@ -43,42 +43,25 @@ mod ec_tests {
     #[test]
     fn test_poly_mod_1() {
         let res = create_error_correction_code(b" [\x0bx\xd1r\xdcMC@\xec\x11\xec\x11\xec\x11", 10);
-        assert_eq!(res[], b"\xc4#'w\xeb\xd7\xe7\xe2]\x17");
+        assert_eq!(&*res, b"\xc4#'w\xeb\xd7\xe7\xe2]\x17");
     }
 
     #[test]
     fn test_poly_mod_2() {
         let res = create_error_correction_code(b" [\x0bx\xd1r\xdcMC@\xec\x11\xec", 13);
-        assert_eq!(res[], b"\xa8H\x16R\xd96\x9c\x00.\x0f\xb4z\x10");
+        assert_eq!(&*res, b"\xa8H\x16R\xd96\x9c\x00.\x0f\xb4z\x10");
     }
 
     #[test]
     fn test_poly_mod_3() {
         let res = create_error_correction_code(b"CUF\x86W&U\xc2w2\x06\x12\x06g&", 18);
-        assert_eq!(res[], b"\xd5\xc7\x0b-s\xf7\xf1\xdf\xe5\xf8\x9au\x9aoV\xa1o'");
+        assert_eq!(&*res, b"\xd5\xc7\x0b-s\xf7\xf1\xdf\xe5\xf8\x9au\x9aoV\xa1o'");
     }
 }
 
 //}}}
 //------------------------------------------------------------------------------
 //{{{ Interleave support
-
-// TODO Make &[T] implement Deref<[T]>
-trait XDeref<Sized? T> {
-    fn deref2(&self) -> &T;
-}
-
-impl<T> XDeref<[T]> for Vec<T> {
-    fn deref2(&self) -> &[T] {
-        self.deref()
-    }
-}
-
-impl<'a, Sized? T> XDeref<T> for &'a T {
-    fn deref2(&self) -> &T {
-        *self
-    }
-}
 
 /// This method interleaves a vector of slices into a single vector.
 ///
@@ -87,16 +70,13 @@ impl<'a, Sized? T> XDeref<T> for &'a T {
 ///
 /// The longest slice must be at the last of `blocks`, and `blocks` must not be
 /// empty.
-fn interleave<T: Copy, V>(blocks: &Vec<V>) -> Vec<T>
-    where V: XDeref<[T]>
-{
-    let last_block_len = blocks.last().unwrap().deref2().len();
+fn interleave<T: Copy, V: Deref<[T]>>(blocks: &Vec<V>) -> Vec<T> {
+    let last_block_len = blocks.last().unwrap().len();
     let mut res = Vec::with_capacity(last_block_len * blocks.len());
     for i in range(0, last_block_len) {
         for t in blocks.iter() {
-            let tref = t.deref2();
-            if i < tref.len() {
-                res.push(tref[i]);
+            if i < t.len() {
+                res.push(t[i]);
             }
         }
     }
@@ -106,7 +86,7 @@ fn interleave<T: Copy, V>(blocks: &Vec<V>) -> Vec<T>
 #[test]
 fn test_interleave() {
     let res = interleave(&vec![b"1234", b"5678", b"abcdef", b"ghijkl"]);
-    assert_eq!(res[], b"15ag26bh37ci48djekfl");
+    assert_eq!(&*res, b"15ag26bh37ci48djekfl");
 }
 
 //}}}
@@ -119,7 +99,7 @@ pub fn construct_codewords(rawbits: &[u8],
                            version: QrVersion,
                            ec_level: ErrorCorrectionLevel) -> QrResult<(Vec<u8>, Vec<u8>)> {
     let (block_1_size, block_1_count, block_2_size, block_2_count) =
-        try!(version.fetch(ec_level, DATA_BYTES_PER_BLOCK[]));
+        try!(version.fetch(ec_level, &DATA_BYTES_PER_BLOCK));
 
     let blocks_count = block_1_count + block_2_count;
     let block_1_end = block_1_size * block_1_count;
@@ -135,7 +115,7 @@ pub fn construct_codewords(rawbits: &[u8],
     }
 
     // Generate EC codes.
-    let ec_bytes = try!(version.fetch(ec_level, EC_BYTES_PER_BLOCK[]));
+    let ec_bytes = try!(version.fetch(ec_level, &EC_BYTES_PER_BLOCK));
     let ec_codes = blocks.iter()
                          .map(|block| create_error_correction_code(*block, ec_bytes))
                          .collect::<Vec<Vec<u8>>>();
@@ -155,17 +135,17 @@ mod construct_codewords_test {
     fn test_add_ec_simple() {
         let msg = b" [\x0bx\xd1r\xdcMC@\xec\x11\xec\x11\xec\x11";
         let (blocks_vec, ec_vec) = construct_codewords(msg, Version(1), M).unwrap();
-        assert_eq!(blocks_vec[], msg);
-        assert_eq!(ec_vec[], b"\xc4#'w\xeb\xd7\xe7\xe2]\x17");
+        assert_eq!(&*blocks_vec, msg);
+        assert_eq!(&*ec_vec, b"\xc4#'w\xeb\xd7\xe7\xe2]\x17");
     }
 
     #[test]
     fn test_add_ec_complex() {
         let msg = b"CUF\x86W&U\xc2w2\x06\x12\x06g&\xf6\xf6B\x07v\x86\xf2\x07&V\x16\xc6\xc7\x92\x06\xb6\xe6\xf7w2\x07v\x86W&R\x06\x86\x972\x07F\xf7vV\xc2\x06\x972\x10\xec\x11\xec\x11\xec\x11\xec";
         let (blocks_vec, ec_vec) = construct_codewords(msg, Version(5), Q).unwrap();
-        assert_eq!(blocks_vec[],
+        assert_eq!(&*blocks_vec,
                    b"C\xf6\xb6FU\xf6\xe6\xf7FB\xf7v\x86\x07wVWv2\xc2&\x86\x07\x06U\xf2v\x97\xc2\x07\x862w&W\x102V&\xec\x06\x16R\x11\x12\xc6\x06\xec\x06\xc7\x86\x11g\x92\x97\xec&\x062\x11\x07\xec");
-        assert_eq!(ec_vec[],
+        assert_eq!(&*ec_vec,
                    b"\xd5W\x94\xeb\xc7\xcct\x9f\x0b`\xb1\x05-<\xd4\xads\xcaL\x18\xf7\xb6\x85\x93\xf1|K;\xdf\x9d\xf2!\xe5\xc8\xeej\xf8\x86L(\x9a\x1b\xc3\xffu\x81\xe6\xac\x9a\xd1\xbdRo\x11\n\x02V\xa3l\x83\xa1\xa3\xf0 ox\xc0\xb2'\x85\x8d\xec");
     }
 }

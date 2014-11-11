@@ -314,15 +314,15 @@ mod optimize_tests {
     use types::{Numeric, Alphanumeric, Byte, Kanji, QrVersion, Version, MicroVersion};
 
     fn test_optimization_result(given: Vec<Segment>, expected: Vec<Segment>, version: QrVersion) {
-        let prev_len = total_encoded_len(given[], version);
+        let prev_len = total_encoded_len(&*given, version);
         let opt_segs = Optimizer::new(given.iter().map(|seg| *seg), version).collect::<Vec<Segment>>();
-        let new_len = total_encoded_len(opt_segs[], version);
+        let new_len = total_encoded_len(&*opt_segs, version);
         if given != opt_segs {
             assert!(prev_len > new_len, "{} > {}", prev_len, new_len);
         }
         assert!(opt_segs == expected,
                 "Optimization gave something better: {} < {} ({})",
-                new_len, total_encoded_len(expected[], version), opt_segs);
+                new_len, total_encoded_len(&*expected, version), opt_segs);
     }
 
     #[test]

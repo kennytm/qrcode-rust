@@ -190,7 +190,7 @@ mod basic_canvas_tests {
             }
         }
 
-        assert_eq!(c.to_debug_str()[], "\n\
+        assert_eq!(&*c.to_debug_str(), "\n\
                     ?????????????????????\n\
                     ?????????????????????\n\
                     ?????????????????????\n\
@@ -263,7 +263,7 @@ mod finder_pattern_tests {
     fn test_qr() {
         let mut c = Canvas::new(Version(1), L);
         c.draw_finder_patterns();
-        assert_eq!(c.to_debug_str()[], "\n\
+        assert_eq!(&*c.to_debug_str(), "\n\
                     #######.?????.#######\n\
                     #.....#.?????.#.....#\n\
                     #.###.#.?????.#.###.#\n\
@@ -291,7 +291,7 @@ mod finder_pattern_tests {
     fn test_micro_qr() {
         let mut c = Canvas::new(MicroVersion(1), L);
         c.draw_finder_patterns();
-        assert_eq!(c.to_debug_str()[], "\n\
+        assert_eq!(&*c.to_debug_str(), "\n\
                     #######.???\n\
                     #.....#.???\n\
                     #.###.#.???\n\
@@ -356,7 +356,7 @@ mod alignment_pattern_tests {
         let mut c = Canvas::new(Version(1), L);
         c.draw_finder_patterns();
         c.draw_alignment_patterns();
-        assert_eq!(c.to_debug_str()[], "\n\
+        assert_eq!(&*c.to_debug_str(), "\n\
                     #######.?????.#######\n\
                     #.....#.?????.#.....#\n\
                     #.###.#.?????.#.###.#\n\
@@ -385,7 +385,7 @@ mod alignment_pattern_tests {
         let mut c = Canvas::new(Version(3), L);
         c.draw_finder_patterns();
         c.draw_alignment_patterns();
-        assert_eq!(c.to_debug_str()[], "\n\
+        assert_eq!(&*c.to_debug_str(), "\n\
                     #######.?????????????.#######\n\
                     #.....#.?????????????.#.....#\n\
                     #.###.#.?????????????.#.###.#\n\
@@ -422,7 +422,7 @@ mod alignment_pattern_tests {
         let mut c = Canvas::new(Version(7), L);
         c.draw_finder_patterns();
         c.draw_alignment_patterns();
-        assert_eq!(c.to_debug_str()[], "\n\
+        assert_eq!(&*c.to_debug_str(), "\n\
                     #######.?????????????????????????????.#######\n\
                     #.....#.?????????????????????????????.#.....#\n\
                     #.###.#.?????????????????????????????.#.###.#\n\
@@ -567,7 +567,7 @@ mod timing_pattern_tests {
     fn test_draw_timing_patterns_qr() {
         let mut c = Canvas::new(Version(1), L);
         c.draw_timing_patterns();
-        assert_eq!(c.to_debug_str()[], "\n\
+        assert_eq!(&*c.to_debug_str(), "\n\
                     ?????????????????????\n\
                     ?????????????????????\n\
                     ?????????????????????\n\
@@ -595,7 +595,7 @@ mod timing_pattern_tests {
     fn test_draw_timing_patterns_micro_qr() {
         let mut c = Canvas::new(MicroVersion(1), L);
         c.draw_timing_patterns();
-        assert_eq!(c.to_debug_str()[], "\n\
+        assert_eq!(&*c.to_debug_str(), "\n\
                     ????????#.#\n\
                     ???????????\n\
                     ???????????\n\
@@ -673,7 +673,7 @@ mod draw_version_info_tests {
     fn test_draw_number() {
         let mut c = Canvas::new(MicroVersion(1), L);
         c.draw_number(0b10101101u8, Dark, Light, [(0,0), (0,-1), (-2,-2), (-2,0)]);
-        assert_eq!(c.to_debug_str()[], "\n\
+        assert_eq!(&*c.to_debug_str(), "\n\
                     #????????.?\n\
                     ???????????\n\
                     ???????????\n\
@@ -691,7 +691,7 @@ mod draw_version_info_tests {
     fn test_draw_version_info_1() {
         let mut c = Canvas::new(Version(1), L);
         c.draw_version_info_patterns();
-        assert_eq!(c.to_debug_str()[], "\n\
+        assert_eq!(&*c.to_debug_str(), "\n\
                     ?????????????????????\n\
                     ?????????????????????\n\
                     ?????????????????????\n\
@@ -720,7 +720,7 @@ mod draw_version_info_tests {
         let mut c = Canvas::new(Version(7), L);
         c.draw_version_info_patterns();
 
-        assert_eq!(c.to_debug_str()[], "\n\
+        assert_eq!(&*c.to_debug_str(), "\n\
                     ??????????????????????????????????..#????????\n\
                     ??????????????????????????????????.#.????????\n\
                     ??????????????????????????????????.#.????????\n\
@@ -772,7 +772,7 @@ mod draw_version_info_tests {
     fn test_draw_reserved_format_info_patterns_qr() {
         let mut c = Canvas::new(Version(1), L);
         c.draw_reserved_format_info_patterns();
-        assert_eq!(c.to_debug_str()[], "\n\
+        assert_eq!(&*c.to_debug_str(), "\n\
                     ????????.????????????\n\
                     ????????.????????????\n\
                     ????????.????????????\n\
@@ -800,7 +800,7 @@ mod draw_version_info_tests {
     fn test_draw_reserved_format_info_patterns_micro_qr() {
         let mut c = Canvas::new(MicroVersion(1), L);
         c.draw_reserved_format_info_patterns();
-        assert_eq!(c.to_debug_str()[], "\n\
+        assert_eq!(&*c.to_debug_str(), "\n\
                     ???????????\n\
                     ????????.??\n\
                     ????????.??\n\
@@ -886,7 +886,7 @@ mod all_functional_patterns_tests {
     fn test_all_functional_patterns_qr() {
         let mut c = Canvas::new(Version(2), L);
         c.draw_all_functional_patterns();
-        assert_eq!(c.to_debug_str()[], "\n\
+        assert_eq!(&*c.to_debug_str(), "\n\
                     #######..????????.#######\n\
                     #.....#..????????.#.....#\n\
                     #.###.#..????????.#.###.#\n\
@@ -918,7 +918,7 @@ mod all_functional_patterns_tests {
     fn test_all_functional_patterns_micro_qr() {
         let mut c = Canvas::new(MicroVersion(1), L);
         c.draw_all_functional_patterns();
-        assert_eq!(c.to_debug_str()[], "\n\
+        assert_eq!(&*c.to_debug_str(), "\n\
                     #######.#.#\n\
                     #.....#..??\n\
                     #.###.#..??\n\
@@ -1212,7 +1212,7 @@ mod draw_codewords_test {
         let mut c = Canvas::new(MicroVersion(1), L);
         c.draw_all_functional_patterns();
         c.draw_data(b"\x6e\x5d\xe2", b"\x2b\x63");
-        assert_eq!(c.to_debug_str()[], "\n\
+        assert_eq!(&*c.to_debug_str(), "\n\
                     #######.#.#\n\
                     #.....#..-*\n\
                     #.###.#..**\n\
@@ -1231,7 +1231,7 @@ mod draw_codewords_test {
         let mut c = Canvas::new(Version(2), L);
         c.draw_all_functional_patterns();
         c.draw_data(b"\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$", b"");
-        assert_eq!(c.to_debug_str()[], "\n\
+        assert_eq!(&*c.to_debug_str(), "\n\
                     #######..--*---*-.#######\n\
                     #.....#..-*-*-*-*.#.....#\n\
                     #.###.#..*---*---.#.###.#\n\
@@ -1380,7 +1380,7 @@ mod mask_tests {
         c.draw_all_functional_patterns();
         c.apply_mask(Checkerboard);
 
-        assert_eq!(c.to_debug_str()[], "\n\
+        assert_eq!(&*c.to_debug_str(), "\n\
                     #######...#.#.#######\n\
                     #.....#..#.#..#.....#\n\
                     #.###.#.#.#.#.#.###.#\n\
@@ -1408,7 +1408,7 @@ mod mask_tests {
     fn test_draw_format_info_patterns_qr() {
         let mut c = Canvas::new(Version(1), L);
         c.draw_format_info_patterns(LargeCheckerboard);
-        assert_eq!(c.to_debug_str()[], "\n\
+        assert_eq!(&*c.to_debug_str(), "\n\
                     ????????#????????????\n\
                     ????????#????????????\n\
                     ????????#????????????\n\
@@ -1436,7 +1436,7 @@ mod mask_tests {
     fn test_draw_format_info_patterns_micro_qr() {
         let mut c = Canvas::new(MicroVersion(2), L);
         c.draw_format_info_patterns(LargeCheckerboard);
-        assert_eq!(c.to_debug_str()[], "\n\
+        assert_eq!(&*c.to_debug_str(), "\n\
                     ?????????????\n\
                     ????????#????\n\
                     ????????.????\n\
@@ -1632,7 +1632,7 @@ mod penalty_tests {
     #[test]
     fn check_penalty_canvas() {
         let c = create_test_canvas();
-        assert_eq!(c.to_debug_str()[], "\n\
+        assert_eq!(&*c.to_debug_str(), "\n\
                     #######.##....#######\n\
                     #.....#.#..#..#.....#\n\
                     #.###.#.#..##.#.###.#\n\

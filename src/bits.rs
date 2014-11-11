@@ -77,9 +77,9 @@ impl Bits {
     }
 
     /// Reserves `n` extra bits of space for pushing.
-    fn reserve_additional(&mut self, n: uint) {
+    fn reserve(&mut self, n: uint) {
         let extra_bytes = (n + (8 - self.bit_offset) % 8) / 8;
-        self.data.reserve_additional(extra_bytes);
+        self.data.reserve(extra_bytes);
     }
 
     /// Convert the bits into a bytes vector.
@@ -231,7 +231,7 @@ impl Bits {
     /// If the designator is outside of the expected range, this method will
     /// return `Err(InvalidECIDesignator)`.
     pub fn push_eci_designator(&mut self, eci_designator: u32) -> QrResult<()> {
-        self.reserve_additional(12); // assume the common case that eci_designator <= 127.
+        self.reserve(12); // assume the common case that eci_designator <= 127.
         try!(self.push_mode_indicator(Eci));
         match eci_designator {
             0...127 => {
@@ -301,7 +301,7 @@ mod eci_tests {
 impl Bits {
     fn push_header(&mut self, mode: Mode, raw_data_len: uint) -> QrResult<()> {
         let length_bits = mode.length_bits_count(self.version);
-        self.reserve_additional(length_bits + 4 + mode.data_bits_count(raw_data_len));
+        self.reserve(length_bits + 4 + mode.data_bits_count(raw_data_len));
         try!(self.push_mode_indicator(Data(mode)));
         try!(self.push_number_checked(length_bits, raw_data_len));
         Ok(())
@@ -314,7 +314,7 @@ impl Bits {
     pub fn push_numeric_data(&mut self, data: &[u8]) -> QrResult<()> {
         try!(self.push_header(Numeric, data.len()));
         for chunk in data.chunks(3) {
-            let number = chunk.iter().map(|b| (b - b'0') as u16).fold(0, |a, b| a*10 + b);
+            let number = chunk.iter().map(|b| (*b - b'0') as u16).fold(0, |a, b| a*10 + b);
             let length = chunk.len() * 3 + 1;
             self.push_number(length, number);
         }
@@ -666,7 +666,7 @@ impl Bits {
         };
 
         let cur_length = self.len();
-        let data_length = try!(self.version.fetch(ec_level, DATA_LENGTHS[]));
+        let data_length = try!(self.version.fetch(ec_level, &DATA_LENGTHS));
         if cur_length > data_length {
             return Err(DataTooLong);
         }
@@ -829,12 +829,12 @@ pub fn encode_auto(data: &[u8], ec_level: ErrorCorrectionLevel) -> QrResult<Bits
     let segments = Parser::new(data).collect::<Vec<Segment>>();
     for version in [Version(9), Version(26), Version(40)].iter() {
         let opt_segments = Optimizer::new(segments.iter().map(|s| *s), *version).collect::<Vec<Segment>>();
-        let total_len = total_encoded_len(opt_segments[], *version);
-        let data_capacity = version.fetch(ec_level, DATA_LENGTHS[]).unwrap();
+        let total_len = total_encoded_len(&*opt_segments, *version);
+        let data_capacity = version.fetch(ec_level, &DATA_LENGTHS).unwrap();
         if total_len <= data_capacity {
             let min_version = find_min_version(total_len, ec_level);
             let mut bits = Bits::new(min_version);
-            bits.reserve_additional(total_len);
+            bits.reserve(total_len);
             try!(bits.push_segments(data, opt_segments.into_iter()));
             try!(bits.push_terminator(ec_level));
             return Ok(bits);

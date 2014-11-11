@@ -24,7 +24,6 @@
 
 extern crate test;
 
-use std::slice::CloneableVector;
 pub use types::{QrResult, ErrorCorrectionLevel, L, M, Q, H,
                 QrVersion, Version, MicroVersion};
 
@@ -164,18 +163,24 @@ impl QrCode {
         }
         res
     }
+
+    /// Converts the QR code to a vector of booleans. Each entry represents the
+    /// color of the module, with "true" means dark and "false" means light.
+    pub fn to_vec(&self) -> Vec<bool> {
+        self.content.clone()
+    }
+
+    /// Converts the QR code to a vector of booleans. Each entry represents the
+    /// color of the module, with "true" means dark and "false" means light.
+    pub fn into_vec(self) -> Vec<bool> {
+        self.content.clone()
+    }
 }
 
 impl Index<(uint, uint), bool> for QrCode {
     fn index(&self, &(x, y): &(uint, uint)) -> &bool {
         let index = y * self.width + x;
         self.content.index(&index)
-    }
-}
-
-impl CloneableVector<bool> for QrCode {
-    fn to_vec(&self) -> Vec<bool> {
-        self.content.clone()
     }
 }
 
@@ -187,7 +192,7 @@ mod tests {
     fn test_annex_i_qr() {
         // This uses the ISO Annex I as test vector.
         let code = QrCode::with_version(b"01234567", Version(1), M).unwrap();
-        assert_eq!(code.to_debug_str('#', '.')[], "\n\
+        assert_eq!(&*code.to_debug_str('#', '.'), "\n\
                     #######..#.##.#######\n\
                     #.....#..####.#.....#\n\
                     #.###.#.#.....#.###.#\n\
@@ -214,7 +219,7 @@ mod tests {
     #[test]
     fn test_annex_i_micro_qr() {
         let code = QrCode::with_version(b"01234567", MicroVersion(2), L).unwrap();
-        assert_eq!(code.to_debug_str('#', '.')[], "\n\
+        assert_eq!(&*code.to_debug_str('#', '.'), "\n\
                     #######.#.#.#\n\
                     #.....#.###.#\n\
                     #.###.#..##.#\n\
