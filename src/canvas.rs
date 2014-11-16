@@ -11,7 +11,7 @@
 
 use std::iter::range_inclusive;
 use std::iter::order::equals;
-use std::num::zero;
+use std::num::Int;
 use std::cmp::max;
 
 use types::{QrVersion, Version, MicroVersion, ErrorCorrectionLevel, L, M, Q};
@@ -624,9 +624,10 @@ impl Canvas {
     fn draw_number<N: Int>(&mut self, number: N,
                            on_color: Module, off_color: Module,
                            coords: &[(i16, i16)]) {
-        let mut mask: N = !(!zero::<N>() >> 1);
+        let zero: N = Int::zero();
+        let mut mask: N = !(!zero >> 1);
         for &(x, y) in coords.iter() {
-            let color = if (mask & number).is_zero() { off_color } else { on_color };
+            let color = if (mask & number) == zero { off_color } else { on_color };
             self.put(x, y, color);
             mask = mask >> 1;
         }
