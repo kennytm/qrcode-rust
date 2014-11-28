@@ -1,6 +1,6 @@
 //! The `ec` module applies the Reed-Solomon error correction codes.
 
-use types::{QrResult, QrVersion, ErrorCorrectionLevel};
+use types::{QrResult, Version, EcLevel};
 
 //------------------------------------------------------------------------------
 //{{{ Error correction primitive
@@ -96,8 +96,8 @@ fn test_interleave() {
 /// Constructs data and error correction codewords ready to be put in the QR
 /// code matrix.
 pub fn construct_codewords(rawbits: &[u8],
-                           version: QrVersion,
-                           ec_level: ErrorCorrectionLevel) -> QrResult<(Vec<u8>, Vec<u8>)> {
+                           version: Version,
+                           ec_level: EcLevel) -> QrResult<(Vec<u8>, Vec<u8>)> {
     let (block_1_size, block_1_count, block_2_size, block_2_count) =
         try!(version.fetch(ec_level, &DATA_BYTES_PER_BLOCK));
 
@@ -129,12 +129,12 @@ pub fn construct_codewords(rawbits: &[u8],
 #[cfg(test)]
 mod construct_codewords_test {
     use ec::construct_codewords;
-    use types::{Version, M, Q};
+    use types::{Version, EcLevel};
 
     #[test]
     fn test_add_ec_simple() {
         let msg = b" [\x0bx\xd1r\xdcMC@\xec\x11\xec\x11\xec\x11";
-        let (blocks_vec, ec_vec) = construct_codewords(msg, Version(1), M).unwrap();
+        let (blocks_vec, ec_vec) = construct_codewords(msg, Version::Normal(1), EcLevel::M).unwrap();
         assert_eq!(&*blocks_vec, msg);
         assert_eq!(&*ec_vec, b"\xc4#'w\xeb\xd7\xe7\xe2]\x17");
     }
@@ -142,7 +142,7 @@ mod construct_codewords_test {
     #[test]
     fn test_add_ec_complex() {
         let msg = b"CUF\x86W&U\xc2w2\x06\x12\x06g&\xf6\xf6B\x07v\x86\xf2\x07&V\x16\xc6\xc7\x92\x06\xb6\xe6\xf7w2\x07v\x86W&R\x06\x86\x972\x07F\xf7vV\xc2\x06\x972\x10\xec\x11\xec\x11\xec\x11\xec";
-        let (blocks_vec, ec_vec) = construct_codewords(msg, Version(5), Q).unwrap();
+        let (blocks_vec, ec_vec) = construct_codewords(msg, Version::Normal(5), EcLevel::Q).unwrap();
         assert_eq!(&*blocks_vec,
                    b"C\xf6\xb6FU\xf6\xe6\xf7FB\xf7v\x86\x07wVWv2\xc2&\x86\x07\x06U\xf2v\x97\xc2\x07\x862w&W\x102V&\xec\x06\x16R\x11\x12\xc6\x06\xec\x06\xc7\x86\x11g\x92\x97\xec&\x062\x11\x07\xec");
         assert_eq!(&*ec_vec,

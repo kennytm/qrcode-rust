@@ -7,7 +7,7 @@ use std::slice::Items;
 #[cfg(test)]
 use test::Bencher;
 
-use types::{Mode, QrVersion, Numeric, Alphanumeric, Byte, Kanji};
+use types::{Mode, Version};
 
 //------------------------------------------------------------------------------
 //{{{ Segment
@@ -28,9 +28,9 @@ pub struct Segment {
 impl Segment {
     /// Compute the number of bits (including the size of the mode indicator and
     /// length bits) when this segment is encoded.
-    pub fn encoded_len(&self, version: QrVersion) -> uint {
+    pub fn encoded_len(&self, version: Version) -> uint {
         let byte_size = self.end - self.begin;
-        let chars_count = if self.mode == Kanji { byte_size / 2 } else { byte_size };
+        let chars_count = if self.mode == Mode::Kanji { byte_size / 2 } else { byte_size };
 
         let mode_bits_count = version.mode_bits_count();
         let length_bits_count = self.mode.length_bits_count(version);
@@ -47,7 +47,9 @@ impl Segment {
 /// This iterator is basically equivalent to
 ///
 /// ```ignore
-/// data.map(|c| ExclusiveCharacterSet::from_u8(*c)).chain(Some(EEnd).move_iter()).enumerate()
+/// data.map(|c| ExclCharSet::from_u8(*c))
+///     .chain(Some(ExclCharSet::End).move_iter())
+///     .enumerate()
 /// ```
 ///
 /// But the type is too hard to write, thus the new type.
@@ -58,8 +60,8 @@ struct EcsIter<I> {
     ended: bool,
 }
 
-impl<'a, I: Iterator<&'a u8>> Iterator<(uint, ExclusiveCharacterSet)> for EcsIter<I> {
-    fn next(&mut self) -> Option<(uint, ExclusiveCharacterSet)> {
+impl<'a, I: Iterator<&'a u8>> Iterator<(uint, ExclCharSet)> for EcsIter<I> {
+    fn next(&mut self) -> Option<(uint, ExclCharSet)> {
         if self.ended {
             return None;
         }
@@ -67,12 +69,12 @@ impl<'a, I: Iterator<&'a u8>> Iterator<(uint, ExclusiveCharacterSet)> for EcsIte
         match self.base.next() {
             None => {
                 self.ended = true;
-                Some((self.index, EEnd))
+                Some((self.index, ExclCharSet::End))
             }
             Some(c) => {
                 let old_index = self.index;
                 self.index += 1;
-                Some((old_index, ExclusiveCharacterSet::from_u8(*c)))
+                Some((old_index, ExclCharSet::from_u8(*c)))
             }
         }
     }
@@ -81,7 +83,7 @@ impl<'a, I: Iterator<&'a u8>> Iterator<(uint, ExclusiveCharacterSet)> for EcsIte
 /// QR code data parser to classify the input into distinct segments.
 pub struct Parser<'a> {
     ecs_iter: EcsIter<Items<'a, u8>>,
-    state: SegmentParseState,
+    state: State,
     begin: uint,
     pending_single_byte: bool,
 }
@@ -101,7 +103,7 @@ impl<'a> Parser<'a> {
     pub fn new(data: &[u8]) -> Parser {
         Parser {
             ecs_iter: EcsIter { base: data.iter(), index: 0, ended: false },
-            state: SInit,
+            state: State::Init,
             begin: 0,
             pending_single_byte: false,
         }
@@ -113,7 +115,11 @@ impl<'a> Iterator<Segment> for Parser<'a> {
         if self.pending_single_byte {
             self.pending_single_byte = false;
             self.begin += 1;
-            return Some(Segment { mode: Byte, begin: self.begin-1, end: self.begin });
+            return Some(Segment {
+                mode: Mode::Byte,
+                begin: self.begin-1,
+                end: self.begin,
+            });
         }
 
         loop {
@@ -126,25 +132,33 @@ impl<'a> Iterator<Segment> for Parser<'a> {
 
             let old_begin = self.begin;
             let push_mode = match action {
-                AIdle => { continue; }
-                ANumeric => Numeric,
-                AAlpha => Alphanumeric,
-                AByte => Byte,
-                AKanji => Kanji,
-                AKanjiAndSingleByte => {
+                Action::Idle => { continue; }
+                Action::Numeric => Mode::Numeric,
+                Action::Alpha => Mode::Alphanumeric,
+                Action::Byte => Mode::Byte,
+                Action::Kanji => Mode::Kanji,
+                Action::KanjiAndSingleByte => {
                     let next_begin = i - 1;
                     if self.begin == next_begin {
-                        Byte
+                        Mode::Byte
                     } else {
                         self.pending_single_byte = true;
                         self.begin = next_begin;
-                        return Some(Segment { mode: Kanji, begin: old_begin, end: next_begin });
+                        return Some(Segment {
+                            mode: Mode::Kanji,
+                            begin: old_begin,
+                            end: next_begin,
+                        });
                     }
                 }
             };
 
             self.begin = i;
-            return Some(Segment { mode: push_mode, begin: old_begin, end: i });
+            return Some(Segment {
+                mode: push_mode,
+                begin: old_begin,
+                end: i,
+            });
         }
     }
 }
@@ -152,7 +166,7 @@ impl<'a> Iterator<Segment> for Parser<'a> {
 #[cfg(test)]
 mod parse_tests {
     use optimize::{Parser, Segment};
-    use types::{Numeric, Alphanumeric, Byte, Kanji};
+    use types::Mode;
 
     fn parse(data: &[u8]) -> Vec<Segment> {
         Parser::new(data).collect()
@@ -161,39 +175,39 @@ mod parse_tests {
     #[test]
     fn test_parse_1() {
         let segs = parse(b"01049123451234591597033130128%10ABC123");
-        assert_eq!(segs, vec![Segment { mode: Numeric, begin: 0, end: 29 },
-                              Segment { mode: Alphanumeric, begin: 29, end: 30 },
-                              Segment { mode: Numeric, begin: 30, end: 32 },
-                              Segment { mode: Alphanumeric, begin: 32, end: 35 },
-                              Segment { mode: Numeric, begin: 35, end: 38 }]);
+        assert_eq!(segs, vec![Segment { mode: Mode::Numeric, begin: 0, end: 29 },
+                              Segment { mode: Mode::Alphanumeric, begin: 29, end: 30 },
+                              Segment { mode: Mode::Numeric, begin: 30, end: 32 },
+                              Segment { mode: Mode::Alphanumeric, begin: 32, end: 35 },
+                              Segment { mode: Mode::Numeric, begin: 35, end: 38 }]);
     }
 
     #[test]
     fn test_parse_shift_jis_example_1() {
         let segs = parse(b"\x82\xa0\x81\x41\x41\xb1\x81\xf0");  // "あ、AｱÅ"
-        assert_eq!(segs, vec![Segment { mode: Kanji, begin: 0, end: 4 },
-                              Segment { mode: Alphanumeric, begin: 4, end: 5 },
-                              Segment { mode: Byte, begin: 5, end: 6 },
-                              Segment { mode: Kanji, begin: 6, end: 8 }]);
+        assert_eq!(segs, vec![Segment { mode: Mode::Kanji, begin: 0, end: 4 },
+                              Segment { mode: Mode::Alphanumeric, begin: 4, end: 5 },
+                              Segment { mode: Mode::Byte, begin: 5, end: 6 },
+                              Segment { mode: Mode::Kanji, begin: 6, end: 8 }]);
     }
 
     #[test]
     fn test_parse_utf_8() {
         // Mojibake?
         let segs = parse(b"\xe3\x81\x82\xe3\x80\x81A\xef\xbd\xb1\xe2\x84\xab");
-        assert_eq!(segs, vec![Segment { mode: Kanji, begin: 0, end: 4 },
-                              Segment { mode: Byte, begin: 4, end: 5 },
-                              Segment { mode: Kanji, begin: 5, end: 7 },
-                              Segment { mode: Byte, begin: 7, end: 10 },
-                              Segment { mode: Kanji, begin: 10, end: 12 },
-                              Segment { mode: Byte, begin: 12, end: 13 }]);
+        assert_eq!(segs, vec![Segment { mode: Mode::Kanji, begin: 0, end: 4 },
+                              Segment { mode: Mode::Byte, begin: 4, end: 5 },
+                              Segment { mode: Mode::Kanji, begin: 5, end: 7 },
+                              Segment { mode: Mode::Byte, begin: 7, end: 10 },
+                              Segment { mode: Mode::Kanji, begin: 10, end: 12 },
+                              Segment { mode: Mode::Byte, begin: 12, end: 13 }]);
     }
 
     #[test]
     fn test_not_kanji_1() {
         let segs = parse(b"\x81\x30");
-        assert_eq!(segs, vec![Segment { mode: Byte, begin: 0, end: 1 },
-                              Segment { mode: Numeric, begin: 1, end: 2 }]);
+        assert_eq!(segs, vec![Segment { mode: Mode::Byte, begin: 0, end: 1 },
+                              Segment { mode: Mode::Numeric, begin: 1, end: 2 }]);
     }
 
     #[test]
@@ -201,22 +215,22 @@ mod parse_tests {
         // Note that it's implementation detail that the byte seq is split into
         // two. Perhaps adjust the test to check for this.
         let segs = parse(b"\xeb\xc0");
-        assert_eq!(segs, vec![Segment { mode: Byte, begin: 0, end: 1 },
-                              Segment { mode: Byte, begin: 1, end: 2 }]);
+        assert_eq!(segs, vec![Segment { mode: Mode::Byte, begin: 0, end: 1 },
+                              Segment { mode: Mode::Byte, begin: 1, end: 2 }]);
     }
 
     #[test]
     fn test_not_kanji_3() {
         let segs = parse(b"\x81\x7f");
-        assert_eq!(segs, vec![Segment { mode: Byte, begin: 0, end: 1 },
-                              Segment { mode: Byte, begin: 1, end: 2 }]);
+        assert_eq!(segs, vec![Segment { mode: Mode::Byte, begin: 0, end: 1 },
+                              Segment { mode: Mode::Byte, begin: 1, end: 2 }]);
     }
 
     #[test]
     fn test_not_kanji_4() {
         let segs = parse(b"\x81\x40\x81");
-        assert_eq!(segs, vec![Segment { mode: Kanji, begin: 0, end: 2 },
-                              Segment { mode: Byte, begin: 2, end: 3 }]);
+        assert_eq!(segs, vec![Segment { mode: Mode::Kanji, begin: 0, end: 2 },
+                              Segment { mode: Mode::Byte, begin: 2, end: 3 }]);
     }
 }
 
@@ -228,7 +242,7 @@ pub struct Optimizer<I> {
     parser: I,
     last_segment: Segment,
     last_segment_size: uint,
-    version: QrVersion,
+    version: Version,
     ended: bool,
 }
 
@@ -239,11 +253,11 @@ impl<I: Iterator<Segment>> Optimizer<I> {
     /// left to right until the new segment is longer than before. This method
     /// does *not* use Annex J from the ISO standard.
     ///
-    pub fn new(mut segments: I, version: QrVersion) -> Optimizer<I> {
+    pub fn new(mut segments: I, version: Version) -> Optimizer<I> {
         match segments.next() {
             None => Optimizer {
                 parser: segments,
-                last_segment: Segment { mode: Numeric, begin: 0, end: 0 },
+                last_segment: Segment { mode: Mode::Numeric, begin: 0, end: 0 },
                 last_segment_size: 0,
                 version: version,
                 ended: true,
@@ -260,7 +274,7 @@ impl<I: Iterator<Segment>> Optimizer<I> {
 }
 
 impl<'a> Parser<'a> {
-    pub fn optimize(self, version: QrVersion) -> Optimizer<Parser<'a>> {
+    pub fn optimize(self, version: Version) -> Optimizer<Parser<'a>> {
         Optimizer::new(self, version)
     }
 }
@@ -303,7 +317,7 @@ impl<I: Iterator<Segment>> Iterator<Segment> for Optimizer<I> {
 }
 
 /// Computes the total encoded length of all segments.
-pub fn total_encoded_len(segments: &[Segment], version: QrVersion) -> uint {
+pub fn total_encoded_len(segments: &[Segment], version: Version) -> uint {
     use std::iter::AdditiveIterator;
     segments.iter().map(|seg| seg.encoded_len(version)).sum()
 }
@@ -311,11 +325,11 @@ pub fn total_encoded_len(segments: &[Segment], version: QrVersion) -> uint {
 #[cfg(test)]
 mod optimize_tests {
     use optimize::{Optimizer, total_encoded_len, Segment};
-    use types::{Numeric, Alphanumeric, Byte, Kanji, QrVersion, Version, MicroVersion};
+    use types::{Mode, Version};
 
-    fn test_optimization_result(given: Vec<Segment>, expected: Vec<Segment>, version: QrVersion) {
+    fn test_optimization_result(given: Vec<Segment>, expected: Vec<Segment>, version: Version) {
         let prev_len = total_encoded_len(&*given, version);
-        let opt_segs = Optimizer::new(given.iter().map(|seg| *seg), version).collect::<Vec<Segment>>();
+        let opt_segs = Optimizer::new(given.iter().map(|seg| *seg), version).collect::<Vec<_>>();
         let new_len = total_encoded_len(&*opt_segs, version);
         if given != opt_segs {
             assert!(prev_len > new_len, "{} > {}", prev_len, new_len);
@@ -329,14 +343,14 @@ mod optimize_tests {
     fn test_example_1() {
         test_optimization_result(
 
-            vec![Segment { mode: Alphanumeric, begin: 0, end: 3 },
-                 Segment { mode: Numeric, begin: 3, end: 6 },
-                 Segment { mode: Byte, begin: 6, end: 10 }],
+            vec![Segment { mode: Mode::Alphanumeric, begin: 0, end: 3 },
+                 Segment { mode: Mode::Numeric, begin: 3, end: 6 },
+                 Segment { mode: Mode::Byte, begin: 6, end: 10 }],
 
-            vec![Segment { mode: Alphanumeric, begin: 0, end: 6 },
-                 Segment { mode: Byte, begin: 6, end: 10 }],
+            vec![Segment { mode: Mode::Alphanumeric, begin: 0, end: 6 },
+                 Segment { mode: Mode::Byte, begin: 6, end: 10 }],
 
-            Version(1)
+            Version::Normal(1)
 
         );
     }
@@ -345,16 +359,16 @@ mod optimize_tests {
     fn test_example_2() {
         test_optimization_result(
 
-            vec![Segment { mode: Numeric, begin: 0, end: 29 },
-                 Segment { mode: Alphanumeric, begin: 29, end: 30 },
-                 Segment { mode: Numeric, begin: 30, end: 32 },
-                 Segment { mode: Alphanumeric, begin: 32, end: 35 },
-                 Segment { mode: Numeric, begin: 35, end: 38 }],
+            vec![Segment { mode: Mode::Numeric, begin: 0, end: 29 },
+                 Segment { mode: Mode::Alphanumeric, begin: 29, end: 30 },
+                 Segment { mode: Mode::Numeric, begin: 30, end: 32 },
+                 Segment { mode: Mode::Alphanumeric, begin: 32, end: 35 },
+                 Segment { mode: Mode::Numeric, begin: 35, end: 38 }],
 
-            vec![Segment { mode: Numeric, begin: 0, end: 29 },
-                 Segment { mode: Alphanumeric, begin: 29, end: 38 }],
+            vec![Segment { mode: Mode::Numeric, begin: 0, end: 29 },
+                 Segment { mode: Mode::Alphanumeric, begin: 29, end: 38 }],
 
-            Version(9)
+            Version::Normal(9)
 
         );
     }
@@ -363,14 +377,14 @@ mod optimize_tests {
     fn test_example_3() {
         test_optimization_result(
 
-            vec![Segment { mode: Kanji, begin: 0, end: 4 },
-                 Segment { mode: Alphanumeric, begin: 4, end: 5 },
-                 Segment { mode: Byte, begin: 5, end: 6 },
-                 Segment { mode: Kanji, begin: 6, end: 8 }],
+            vec![Segment { mode: Mode::Kanji, begin: 0, end: 4 },
+                 Segment { mode: Mode::Alphanumeric, begin: 4, end: 5 },
+                 Segment { mode: Mode::Byte, begin: 5, end: 6 },
+                 Segment { mode: Mode::Kanji, begin: 6, end: 8 }],
 
-            vec![Segment { mode: Byte, begin: 0, end: 8 }],
+            vec![Segment { mode: Mode::Byte, begin: 0, end: 8 }],
 
-            Version(1)
+            Version::Normal(1)
 
         );
     }
@@ -379,13 +393,13 @@ mod optimize_tests {
     fn test_example_4() {
         test_optimization_result(
 
-            vec![Segment { mode: Kanji, begin: 0, end: 10 },
-                 Segment { mode: Byte, begin: 10, end: 11 }],
+            vec![Segment { mode: Mode::Kanji, begin: 0, end: 10 },
+                 Segment { mode: Mode::Byte, begin: 10, end: 11 }],
 
-            vec![Segment { mode: Kanji, begin: 0, end: 10 },
-                 Segment { mode: Byte, begin: 10, end: 11 }],
+            vec![Segment { mode: Mode::Kanji, begin: 0, end: 10 },
+                 Segment { mode: Mode::Byte, begin: 10, end: 11 }],
 
-            Version(1)
+            Version::Normal(1)
 
         );
     }
@@ -394,13 +408,13 @@ mod optimize_tests {
     fn test_annex_j_guideline_1a() {
         test_optimization_result(
 
-            vec![Segment { mode: Numeric, begin: 0, end: 3 },
-                 Segment { mode: Alphanumeric, begin: 3, end: 4 }],
+            vec![Segment { mode: Mode::Numeric, begin: 0, end: 3 },
+                 Segment { mode: Mode::Alphanumeric, begin: 3, end: 4 }],
 
-            vec![Segment { mode: Numeric, begin: 0, end: 3 },
-                 Segment { mode: Alphanumeric, begin: 3, end: 4 }],
+            vec![Segment { mode: Mode::Numeric, begin: 0, end: 3 },
+                 Segment { mode: Mode::Alphanumeric, begin: 3, end: 4 }],
 
-            MicroVersion(2)
+            Version::Micro(2)
 
         );
     }
@@ -409,12 +423,12 @@ mod optimize_tests {
     fn test_annex_j_guideline_1b() {
         test_optimization_result(
 
-            vec![Segment { mode: Numeric, begin: 0, end: 2 },
-                 Segment { mode: Alphanumeric, begin: 2, end: 4 }],
+            vec![Segment { mode: Mode::Numeric, begin: 0, end: 2 },
+                 Segment { mode: Mode::Alphanumeric, begin: 2, end: 4 }],
 
-            vec![Segment { mode: Alphanumeric, begin: 0, end: 4 }],
+            vec![Segment { mode: Mode::Alphanumeric, begin: 0, end: 4 }],
 
-            MicroVersion(2)
+            Version::Micro(2)
 
         );
     }
@@ -423,12 +437,12 @@ mod optimize_tests {
     fn test_annex_j_guideline_1c() {
         test_optimization_result(
 
-            vec![Segment { mode: Numeric, begin: 0, end: 3 },
-                 Segment { mode: Alphanumeric, begin: 3, end: 4 }],
+            vec![Segment { mode: Mode::Numeric, begin: 0, end: 3 },
+                 Segment { mode: Mode::Alphanumeric, begin: 3, end: 4 }],
 
-            vec![Segment { mode: Alphanumeric, begin: 0, end: 4 }],
+            vec![Segment { mode: Mode::Alphanumeric, begin: 0, end: 4 }],
 
-            MicroVersion(3)
+            Version::Micro(3)
 
         );
     }
@@ -441,7 +455,7 @@ fn bench_optimize(bencher: &mut Bencher) {
 
     let data = b"QR\x83R\x81[\x83h\x81i\x83L\x83\x85\x81[\x83A\x81[\x83\x8b\x83R\x81[\x83h\x81j\x82\xc6\x82\xcd\x81A1994\x94N\x82\xc9\x83f\x83\x93\x83\\\x81[\x82\xcc\x8aJ\x94\xad\x95\x94\x96\xe5\x81i\x8c\xbb\x8d\xdd\x82\xcd\x95\xaa\x97\xa3\x82\xb5\x83f\x83\x93\x83\\\x81[\x83E\x83F\x81[\x83u\x81j\x82\xaa\x8aJ\x94\xad\x82\xb5\x82\xbd\x83}\x83g\x83\x8a\x83b\x83N\x83X\x8c^\x93\xf1\x8e\x9f\x8c\xb3\x83R\x81[\x83h\x82\xc5\x82\xa0\x82\xe9\x81B\x82\xc8\x82\xa8\x81AQR\x83R\x81[\x83h\x82\xc6\x82\xa2\x82\xa4\x96\xbc\x8f\xcc\x81i\x82\xa8\x82\xe6\x82\xd1\x92P\x8c\xea\x81j\x82\xcd\x83f\x83\x93\x83\\\x81[\x83E\x83F\x81[\x83u\x82\xcc\x93o\x98^\x8f\xa4\x95W\x81i\x91\xe64075066\x8d\x86\x81j\x82\xc5\x82\xa0\x82\xe9\x81BQR\x82\xcdQuick Response\x82\xc9\x97R\x97\x88\x82\xb5\x81A\x8d\x82\x91\xac\x93\xc7\x82\xdd\x8e\xe6\x82\xe8\x82\xaa\x82\xc5\x82\xab\x82\xe9\x82\xe6\x82\xa4\x82\xc9\x8aJ\x94\xad\x82\xb3\x82\xea\x82\xbd\x81B\x93\x96\x8f\x89\x82\xcd\x8e\xa9\x93\xae\x8e\xd4\x95\x94\x95i\x8dH\x8f\xea\x82\xe2\x94z\x91\x97\x83Z\x83\x93\x83^\x81[\x82\xc8\x82\xc7\x82\xc5\x82\xcc\x8eg\x97p\x82\xf0\x94O\x93\xaa\x82\xc9\x8aJ\x94\xad\x82\xb3\x82\xea\x82\xbd\x82\xaa\x81A\x8c\xbb\x8d\xdd\x82\xc5\x82\xcd\x83X\x83}\x81[\x83g\x83t\x83H\x83\x93\x82\xcc\x95\x81\x8by\x82\xc8\x82\xc7\x82\xc9\x82\xe6\x82\xe8\x93\xfa\x96{\x82\xc9\x8c\xc0\x82\xe7\x82\xb8\x90\xa2\x8aE\x93I\x82\xc9\x95\x81\x8by\x82\xb5\x82\xc4\x82\xa2\x82\xe9\x81B";
     bencher.iter(|| {
-        Parser::new(data).optimize(Version(15))
+        Parser::new(data).optimize(Version::Normal(15))
     });
 }
 
@@ -450,210 +464,208 @@ fn bench_optimize(bencher: &mut Bencher) {
 //------------------------------------------------------------------------------
 //{{{ Internal types and data for parsing
 
-// All the silly prefixes are to avoid name collision with each other.
-
 /// All values of `u8` can be split into 9 different character sets when
 /// determining which encoding to use. This enum represents these groupings for
 /// parsing purpose.
-enum ExclusiveCharacterSet {
+enum ExclCharSet {
     /// The end of string.
-    EEnd = 0,
+    End = 0,
 
     /// All symbols supported by the Alphanumeric encoding, i.e. space, `$`, `%`,
     /// `*`, `+`, `-`, `.`, `/` and `:`.
-    ESymbol = 1,
+    Symbol = 1,
 
     /// All numbers (0–9).
-    ENumeric = 2,
+    Numeric = 2,
 
     /// All uppercase letters (A–Z). These characters may also appear in the
     /// second byte of a Shift JIS 2-byte encoding.
-    EAlpha = 3,
+    Alpha = 3,
 
     /// The first byte of a Shift JIS 2-byte encoding, in the range 0x81–0x9f.
-    EKanjiHi1 = 4,
+    KanjiHi1 = 4,
 
     /// The first byte of a Shift JIS 2-byte encoding, in the range 0xe0–0xea.
-    EKanjiHi2 = 5,
+    KanjiHi2 = 5,
 
     /// The first byte of a Shift JIS 2-byte encoding, of value 0xeb. This is
     /// different from the other two range that the second byte has a smaller
     /// range.
-    EKanjiHi3 = 6,
+    KanjiHi3 = 6,
 
     /// The second byte of a Shift JIS 2-byte encoding, in the range 0x40–0xbf,
     /// excluding letters (covered by `Alpha`), 0x81–0x9f (covered by `KanjiHi1`),
     /// and the invalid byte 0x7f.
-    EKanjiLo1 = 7,
+    KanjiLo1 = 7,
 
     /// The second byte of a Shift JIS 2-byte encoding, in the range 0xc0–0xfc,
     /// excluding the range 0xe0–0xeb (covered by `KanjiHi2` and `KanjiHi3`).
     /// This half of byte-pair cannot appear as the second byte leaded by
     /// `KanjiHi3`.
-    EKanjiLo2 = 8,
+    KanjiLo2 = 8,
 
     /// Any other values not covered by the above character sets.
-    EByte = 9,
+    Byte = 9,
 }
 
-impl ExclusiveCharacterSet {
+impl ExclCharSet {
     /// Determines which character set a byte is in.
-    fn from_u8(c: u8) -> ExclusiveCharacterSet {
+    fn from_u8(c: u8) -> ExclCharSet {
         match c {
-            0x20 | 0x24 | 0x25 | 0x2a | 0x2b | 0x2d ... 0x2f | 0x3a => ESymbol,
-            0x30 ... 0x39 => ENumeric,
-            0x41 ... 0x5a => EAlpha,
-            0x81 ... 0x9f => EKanjiHi1,
-            0xe0 ... 0xea => EKanjiHi2,
-            0xeb => EKanjiHi3,
-            0x40 | 0x5b ... 0x7e | 0x80 | 0xa0 ... 0xbf => EKanjiLo1,
-            0xc0 ... 0xdf | 0xec ... 0xfc => EKanjiLo2,
-            _ => EByte
+            0x20 | 0x24 | 0x25 | 0x2a | 0x2b | 0x2d ... 0x2f | 0x3a => ExclCharSet::Symbol,
+            0x30 ... 0x39 => ExclCharSet::Numeric,
+            0x41 ... 0x5a => ExclCharSet::Alpha,
+            0x81 ... 0x9f => ExclCharSet::KanjiHi1,
+            0xe0 ... 0xea => ExclCharSet::KanjiHi2,
+            0xeb => ExclCharSet::KanjiHi3,
+            0x40 | 0x5b ... 0x7e | 0x80 | 0xa0 ... 0xbf => ExclCharSet::KanjiLo1,
+            0xc0 ... 0xdf | 0xec ... 0xfc => ExclCharSet::KanjiLo2,
+            _ => ExclCharSet::Byte
         }
     }
 }
 
 /// The current parsing state.
-enum SegmentParseState {
+enum State {
     /// Just initialized.
-    SInit = 0,
+    Init = 0,
 
     /// Inside a string that can be exclusively encoded as Numeric.
-    SNumeric = 10,
+    Numeric = 10,
 
     /// Inside a string that can be exclusively encoded as Alphanumeric.
-    SAlpha = 20,
+    Alpha = 20,
 
     /// Inside a string that can be exclusively encoded as 8-Bit Byte.
-    SByte = 30,
+    Byte = 30,
 
     /// Just encountered the first byte of a Shift JIS 2-byte sequence of the
     /// set `KanjiHi1` or `KanjiHi2`.
-    SKanjiHi12 = 40,
+    KanjiHi12 = 40,
 
     /// Just encountered the first byte of a Shift JIS 2-byte sequence of the
     /// set `KanjiHi3`.
-    SKanjiHi3 = 50,
+    KanjiHi3 = 50,
 
     /// Inside a string that can be exclusively encoded as Kanji.
-    SKanji = 60,
+    Kanji = 60,
 }
 
 /// What should the parser do after a state transition.
-enum ParserAction {
+enum Action {
     /// The parser should do nothing.
-    AIdle,
+    Idle,
 
     /// Push the current segment as a Numeric string, and reset the marks.
-    ANumeric,
+    Numeric,
 
     /// Push the current segment as an Alphanumeric string, and reset the marks.
-    AAlpha,
+    Alpha,
 
     /// Push the current segment as a 8-Bit Byte string, and reset the marks.
-    AByte,
+    Byte,
 
     /// Push the current segment as a Kanji string, and reset the marks.
-    AKanji,
+    Kanji,
 
     /// Push the current segment excluding the last byte as a Kanji string, then
     /// push the remaining single byte as a Byte string, and reset the marks.
-    AKanjiAndSingleByte,
+    KanjiAndSingleByte,
 }
 
-static STATE_TRANSITION: [(SegmentParseState, ParserAction), ..70] = [
+static STATE_TRANSITION: [(State, Action), ..70] = [
     // STATE_TRANSITION[current_state + next_character] == (next_state, what_to_do)
 
     // Init state:
 
-    (SInit, AIdle),       // End
-    (SAlpha, AIdle),      // Symbol
-    (SNumeric, AIdle),    // Numeric
-    (SAlpha, AIdle),      // Alpha
-    (SKanjiHi12, AIdle),  // KanjiHi1
-    (SKanjiHi12, AIdle),  // KanjiHi2
-    (SKanjiHi3, AIdle),   // KanjiHi3
-    (SByte, AIdle),       // KanjiLo1
-    (SByte, AIdle),       // KanjiLo2
-    (SByte, AIdle),       // Byte
+    (State::Init, Action::Idle),       // End
+    (State::Alpha, Action::Idle),      // Symbol
+    (State::Numeric, Action::Idle),    // Numeric
+    (State::Alpha, Action::Idle),      // Alpha
+    (State::KanjiHi12, Action::Idle),  // KanjiHi1
+    (State::KanjiHi12, Action::Idle),  // KanjiHi2
+    (State::KanjiHi3, Action::Idle),   // KanjiHi3
+    (State::Byte, Action::Idle),       // KanjiLo1
+    (State::Byte, Action::Idle),       // KanjiLo2
+    (State::Byte, Action::Idle),       // Byte
 
     // Numeric state:
 
-    (SInit, ANumeric),       // End
-    (SAlpha, ANumeric),      // Symbol
-    (SNumeric, AIdle),       // Numeric
-    (SAlpha, ANumeric),      // Alpha
-    (SKanjiHi12, ANumeric),  // KanjiHi1
-    (SKanjiHi12, ANumeric),  // KanjiHi2
-    (SKanjiHi3, ANumeric),   // KanjiHi3
-    (SByte, ANumeric),       // KanjiLo1
-    (SByte, ANumeric),       // KanjiLo2
-    (SByte, ANumeric),       // Byte
+    (State::Init, Action::Numeric),       // End
+    (State::Alpha, Action::Numeric),      // Symbol
+    (State::Numeric, Action::Idle),       // Numeric
+    (State::Alpha, Action::Numeric),      // Alpha
+    (State::KanjiHi12, Action::Numeric),  // KanjiHi1
+    (State::KanjiHi12, Action::Numeric),  // KanjiHi2
+    (State::KanjiHi3, Action::Numeric),   // KanjiHi3
+    (State::Byte, Action::Numeric),       // KanjiLo1
+    (State::Byte, Action::Numeric),       // KanjiLo2
+    (State::Byte, Action::Numeric),       // Byte
 
     // Alpha state:
 
-    (SInit, AAlpha),       // End
-    (SAlpha, AIdle),       // Symbol
-    (SNumeric, AAlpha),    // Numeric
-    (SAlpha, AIdle),       // Alpha
-    (SKanjiHi12, AAlpha),  // KanjiHi1
-    (SKanjiHi12, AAlpha),  // KanjiHi2
-    (SKanjiHi3, AAlpha),   // KanjiHi3
-    (SByte, AAlpha),       // KanjiLo1
-    (SByte, AAlpha),       // KanjiLo2
-    (SByte, AAlpha),       // Byte
+    (State::Init, Action::Alpha),       // End
+    (State::Alpha, Action::Idle),       // Symbol
+    (State::Numeric, Action::Alpha),    // Numeric
+    (State::Alpha, Action::Idle),       // Alpha
+    (State::KanjiHi12, Action::Alpha),  // KanjiHi1
+    (State::KanjiHi12, Action::Alpha),  // KanjiHi2
+    (State::KanjiHi3, Action::Alpha),   // KanjiHi3
+    (State::Byte, Action::Alpha),       // KanjiLo1
+    (State::Byte, Action::Alpha),       // KanjiLo2
+    (State::Byte, Action::Alpha),       // Byte
 
     // Byte state:
 
-    (SInit, AByte),       // End
-    (SAlpha, AByte),      // Symbol
-    (SNumeric, AByte),    // Numeric
-    (SAlpha, AByte),      // Alpha
-    (SKanjiHi12, AByte),  // KanjiHi1
-    (SKanjiHi12, AByte),  // KanjiHi2
-    (SKanjiHi3, AByte),   // KanjiHi3
-    (SByte, AIdle),       // KanjiLo1
-    (SByte, AIdle),       // KanjiLo2
-    (SByte, AIdle),       // Byte
+    (State::Init, Action::Byte),       // End
+    (State::Alpha, Action::Byte),      // Symbol
+    (State::Numeric, Action::Byte),    // Numeric
+    (State::Alpha, Action::Byte),      // Alpha
+    (State::KanjiHi12, Action::Byte),  // KanjiHi1
+    (State::KanjiHi12, Action::Byte),  // KanjiHi2
+    (State::KanjiHi3, Action::Byte),   // KanjiHi3
+    (State::Byte, Action::Idle),       // KanjiLo1
+    (State::Byte, Action::Idle),       // KanjiLo2
+    (State::Byte, Action::Idle),       // Byte
 
     // KanjiHi12 state:
 
-    (SInit, AKanjiAndSingleByte),       // End
-    (SAlpha, AKanjiAndSingleByte),      // Symbol
-    (SNumeric, AKanjiAndSingleByte),    // Numeric
-    (SKanji, AIdle),                    // Alpha
-    (SKanji, AIdle),                    // KanjiHi1
-    (SKanji, AIdle),                    // KanjiHi2
-    (SKanji, AIdle),                    // KanjiHi3
-    (SKanji, AIdle),                    // KanjiLo1
-    (SKanji, AIdle),                    // KanjiLo2
-    (SByte, AKanjiAndSingleByte),       // Byte
+    (State::Init, Action::KanjiAndSingleByte),       // End
+    (State::Alpha, Action::KanjiAndSingleByte),      // Symbol
+    (State::Numeric, Action::KanjiAndSingleByte),    // Numeric
+    (State::Kanji, Action::Idle),                    // Alpha
+    (State::Kanji, Action::Idle),                    // KanjiHi1
+    (State::Kanji, Action::Idle),                    // KanjiHi2
+    (State::Kanji, Action::Idle),                    // KanjiHi3
+    (State::Kanji, Action::Idle),                    // KanjiLo1
+    (State::Kanji, Action::Idle),                    // KanjiLo2
+    (State::Byte, Action::KanjiAndSingleByte),       // Byte
 
     // KanjiHi3 state:
 
-    (SInit, AKanjiAndSingleByte),       // End
-    (SAlpha, AKanjiAndSingleByte),      // Symbol
-    (SNumeric, AKanjiAndSingleByte),    // Numeric
-    (SKanji, AIdle),                    // Alpha
-    (SKanji, AIdle),                    // KanjiHi1
-    (SKanjiHi12, AKanjiAndSingleByte),  // KanjiHi2
-    (SKanjiHi3, AKanjiAndSingleByte),   // KanjiHi3
-    (SKanji, AIdle),                    // KanjiLo1
-    (SByte, AKanjiAndSingleByte),       // KanjiLo2
-    (SByte, AKanjiAndSingleByte),       // Byte
+    (State::Init, Action::KanjiAndSingleByte),       // End
+    (State::Alpha, Action::KanjiAndSingleByte),      // Symbol
+    (State::Numeric, Action::KanjiAndSingleByte),    // Numeric
+    (State::Kanji, Action::Idle),                    // Alpha
+    (State::Kanji, Action::Idle),                    // KanjiHi1
+    (State::KanjiHi12, Action::KanjiAndSingleByte),  // KanjiHi2
+    (State::KanjiHi3, Action::KanjiAndSingleByte),   // KanjiHi3
+    (State::Kanji, Action::Idle),                    // KanjiLo1
+    (State::Byte, Action::KanjiAndSingleByte),       // KanjiLo2
+    (State::Byte, Action::KanjiAndSingleByte),       // Byte
 
     // Kanji state:
 
-    (SInit, AKanji),       // End
-    (SAlpha, AKanji),      // Symbol
-    (SNumeric, AKanji),    // Numeric
-    (SAlpha, AKanji),      // Alpha
-    (SKanjiHi12, AIdle),   // KanjiHi1
-    (SKanjiHi12, AIdle),   // KanjiHi2
-    (SKanjiHi3, AIdle),    // KanjiHi3
-    (SByte, AKanji),       // KanjiLo1
-    (SByte, AKanji),       // KanjiLo2
-    (SByte, AKanji),       // Byte
+    (State::Init, Action::Kanji),       // End
+    (State::Alpha, Action::Kanji),      // Symbol
+    (State::Numeric, Action::Kanji),    // Numeric
+    (State::Alpha, Action::Kanji),      // Alpha
+    (State::KanjiHi12, Action::Idle),   // KanjiHi1
+    (State::KanjiHi12, Action::Idle),   // KanjiHi2
+    (State::KanjiHi3, Action::Idle),    // KanjiHi3
+    (State::Byte, Action::Kanji),       // KanjiLo1
+    (State::Byte, Action::Kanji),       // KanjiLo2
+    (State::Byte, Action::Kanji),       // Byte
 ];
 
 //}}}

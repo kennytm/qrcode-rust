@@ -1,12 +1,12 @@
 //! The `canvas` module puts raw bits into the QR code canvas.
 //!
-//!     use qrcode::types::{Version, L};
-//!     use qrcode::canvas::{Canvas, Checkerboard};
+//!     use qrcode::types::{Version, EcLevel};
+//!     use qrcode::canvas::{Canvas, MaskPattern};
 //!
-//!     let mut c = Canvas::new(Version(1), L);
+//!     let mut c = Canvas::new(Version::Normal(1), EcLevel::L);
 //!     c.draw_all_functional_patterns();
 //!     c.draw_data(b"data_here", b"ec_code_here");
-//!     c.apply_mask(Checkerboard);
+//!     c.apply_mask(MaskPattern::Checkerboard);
 //!     let bools = c.to_bools();
 
 use std::iter::range_inclusive;
@@ -14,7 +14,7 @@ use std::iter::order::equals;
 use std::num::Int;
 use std::cmp::max;
 
-use types::{QrVersion, Version, MicroVersion, ErrorCorrectionLevel, L, M, Q};
+use types::{Version, EcLevel};
 
 //------------------------------------------------------------------------------
 //{{{ Modules
@@ -46,27 +46,27 @@ impl Module {
     /// Checks whether a module is dark.
     pub fn is_dark(&self) -> bool {
         match *self {
-            Dark | DarkUnmasked => true,
+            Module::Dark | Module::DarkUnmasked => true,
             _ => false,
         }
     }
 
     /// Apply a mask to the unmasked modules.
     ///
-    ///     use qrcode::canvas::{LightUnmasked, Light, DarkUnmasked, Dark};
+    ///     use qrcode::canvas::Module;
     ///
-    ///     assert_eq!(LightUnmasked.mask(true), Dark);
-    ///     assert_eq!(DarkUnmasked.mask(true), Light);
-    ///     assert_eq!(LightUnmasked.mask(false), Light);
-    ///     assert_eq!(Dark.mask(true), Dark);
-    ///     assert_eq!(Dark.mask(false), Dark);
+    ///     assert_eq!(Module::LightUnmasked.mask(true), Module::Dark);
+    ///     assert_eq!(Module::DarkUnmasked.mask(true), Module::Light);
+    ///     assert_eq!(Module::LightUnmasked.mask(false), Module::Light);
+    ///     assert_eq!(Module::Dark.mask(true), Module::Dark);
+    ///     assert_eq!(Module::Dark.mask(false), Module::Dark);
     ///
     pub fn mask(&self, should_invert: bool) -> Module {
         match (*self, should_invert) {
-            (Empty, true) | (LightUnmasked, true) => Dark,
-            (Empty, false) | (LightUnmasked, false) => Light,
-            (DarkUnmasked, true) => Light,
-            (DarkUnmasked, false) => Dark,
+            (Module::Empty, true) | (Module::LightUnmasked, true) => Module::Dark,
+            (Module::Empty, false) | (Module::LightUnmasked, false) => Module::Light,
+            (Module::DarkUnmasked, true) => Module::Light,
+            (Module::DarkUnmasked, false) => Module::Dark,
             (a, _) => a,
         }
     }
@@ -84,10 +84,10 @@ pub struct Canvas {
     width: i16,
 
     /// The version of the QR code.
-    version: QrVersion,
+    version: Version,
 
     /// The error correction level of the QR code.
-    ec_level: ErrorCorrectionLevel,
+    ec_level: EcLevel,
 
     /// The modules of the QR code. Modules are arranged in left-to-right, then
     /// top-to-bottom order.
@@ -96,13 +96,13 @@ pub struct Canvas {
 
 impl Canvas {
     /// Constructs a new canvas big enough for a QR code of the given version.
-    pub fn new(version: QrVersion, ec_level: ErrorCorrectionLevel) -> Canvas {
+    pub fn new(version: Version, ec_level: EcLevel) -> Canvas {
         let width = version.width();
         Canvas {
             width: width,
             version: version,
             ec_level: ec_level,
-            modules: Vec::from_elem((width*width) as uint, Empty),
+            modules: Vec::from_elem((width*width) as uint, Module::Empty),
         }
     }
 
@@ -115,11 +115,11 @@ impl Canvas {
             res.push('\n');
             for x in range(0, width) {
                 res.push(match self.get(x, y) {
-                    Empty => '?',
-                    Light => '.',
-                    Dark => '#',
-                    LightUnmasked => '-',
-                    DarkUnmasked => '*',
+                    Module::Empty => '?',
+                    Module::Light => '.',
+                    Module::Dark => '#',
+                    Module::LightUnmasked => '-',
+                    Module::DarkUnmasked => '*',
                 });
             }
         }
@@ -155,36 +155,36 @@ impl Canvas {
 
 #[cfg(test)]
 mod basic_canvas_tests {
-    use canvas::{Canvas, Empty, Dark, Light, DarkUnmasked, LightUnmasked};
-    use types::{Version, L};
+    use canvas::{Canvas, Module};
+    use types::{Version, EcLevel};
 
     #[test]
     fn test_index() {
-        let mut c = Canvas::new(Version(1), L);
+        let mut c = Canvas::new(Version::Normal(1), EcLevel::L);
 
-        assert_eq!(c.get(0, 4), Empty);
-        assert_eq!(c.get(-1, -7), Empty);
-        assert_eq!(c.get(21-1, 21-7), Empty);
+        assert_eq!(c.get(0, 4), Module::Empty);
+        assert_eq!(c.get(-1, -7), Module::Empty);
+        assert_eq!(c.get(21-1, 21-7), Module::Empty);
 
-        c.put(0, 0, Dark);
-        c.put(-1, -7, Light);
-        assert_eq!(c.get(0, 0), Dark);
-        assert_eq!(c.get(21-1, -7), Light);
-        assert_eq!(c.get(-1, 21-7), Light);
+        c.put(0, 0, Module::Dark);
+        c.put(-1, -7, Module::Light);
+        assert_eq!(c.get(0, 0), Module::Dark);
+        assert_eq!(c.get(21-1, -7), Module::Light);
+        assert_eq!(c.get(-1, 21-7), Module::Light);
     }
 
     #[test]
     fn test_debug_str() {
-        let mut c = Canvas::new(Version(1), L);
+        let mut c = Canvas::new(Version::Normal(1), EcLevel::L);
 
         for i in range(3i16, 20) {
             for j in range(3i16, 20) {
                 c.put(i, j, match ((i * 3) ^ j) % 5 {
-                    0 => Empty,
-                    1 => Light,
-                    2 => Dark,
-                    3 => LightUnmasked,
-                    4 => DarkUnmasked,
+                    0 => Module::Empty,
+                    1 => Module::Light,
+                    2 => Module::Dark,
+                    3 => Module::LightUnmasked,
+                    4 => Module::DarkUnmasked,
                     _ => panic!(),
                 });
             }
@@ -227,10 +227,10 @@ impl Canvas {
         for j in range_inclusive(dy_top, dy_bottom) {
             for i in range_inclusive(dx_left, dx_right) {
                 self.put(x+i, y+j, match (i, j) {
-                    (4, _) | (_, 4) | (-4, _) | (_, -4) => Light,
-                    (3, _) | (_, 3) | (-3, _) | (_, -3) => Dark,
-                    (2, _) | (_, 2) | (-2, _) | (_, -2) => Light,
-                    _ => Dark,
+                    (4, _) | (_, 4) | (-4, _) | (_, -4) => Module::Light,
+                    (3, _) | (_, 3) | (-3, _) | (_, -3) => Module::Dark,
+                    (2, _) | (_, 2) | (-2, _) | (_, -2) => Module::Light,
+                    _ => Module::Dark,
                 });
             }
         }
@@ -245,8 +245,8 @@ impl Canvas {
         self.draw_finder_pattern_at(3, 3);
 
         match self.version {
-            MicroVersion(_) => { return; }
-            Version(_) => {
+            Version::Micro(_) => { return; }
+            Version::Normal(_) => {
                 self.draw_finder_pattern_at(-4, 3);
                 self.draw_finder_pattern_at(3, -4);
             }
@@ -257,11 +257,11 @@ impl Canvas {
 #[cfg(test)]
 mod finder_pattern_tests {
     use canvas::Canvas;
-    use types::{Version, MicroVersion, L};
+    use types::{Version, EcLevel};
 
     #[test]
     fn test_qr() {
-        let mut c = Canvas::new(Version(1), L);
+        let mut c = Canvas::new(Version::Normal(1), EcLevel::L);
         c.draw_finder_patterns();
         assert_eq!(&*c.to_debug_str(), "\n\
                     #######.?????.#######\n\
@@ -289,7 +289,7 @@ mod finder_pattern_tests {
 
     #[test]
     fn test_micro_qr() {
-        let mut c = Canvas::new(MicroVersion(1), L);
+        let mut c = Canvas::new(Version::Micro(1), EcLevel::L);
         c.draw_finder_patterns();
         assert_eq!(&*c.to_debug_str(), "\n\
                     #######.???\n\
@@ -313,14 +313,14 @@ mod finder_pattern_tests {
 impl Canvas {
     /// Draws a alignment pattern with the center at (x, y).
     fn draw_alignment_pattern_at(&mut self, x: i16, y: i16) {
-        if self.get(x, y) != Empty {
+        if self.get(x, y) != Module::Empty {
             return;
         }
         for j in range_inclusive(-2, 2) {
             for i in range_inclusive(-2, 2) {
                 self.put(x+i, y+j, match (i, j) {
-                    (2, _) | (_, 2) | (-2, _) | (_, -2) | (0, 0) => Dark,
-                    _ => Light,
+                    (2, _) | (_, 2) | (-2, _) | (_, -2) | (0, 0) => Module::Dark,
+                    _ => Module::Light,
                 });
             }
         }
@@ -332,9 +332,9 @@ impl Canvas {
     /// to help the scanner create the square grid.
     fn draw_alignment_patterns(&mut self) {
         match self.version {
-            MicroVersion(_) | Version(1) => { return; }
-            Version(2...6) => self.draw_alignment_pattern_at(-7, -7),
-            Version(a) => {
+            Version::Micro(_) | Version::Normal(1) => { return; }
+            Version::Normal(2...6) => self.draw_alignment_pattern_at(-7, -7),
+            Version::Normal(a) => {
                 let positions = ALIGNMENT_PATTERN_POSITIONS[a as uint - 7];
                 for x in positions.iter() {
                     for y in positions.iter() {
@@ -349,11 +349,11 @@ impl Canvas {
 #[cfg(test)]
 mod alignment_pattern_tests {
     use canvas::Canvas;
-    use types::{Version, L};
+    use types::{Version, EcLevel};
 
     #[test]
     fn test_draw_alignment_patterns_1() {
-        let mut c = Canvas::new(Version(1), L);
+        let mut c = Canvas::new(Version::Normal(1), EcLevel::L);
         c.draw_finder_patterns();
         c.draw_alignment_patterns();
         assert_eq!(&*c.to_debug_str(), "\n\
@@ -382,7 +382,7 @@ mod alignment_pattern_tests {
 
     #[test]
     fn test_draw_alignment_patterns_3() {
-        let mut c = Canvas::new(Version(3), L);
+        let mut c = Canvas::new(Version::Normal(3), EcLevel::L);
         c.draw_finder_patterns();
         c.draw_alignment_patterns();
         assert_eq!(&*c.to_debug_str(), "\n\
@@ -419,7 +419,7 @@ mod alignment_pattern_tests {
 
     #[test]
     fn test_draw_alignment_patterns_7() {
-        let mut c = Canvas::new(Version(7), L);
+        let mut c = Canvas::new(Version::Normal(7), EcLevel::L);
         c.draw_finder_patterns();
         c.draw_alignment_patterns();
         assert_eq!(&*c.to_debug_str(), "\n\
@@ -550,22 +550,22 @@ impl Canvas {
     fn draw_timing_patterns(&mut self) {
         let width = self.width;
         let (y, x1, x2) = match self.version {
-            MicroVersion(_) => (0, 8, width-1),
-            Version(_) => (6, 8, width-9),
+            Version::Micro(_) => (0, 8, width-1),
+            Version::Normal(_) => (6, 8, width-9),
         };
-        self.draw_line(x1, y, x2, y, Dark, Light);
-        self.draw_line(y, x1, y, x2, Dark, Light);
+        self.draw_line(x1, y, x2, y, Module::Dark, Module::Light);
+        self.draw_line(y, x1, y, x2, Module::Dark, Module::Light);
     }
 }
 
 #[cfg(test)]
 mod timing_pattern_tests {
     use canvas::Canvas;
-    use types::{Version, MicroVersion, L};
+    use types::{Version, EcLevel};
 
     #[test]
     fn test_draw_timing_patterns_qr() {
-        let mut c = Canvas::new(Version(1), L);
+        let mut c = Canvas::new(Version::Normal(1), EcLevel::L);
         c.draw_timing_patterns();
         assert_eq!(&*c.to_debug_str(), "\n\
                     ?????????????????????\n\
@@ -593,7 +593,7 @@ mod timing_pattern_tests {
 
     #[test]
     fn test_draw_timing_patterns_micro_qr() {
-        let mut c = Canvas::new(MicroVersion(1), L);
+        let mut c = Canvas::new(Version::Micro(1), EcLevel::L);
         c.draw_timing_patterns();
         assert_eq!(&*c.to_debug_str(), "\n\
                     ????????#.#\n\
@@ -636,13 +636,16 @@ impl Canvas {
     /// Draws the format info patterns for an encoded number.
     fn draw_format_info_patterns_with_number(&mut self, format_info: u16) {
         match self.version {
-            MicroVersion(_) => {
-                self.draw_number(format_info, Dark, Light, FORMAT_INFO_COORDS_MICRO_QR);
+            Version::Micro(_) => {
+                self.draw_number(format_info, Module::Dark, Module::Light,
+                                 &FORMAT_INFO_COORDS_MICRO_QR);
             }
-            Version(_) => {
-                self.draw_number(format_info, Dark, Light, FORMAT_INFO_COORDS_QR_MAIN);
-                self.draw_number(format_info, Dark, Light, FORMAT_INFO_COORDS_QR_SIDE);
-                self.put(8, -8, Dark); // Dark module.
+            Version::Normal(_) => {
+                self.draw_number(format_info, Module::Dark, Module::Light,
+                                 &FORMAT_INFO_COORDS_QR_MAIN);
+                self.draw_number(format_info, Module::Dark, Module::Light,
+                                 &FORMAT_INFO_COORDS_QR_SIDE);
+                self.put(8, -8, Module::Dark); // Dark module.
             }
         }
     }
@@ -655,11 +658,13 @@ impl Canvas {
     /// Draws the version information patterns.
     fn draw_version_info_patterns(&mut self) {
         match self.version {
-            MicroVersion(_) | Version(1...6) => { return; }
-            Version(a) => {
+            Version::Micro(_) | Version::Normal(1...6) => { return; }
+            Version::Normal(a) => {
                 let version_info = VERSION_INFOS[(a - 7) as uint] << 14;
-                self.draw_number(version_info, Dark, Light, VERSION_INFO_COORDS_BL);
-                self.draw_number(version_info, Dark, Light, VERSION_INFO_COORDS_TR);
+                self.draw_number(version_info, Module::Dark, Module::Light,
+                                 &VERSION_INFO_COORDS_BL);
+                self.draw_number(version_info, Module::Dark, Module::Light,
+                                 &VERSION_INFO_COORDS_TR);
             }
         }
     }
@@ -667,13 +672,14 @@ impl Canvas {
 
 #[cfg(test)]
 mod draw_version_info_tests {
-    use canvas::{Canvas, Light, Dark};
-    use types::{MicroVersion, Version, L};
+    use canvas::{Canvas, Module};
+    use types::{Version, EcLevel};
 
     #[test]
     fn test_draw_number() {
-        let mut c = Canvas::new(MicroVersion(1), L);
-        c.draw_number(0b10101101u8, Dark, Light, [(0,0), (0,-1), (-2,-2), (-2,0)]);
+        let mut c = Canvas::new(Version::Micro(1), EcLevel::L);
+        c.draw_number(0b10101101u8, Module::Dark, Module::Light,
+                      &[(0,0), (0,-1), (-2,-2), (-2,0)]);
         assert_eq!(&*c.to_debug_str(), "\n\
                     #????????.?\n\
                     ???????????\n\
@@ -690,7 +696,7 @@ mod draw_version_info_tests {
 
     #[test]
     fn test_draw_version_info_1() {
-        let mut c = Canvas::new(Version(1), L);
+        let mut c = Canvas::new(Version::Normal(1), EcLevel::L);
         c.draw_version_info_patterns();
         assert_eq!(&*c.to_debug_str(), "\n\
                     ?????????????????????\n\
@@ -718,7 +724,7 @@ mod draw_version_info_tests {
 
     #[test]
     fn test_draw_version_info_7() {
-        let mut c = Canvas::new(Version(7), L);
+        let mut c = Canvas::new(Version::Normal(7), EcLevel::L);
         c.draw_version_info_patterns();
 
         assert_eq!(&*c.to_debug_str(), "\n\
@@ -771,7 +777,7 @@ mod draw_version_info_tests {
 
     #[test]
     fn test_draw_reserved_format_info_patterns_qr() {
-        let mut c = Canvas::new(Version(1), L);
+        let mut c = Canvas::new(Version::Normal(1), EcLevel::L);
         c.draw_reserved_format_info_patterns();
         assert_eq!(&*c.to_debug_str(), "\n\
                     ????????.????????????\n\
@@ -799,7 +805,7 @@ mod draw_version_info_tests {
 
     #[test]
     fn test_draw_reserved_format_info_patterns_micro_qr() {
-        let mut c = Canvas::new(MicroVersion(1), L);
+        let mut c = Canvas::new(Version::Micro(1), EcLevel::L);
         c.draw_reserved_format_info_patterns();
         assert_eq!(&*c.to_debug_str(), "\n\
                     ???????????\n\
@@ -881,11 +887,11 @@ impl Canvas {
 #[cfg(test)]
 mod all_functional_patterns_tests {
     use canvas::Canvas;
-    use types::{Version, MicroVersion, L};
+    use types::{Version, EcLevel};
 
     #[test]
     fn test_all_functional_patterns_qr() {
-        let mut c = Canvas::new(Version(2), L);
+        let mut c = Canvas::new(Version::Normal(2), EcLevel::L);
         c.draw_all_functional_patterns();
         assert_eq!(&*c.to_debug_str(), "\n\
                     #######..????????.#######\n\
@@ -917,7 +923,7 @@ mod all_functional_patterns_tests {
 
     #[test]
     fn test_all_functional_patterns_micro_qr() {
-        let mut c = Canvas::new(MicroVersion(1), L);
+        let mut c = Canvas::new(Version::Micro(1), EcLevel::L);
         c.draw_all_functional_patterns();
         assert_eq!(&*c.to_debug_str(), "\n\
                     #######.#.#\n\
@@ -946,15 +952,15 @@ struct DataModuleIter {
 }
 
 impl DataModuleIter {
-    fn new(version: QrVersion) -> DataModuleIter {
+    fn new(version: Version) -> DataModuleIter {
         let width = version.width();
         DataModuleIter {
             x: width - 1,
             y: width - 1,
             width: width,
             timing_pattern_column: match version {
-                MicroVersion(_) => 0,
-                Version(_) => 6,
+                Version::Micro(_) => 0,
+                Version::Normal(_) => 6,
             }
         }
     }
@@ -998,11 +1004,11 @@ impl Iterator<(i16, i16)> for DataModuleIter {
 #[cfg(test)]
 mod data_iter_tests {
     use canvas::DataModuleIter;
-    use types::{Version, MicroVersion};
+    use types::Version;
 
     #[test]
     fn test_qr() {
-        let res = DataModuleIter::new(Version(1)).collect::<Vec<(i16, i16)>>();
+        let res = DataModuleIter::new(Version::Normal(1)).collect::<Vec<(i16, i16)>>();
         assert_eq!(res, vec![
             (20, 20), (19, 20), (20, 19), (19, 19), (20, 18), (19, 18),
             (20, 17), (19, 17), (20, 16), (19, 16), (20, 15), (19, 15),
@@ -1088,7 +1094,7 @@ mod data_iter_tests {
 
     #[test]
     fn test_micro_qr() {
-        let res = DataModuleIter::new(MicroVersion(1)).collect::<Vec<(i16, i16)>>();
+        let res = DataModuleIter::new(Version::Micro(1)).collect::<Vec<(i16, i16)>>();
         assert_eq!(res, vec![
             (10, 10), (9, 10), (10, 9), (9, 9), (10, 8), (9, 8),
             (10, 7), (9, 7), (10, 6), (9, 6), (10, 5), (9, 5),
@@ -1119,7 +1125,7 @@ mod data_iter_tests {
 
     #[test]
     fn test_micro_qr_2() {
-        let res = DataModuleIter::new(MicroVersion(2)).collect::<Vec<(i16, i16)>>();
+        let res = DataModuleIter::new(Version::Micro(2)).collect::<Vec<(i16, i16)>>();
         assert_eq!(res, vec![
             (12, 12), (11, 12), (12, 11), (11, 11), (12, 10), (11, 10),
             (12, 9), (11, 9), (12, 8), (11, 8), (12, 7), (11, 7),
@@ -1177,10 +1183,14 @@ impl Canvas {
             let bits_end = if i == last_word { 4 } else { 0 };
         'outside:
             for j in range_inclusive(bits_end, 7u).rev() {
-                let color = if (*b & (1 << j)) != 0 { DarkUnmasked } else { LightUnmasked };
+                let color = if (*b & (1 << j)) != 0 {
+                    Module::DarkUnmasked
+                } else {
+                    Module::LightUnmasked
+                };
                 while let Some((x, y)) = coords.next() {
                     let r = self.get_mut(x, y);
-                    if *r == Empty {
+                    if *r == Module::Empty {
                         *r = color;
                         continue 'outside;
                     }
@@ -1193,7 +1203,7 @@ impl Canvas {
     /// Draws the encoded data and error correction codes to the empty modules.
     pub fn draw_data(&mut self, data: &[u8], ec: &[u8]) {
         let is_half_codeword_at_end = match (self.version, self.ec_level) {
-            (MicroVersion(1), L) | (MicroVersion(3), M) => true,
+            (Version::Micro(1), EcLevel::L) | (Version::Micro(3), EcLevel::M) => true,
             _ => false,
         };
 
@@ -1206,11 +1216,11 @@ impl Canvas {
 #[cfg(test)]
 mod draw_codewords_test {
     use canvas::Canvas;
-    use types::{Version, MicroVersion, L};
+    use types::{Version, EcLevel};
 
     #[test]
     fn test_micro_qr_1() {
-        let mut c = Canvas::new(MicroVersion(1), L);
+        let mut c = Canvas::new(Version::Micro(1), EcLevel::L);
         c.draw_all_functional_patterns();
         c.draw_data(b"\x6e\x5d\xe2", b"\x2b\x63");
         assert_eq!(&*c.to_debug_str(), "\n\
@@ -1229,7 +1239,7 @@ mod draw_codewords_test {
 
     #[test]
     fn test_qr_2() {
-        let mut c = Canvas::new(Version(2), L);
+        let mut c = Canvas::new(Version::Normal(2), EcLevel::L);
         c.draw_all_functional_patterns();
         c.draw_data(b"\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$\x92I$", b"");
         assert_eq!(&*c.to_debug_str(), "\n\
@@ -1306,14 +1316,14 @@ mod mask_functions {
 
 fn get_mask_function(pattern: MaskPattern) -> fn(i16, i16) -> bool {
     match pattern {
-        Checkerboard => mask_functions::checkerboard,
-        HorizontalLines => mask_functions::horizontal_lines,
-        VerticalLines => mask_functions::vertical_lines,
-        DiagonalLines => mask_functions::diagonal_lines,
-        LargeCheckerboard => mask_functions::large_checkerboard,
-        Fields => mask_functions::fields,
-        Diamonds => mask_functions::diamonds,
-        Meadow => mask_functions::meadow,
+        MaskPattern::Checkerboard => mask_functions::checkerboard,
+        MaskPattern::HorizontalLines => mask_functions::horizontal_lines,
+        MaskPattern::VerticalLines => mask_functions::vertical_lines,
+        MaskPattern::DiagonalLines => mask_functions::diagonal_lines,
+        MaskPattern::LargeCheckerboard => mask_functions::large_checkerboard,
+        MaskPattern::Fields => mask_functions::fields,
+        MaskPattern::Diamonds => mask_functions::diamonds,
+        MaskPattern::Meadow => mask_functions::meadow,
     }
 }
 
@@ -1339,27 +1349,27 @@ impl Canvas {
     /// current QR code version, this method will fail.
     fn draw_format_info_patterns(&mut self, pattern: MaskPattern) {
         let format_number = match self.version {
-            Version(_) => {
+            Version::Normal(_) => {
                 let simple_format_number = ((self.ec_level as uint) ^ 1) << 3 | (pattern as uint);
                 FORMAT_INFOS_QR[simple_format_number]
             }
-            MicroVersion(a) => {
+            Version::Micro(a) => {
                 let micro_pattern_number = match pattern {
-                    HorizontalLines => 0b00,
-                    LargeCheckerboard => 0b01,
-                    Diamonds => 0b10,
-                    Meadow => 0b11,
+                    MaskPattern::HorizontalLines => 0b00,
+                    MaskPattern::LargeCheckerboard => 0b01,
+                    MaskPattern::Diamonds => 0b10,
+                    MaskPattern::Meadow => 0b11,
                     _ => panic!("Unsupported mask pattern in Micro QR code"),
                 };
                 let symbol_number = match (a, self.ec_level) {
-                    (1, L) => 0b000,
-                    (2, L) => 0b001,
-                    (2, M) => 0b010,
-                    (3, L) => 0b011,
-                    (3, M) => 0b100,
-                    (4, L) => 0b101,
-                    (4, M) => 0b110,
-                    (4, Q) => 0b111,
+                    (1, EcLevel::L) => 0b000,
+                    (2, EcLevel::L) => 0b001,
+                    (2, EcLevel::M) => 0b010,
+                    (3, EcLevel::L) => 0b011,
+                    (3, EcLevel::M) => 0b100,
+                    (4, EcLevel::L) => 0b101,
+                    (4, EcLevel::M) => 0b110,
+                    (4, EcLevel::Q) => 0b111,
                     _ => panic!("Unsupported version/ec_level combination in Micro QR code"),
                 };
                 let simple_format_number = symbol_number << 2 | micro_pattern_number;
@@ -1372,14 +1382,14 @@ impl Canvas {
 
 #[cfg(test)]
 mod mask_tests {
-    use canvas::{Canvas, Checkerboard, LargeCheckerboard};
-    use types::{Version, MicroVersion, L};
+    use canvas::{Canvas, MaskPattern};
+    use types::{Version, EcLevel};
 
     #[test]
     fn test_apply_mask_qr() {
-        let mut c = Canvas::new(Version(1), L);
+        let mut c = Canvas::new(Version::Normal(1), EcLevel::L);
         c.draw_all_functional_patterns();
-        c.apply_mask(Checkerboard);
+        c.apply_mask(MaskPattern::Checkerboard);
 
         assert_eq!(&*c.to_debug_str(), "\n\
                     #######...#.#.#######\n\
@@ -1407,8 +1417,8 @@ mod mask_tests {
 
     #[test]
     fn test_draw_format_info_patterns_qr() {
-        let mut c = Canvas::new(Version(1), L);
-        c.draw_format_info_patterns(LargeCheckerboard);
+        let mut c = Canvas::new(Version::Normal(1), EcLevel::L);
+        c.draw_format_info_patterns(MaskPattern::LargeCheckerboard);
         assert_eq!(&*c.to_debug_str(), "\n\
                     ????????#????????????\n\
                     ????????#????????????\n\
@@ -1435,8 +1445,8 @@ mod mask_tests {
 
     #[test]
     fn test_draw_format_info_patterns_micro_qr() {
-        let mut c = Canvas::new(MicroVersion(2), L);
-        c.draw_format_info_patterns(LargeCheckerboard);
+        let mut c = Canvas::new(Version::Micro(2), EcLevel::L);
+        c.draw_format_info_patterns(MaskPattern::LargeCheckerboard);
         assert_eq!(&*c.to_debug_str(), "\n\
                     ?????????????\n\
                     ????????#????\n\
@@ -1488,9 +1498,9 @@ impl Canvas {
                 |j| self.get(i, j)
             };
 
-            let mut colors = range(0, self.width).map(map_fn).chain(Some(Empty).into_iter());
-
-            let mut last_color = Empty;
+            let mut colors = range(0, self.width).map(map_fn)
+                                                 .chain(Some(Module::Empty).into_iter());
+            let mut last_color = Module::Empty;
             let mut consecutive_len = 1u16;
 
             for color in colors {
@@ -1538,7 +1548,10 @@ impl Canvas {
     /// Every pattern that looks like `#.###.#....` in any orientation will add
     /// 40 points.
     fn compute_finder_penalty_score(&self, is_horizontal: bool) -> u16 {
-        static PATTERN: [Module, ..7] = [Dark, Light, Dark, Dark, Dark, Light, Dark];
+        static PATTERN: [Module, ..7] = [
+            Module::Dark, Module::Light, Module::Dark, Module::Dark,
+            Module::Dark, Module::Light, Module::Dark,
+        ];
 
         let mut total_score = 0;
 
@@ -1602,7 +1615,7 @@ impl Canvas {
     fn compute_total_penalty_scores(&self) -> u16 {
 
         match self.version {
-            Version(_) => {
+            Version::Normal(_) => {
                 let s1a = self.compute_adjacent_penalty_score(true);
                 let s1b = self.compute_adjacent_penalty_score(false);
                 let s2 = self.compute_block_penalty_score();
@@ -1611,22 +1624,22 @@ impl Canvas {
                 let s4 = self.compute_balance_penalty_score();
                 s1a + s1b + s2 + s3a + s3b + s4
             }
-            MicroVersion(_) => self.compute_light_side_penalty_score(),
+            Version::Micro(_) => self.compute_light_side_penalty_score(),
         }
     }
 }
 
 #[cfg(test)]
 mod penalty_tests {
-    use canvas::{Canvas, Checkerboard, Module, Light, Dark};
-    use types::{Version, MicroVersion, Q};
+    use canvas::{Canvas, MaskPattern, Module};
+    use types::{Version, EcLevel};
 
     fn create_test_canvas() -> Canvas {
-        let mut c = Canvas::new(Version(1), Q);
+        let mut c = Canvas::new(Version::Normal(1), EcLevel::Q);
         c.draw_all_functional_patterns();
         c.draw_data(b"\x20\x5b\x0b\x78\xd1\x72\xdc\x4d\x43\x40\xec\x11\x00",
                     b"\xa8\x48\x16\x52\xd9\x36\x9c\x00\x2e\x0f\xb4\x7a\x10");
-        c.apply_mask(Checkerboard);
+        c.apply_mask(MaskPattern::Checkerboard);
         c
     }
 
@@ -1686,15 +1699,21 @@ mod penalty_tests {
     #[test]
     fn test_penalty_score_light_sides() {
         static HORIZONTAL_SIDE: [Module, ..17] = [
-            Dark, Light, Light, Dark, Dark, Dark, Light, Light,
-            Dark, Light, Dark, Light, Light, Dark, Light, Light, Light
+            Module::Dark, Module::Light, Module::Light, Module::Dark,
+            Module::Dark, Module::Dark, Module::Light, Module::Light,
+            Module::Dark, Module::Light, Module::Dark, Module::Light,
+            Module::Light, Module::Dark, Module::Light, Module::Light,
+            Module::Light,
         ];
         static VERTICAL_SIDE: [Module, ..17] = [
-            Dark, Dark, Dark, Light, Light, Dark, Dark, Light,
-            Dark, Light, Dark, Light, Dark, Light, Light, Dark, Light
+            Module::Dark, Module::Dark, Module::Dark, Module::Light,
+            Module::Light, Module::Dark, Module::Dark, Module::Light,
+            Module::Dark, Module::Light, Module::Dark, Module::Light,
+            Module::Dark, Module::Light, Module::Light, Module::Dark,
+            Module::Light,
         ];
 
-        let mut c = Canvas::new(MicroVersion(4), Q);
+        let mut c = Canvas::new(Version::Micro(4), EcLevel::Q);
         for i in range(0, 17) {
             c.put(i, -1, HORIZONTAL_SIDE[i as uint]);
             c.put(-1, i, VERTICAL_SIDE[i as uint]);
@@ -1709,12 +1728,15 @@ mod penalty_tests {
 //{{{ Select mask with lowest penalty score
 
 static ALL_PATTERNS_QR: [MaskPattern, ..8] = [
-    Checkerboard, HorizontalLines, VerticalLines, DiagonalLines,
-    LargeCheckerboard, Fields, Diamonds, Meadow
+    MaskPattern::Checkerboard, MaskPattern::HorizontalLines,
+    MaskPattern::VerticalLines, MaskPattern::DiagonalLines,
+    MaskPattern::LargeCheckerboard, MaskPattern::Fields,
+    MaskPattern::Diamonds, MaskPattern::Meadow,
 ];
 
 static ALL_PATTERNS_MICRO_QR: [MaskPattern, ..4] = [
-    HorizontalLines, LargeCheckerboard, Diamonds, Meadow
+    MaskPattern::HorizontalLines, MaskPattern::LargeCheckerboard,
+    MaskPattern::Diamonds, MaskPattern::Meadow,
 ];
 
 impl Canvas {
@@ -1722,8 +1744,8 @@ impl Canvas {
     /// penalty score.
     pub fn apply_best_mask(&self) -> Canvas {
         let patterns = match self.version {
-            Version(_) => ALL_PATTERNS_QR.iter(),
-            MicroVersion(_) => ALL_PATTERNS_MICRO_QR.iter(),
+            Version::Normal(_) => ALL_PATTERNS_QR.iter(),
+            Version::Micro(_) => ALL_PATTERNS_MICRO_QR.iter(),
         };
 
         patterns.map(|ptn| {

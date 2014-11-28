@@ -39,7 +39,7 @@ pub type QrResult<T> = Result<T, QrError>;
 /// even if parts of the code is damaged.
 #[deriving(Show, PartialEq, Eq, Copy, Clone, PartialOrd, Ord)]
 #[unstable]
-pub enum ErrorCorrectionLevel {
+pub enum EcLevel {
     /// Low error correction. Allows up to 7% of wrong blocks.
     L = 0,
 
@@ -61,27 +61,26 @@ pub enum ErrorCorrectionLevel {
 /// Larger version means the size of code is larger, and therefore can carry
 /// more information.
 ///
-/// The smallest version is `Version(1)` of size 21×21, and the largest is
-/// `Version(40)` of size 177×177.
+/// The smallest version is `Version::Normal(1)` of size 21×21, and the largest
+/// is `Version::Normal(40)` of size 177×177.
 #[unstable]
 #[deriving(Show, PartialEq, Eq, Copy, Clone)]
-pub enum QrVersion {
+pub enum Version {
     /// A normal QR code version. The parameter should be between 1 and 40.
-    #[unstable]
-    Version(i16),
+    Normal(i16),
 
     /// A Micro QR code version. The parameter should be between 1 and 4.
-    MicroVersion(i16),
+    Micro(i16),
 }
 
-impl QrVersion {
+impl Version {
     /// Get the number of "modules" on each size of the QR code, i.e. the width
     /// and height of the code.
     #[unstable]
     pub fn width(&self) -> i16 {
         match *self {
-            Version(v) => v * 4 + 17,
-            MicroVersion(v) => v * 2 + 9,
+            Version::Normal(v) => v * 4 + 17,
+            Version::Micro(v) => v * 2 + 9,
         }
     }
 
@@ -94,21 +93,21 @@ impl QrVersion {
     /// the order [L, M, Q, H].
     ///
     /// If the entry compares equal to the default value of T, this method
-    /// returns `Err(InvalidVersion)`.
-    pub fn fetch<T>(&self, ec_level: ErrorCorrectionLevel, table: &[[T, ..4]]) -> QrResult<T>
+    /// returns `Err(QrError::InvalidVersion)`.
+    pub fn fetch<T>(&self, ec_level: EcLevel, table: &[[T, ..4]]) -> QrResult<T>
         where T: PartialEq + Default + Copy
     {
         match *self {
-            Version(v @ 1...40) => Ok(table[v as uint - 1][ec_level as uint]),
-            MicroVersion(v @ 1...4) => {
+            Version::Normal(v @ 1...40) => Ok(table[v as uint - 1][ec_level as uint]),
+            Version::Micro(v @ 1...4) => {
                 let obj = table[v as uint + 39][ec_level as uint];
                 if obj != Default::default() {
                     Ok(obj)
                 } else {
-                    Err(InvalidVersion)
+                    Err(QrError::InvalidVersion)
                 }
             }
-            _ => Err(InvalidVersion)
+            _ => Err(QrError::InvalidVersion)
         }
     }
 
@@ -116,7 +115,7 @@ impl QrVersion {
     #[unstable]
     pub fn mode_bits_count(&self) -> uint {
         match *self {
-            MicroVersion(a) => (a - 1) as uint,
+            Version::Micro(a) => (a - 1) as uint,
             _ => 4,
         }
     }
@@ -125,8 +124,8 @@ impl QrVersion {
     #[unstable]
     pub fn is_micro(&self) -> bool {
         match *self {
-            Version(_) => false,
-            MicroVersion(_) => true,
+            Version::Normal(_) => false,
+            Version::Micro(_) => true,
         }
     }
 }
@@ -156,68 +155,68 @@ pub enum Mode {
 impl Mode {
     /// Computes the number of bits needed to encode the data length.
     ///
-    ///     use qrcode::types::{Version, Numeric};
+    ///     use qrcode::types::{Version, Mode};
     ///
-    ///     assert_eq!(Numeric.length_bits_count(Version(1)), 10);
+    ///     assert_eq!(Mode::Numeric.length_bits_count(Version::Normal(1)), 10);
     ///
-    /// This method will return `Err(UnsupportedCharacterSet)` if the is not
-    /// supported in the given version.
+    /// This method will return `Err(QrError::UnsupportedCharacterSet)` if the
+    /// mode is not supported in the given version.
     #[unstable]
-    pub fn length_bits_count(&self, version: QrVersion) -> uint {
+    pub fn length_bits_count(&self, version: Version) -> uint {
         match version {
-            MicroVersion(a) => {
+            Version::Micro(a) => {
                 let a = a as uint;
                 match *self {
-                    Numeric => 2 + a,
-                    Alphanumeric | Byte => 1 + a,
-                    Kanji => a,
+                    Mode::Numeric => 2 + a,
+                    Mode::Alphanumeric | Mode::Byte => 1 + a,
+                    Mode::Kanji => a,
                 }
             }
-            Version(1...9) => match *self {
-                Numeric => 10,
-                Alphanumeric => 9,
-                Byte => 8,
-                Kanji => 8,
+            Version::Normal(1...9) => match *self {
+                Mode::Numeric => 10,
+                Mode::Alphanumeric => 9,
+                Mode::Byte => 8,
+                Mode::Kanji => 8,
             },
-            Version(10...26) => match *self {
-                Numeric => 12,
-                Alphanumeric => 11,
-                Byte => 16,
-                Kanji => 10,
+            Version::Normal(10...26) => match *self {
+                Mode::Numeric => 12,
+                Mode::Alphanumeric => 11,
+                Mode::Byte => 16,
+                Mode::Kanji => 10,
             },
-            Version(_) => match *self {
-                Numeric => 14,
-                Alphanumeric => 13,
-                Byte => 16,
-                Kanji => 12,
+            Version::Normal(_) => match *self {
+                Mode::Numeric => 14,
+                Mode::Alphanumeric => 13,
+                Mode::Byte => 16,
+                Mode::Kanji => 12,
             },
         }
     }
 
     /// Computes the number of bits needed to some data of a given raw length.
     ///
-    ///     use qrcode::types::Numeric;
+    ///     use qrcode::types::Mode;
     ///
-    ///     assert_eq!(Numeric.data_bits_count(7), 24);
+    ///     assert_eq!(Mode::Numeric.data_bits_count(7), 24);
     ///
     /// Note that in Kanji mode, the `raw_data_len` is the number of Kanjis,
     /// i.e. half the total size of bytes.
     #[unstable]
     pub fn data_bits_count(&self, raw_data_len: uint) -> uint {
         match *self {
-            Numeric => (raw_data_len * 10 + 2) / 3,
-            Alphanumeric => (raw_data_len * 11 + 1) / 2,
-            Byte => raw_data_len * 8,
-            Kanji => raw_data_len * 13,
+            Mode::Numeric => (raw_data_len * 10 + 2) / 3,
+            Mode::Alphanumeric => (raw_data_len * 11 + 1) / 2,
+            Mode::Byte => raw_data_len * 8,
+            Mode::Kanji => raw_data_len * 13,
         }
     }
 
     /// Find the lowest common mode which both modes are compatible with.
     ///
-    ///     use qrcode::types::{Numeric, Kanji};
+    ///     use qrcode::types::Mode;
     ///
-    ///     let a = Numeric;
-    ///     let b = Kanji;
+    ///     let a = Mode::Numeric;
+    ///     let b = Mode::Kanji;
     ///     let c = a.max(b);
     ///     assert!(a <= c);
     ///     assert!(b <= c);
@@ -226,7 +225,7 @@ impl Mode {
         match self.partial_cmp(&other) {
             Some(Less) | Some(Equal) => other,
             Some(Greater) => *self,
-            None => Byte,
+            None => Mode::Byte,
         }
     }
 }
@@ -236,14 +235,14 @@ impl PartialOrd for Mode {
     /// a superset of all characters supported by `a`.
     fn partial_cmp(&self, other: &Mode) -> Option<Ordering> {
         match (*self, *other) {
-            (Numeric, Alphanumeric) => Some(Less),
-            (Alphanumeric, Numeric) => Some(Greater),
-            (Numeric, Byte) => Some(Less),
-            (Byte, Numeric) => Some(Greater),
-            (Alphanumeric, Byte) => Some(Less),
-            (Byte, Alphanumeric) => Some(Greater),
-            (Kanji, Byte) => Some(Less),
-            (Byte, Kanji) => Some(Greater),
+            (Mode::Numeric, Mode::Alphanumeric) => Some(Less),
+            (Mode::Alphanumeric, Mode::Numeric) => Some(Greater),
+            (Mode::Numeric, Mode::Byte) => Some(Less),
+            (Mode::Byte, Mode::Numeric) => Some(Greater),
+            (Mode::Alphanumeric, Mode::Byte) => Some(Less),
+            (Mode::Byte, Mode::Alphanumeric) => Some(Greater),
+            (Mode::Kanji, Mode::Byte) => Some(Less),
+            (Mode::Byte, Mode::Kanji) => Some(Greater),
             (a, b) if a == b => Some(Equal),
             _ => None,
         }
@@ -252,7 +251,7 @@ impl PartialOrd for Mode {
 
 #[cfg(test)]
 mod mode_tests {
-    use types::{Numeric, Alphanumeric, Byte, Kanji};
+    use types::Mode::{Numeric, Alphanumeric, Byte, Kanji};
 
     #[test]
     fn test_mode_order() {
