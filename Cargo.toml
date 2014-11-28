@@ -5,3 +5,5 @@ license = "Apache-2.0"
 version = "0.0.2"
 authors = ["kennytm <kennytm@gmail.com>"]
 keywords = ["qrcode"]
+repository = "https://github.com/kennytm/qrcode-rust"
+readme = "README.md"
