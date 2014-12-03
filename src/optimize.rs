@@ -93,7 +93,7 @@ impl<'a> Parser<'a> {
     /// contains their exclusive subsets. No optimization is done at this point.
     ///
     ///     use qrcode::optimize::{Parser, Segment};
-    ///     use qrcode::types::{Numeric, Alphanumeric, Byte};
+    ///     use qrcode::types::Mode::{Alphanumeric, Numeric, Byte};
     ///
     ///     let parse_res = Parser::new(b"ABC123abcd").collect::<Vec<Segment>>();
     ///     assert_eq!(parse_res, vec![Segment { mode: Alphanumeric, begin: 0, end: 3 },
