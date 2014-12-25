@@ -1276,7 +1276,7 @@ mod draw_codewords_test {
 
 /// The mask patterns. Since QR code and Micro QR code do not use the same
 /// pattern number, we name them according to their shape instead of the number.
-#[deriving(Show)]
+#[deriving(Show, Copy)]
 pub enum MaskPattern {
     /// QR code pattern 000: `(x + y) % 2 == 0`.
     Checkerboard = 0b000,
@@ -1492,10 +1492,10 @@ impl Canvas {
         let mut total_score = 0;
 
         for i in range(0, self.width) {
-            let map_fn = if is_horizontal {
-                |j| self.get(j, i)
+            let map_fn = |&:j| if is_horizontal {
+                self.get(j, i)
             } else {
-                |j| self.get(i, j)
+                self.get(i, j)
             };
 
             let mut colors = range(0, self.width).map(map_fn)

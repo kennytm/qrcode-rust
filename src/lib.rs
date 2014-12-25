@@ -20,7 +20,6 @@
 
 #![unstable]
 #![feature(slicing_syntax)]
-#![feature(while_let)]
 
 extern crate test;
 

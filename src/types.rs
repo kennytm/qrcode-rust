@@ -7,7 +7,7 @@ use std::default::Default;
 
 /// `QrError` encodes the error encountered when generating a QR code.
 #[unstable]
-#[deriving(Show, PartialEq, Eq)]
+#[deriving(Show, PartialEq, Eq, Copy, Clone)]
 pub enum QrError {
     /// The data is too long to encode into a QR code for the given version.
     DataTooLong,
@@ -136,7 +136,7 @@ impl Version {
 
 /// The mode indicator, which specifies the character set of the encoded data.
 #[unstable]
-#[deriving(Show, PartialEq, Eq)]
+#[deriving(Show, PartialEq, Eq, Copy, Clone)]
 pub enum Mode {
     /// The data contains only characters 0 to 9.
     Numeric,

@@ -142,6 +142,7 @@ fn bench_push_splitted_bytes(bencher: &mut Bencher) {
 
 /// An "extended" mode indicator, includes all indicators supported by QR code
 /// beyond those bearing data.
+#[deriving(Copy)]
 pub enum ExtendedMode {
     /// ECI mode indicator, to introduce an ECI designator.
     Eci,

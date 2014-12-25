@@ -1,19 +1,17 @@
 #![unstable]
 
 //! Find the optimal data mode sequence to encode a piece of data.
-
-use std::slice::Items;
+use std::slice::Iter;
+use types::{Mode, Version};
 
 #[cfg(test)]
 use test::Bencher;
-
-use types::{Mode, Version};
 
 //------------------------------------------------------------------------------
 //{{{ Segment
 
 /// A segment of data committed to an encoding mode.
-#[deriving(PartialEq, Eq, Show)]
+#[deriving(PartialEq, Eq, Show, Copy, Clone)]
 pub struct Segment {
     /// The encoding mode of the segment of data.
     pub mode: Mode,
@@ -82,7 +80,7 @@ impl<'a, I: Iterator<&'a u8>> Iterator<(uint, ExclCharSet)> for EcsIter<I> {
 
 /// QR code data parser to classify the input into distinct segments.
 pub struct Parser<'a> {
-    ecs_iter: EcsIter<Items<'a, u8>>,
+    ecs_iter: EcsIter<Iter<'a, u8>>,
     state: State,
     begin: uint,
     pending_single_byte: bool,
@@ -467,6 +465,7 @@ fn bench_optimize(bencher: &mut Bencher) {
 /// All values of `u8` can be split into 9 different character sets when
 /// determining which encoding to use. This enum represents these groupings for
 /// parsing purpose.
+#[deriving(Copy)]
 enum ExclCharSet {
     /// The end of string.
     End = 0,
@@ -526,6 +525,7 @@ impl ExclCharSet {
 }
 
 /// The current parsing state.
+#[deriving(Copy)]
 enum State {
     /// Just initialized.
     Init = 0,
@@ -552,6 +552,7 @@ enum State {
 }
 
 /// What should the parser do after a state transition.
+#[deriving(Copy)]
 enum Action {
     /// The parser should do nothing.
     Idle,
