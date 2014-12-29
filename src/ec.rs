@@ -152,6 +152,79 @@ mod construct_codewords_test {
 
 //}}}
 //------------------------------------------------------------------------------
+//{{{ Number of allowed errors
+
+/// Computes the maximum allowed number of erratic modules can be introduced to
+/// the QR code, before the data becomes truly corrupted.
+pub fn max_allowed_errors(version: Version, ec_level: EcLevel) -> QrResult<uint> {
+    use Version::{Micro, Normal};
+    use EcLevel::{L, M};
+
+    let p = match (version, ec_level) {
+        (Micro(2), L) | (Normal(1), L) => 3,
+        (Micro(_), L) | (Normal(2), L) | (Micro(2), M) | (Normal(1), M) => 2,
+        (Normal(1), _) | (Normal(3), L) => 1,
+        _ => 0,
+    };
+
+    let ec_bytes_per_block = try!(version.fetch(ec_level, &EC_BYTES_PER_BLOCK));
+    let (_, count1, _, count2) = try!(version.fetch(ec_level, &DATA_BYTES_PER_BLOCK));
+    let ec_bytes = (count1 + count2) * ec_bytes_per_block;
+
+    Ok((ec_bytes - p) / 2)
+}
+
+#[cfg(test)]
+mod max_allowed_errors_test {
+    use ec::max_allowed_errors;
+    use types::{Version, EcLevel};
+
+    #[test]
+    fn test_low_versions() {
+        assert_eq!(Ok(0), max_allowed_errors(Version::Micro(1), EcLevel::L));
+
+        assert_eq!(Ok(1), max_allowed_errors(Version::Micro(2), EcLevel::L));
+        assert_eq!(Ok(2), max_allowed_errors(Version::Micro(2), EcLevel::M));
+
+        assert_eq!(Ok(2), max_allowed_errors(Version::Micro(3), EcLevel::L));
+        assert_eq!(Ok(4), max_allowed_errors(Version::Micro(3), EcLevel::M));
+
+        assert_eq!(Ok(3), max_allowed_errors(Version::Micro(4), EcLevel::L));
+        assert_eq!(Ok(5), max_allowed_errors(Version::Micro(4), EcLevel::M));
+        assert_eq!(Ok(7), max_allowed_errors(Version::Micro(4), EcLevel::Q));
+
+        assert_eq!(Ok(2), max_allowed_errors(Version::Normal(1), EcLevel::L));
+        assert_eq!(Ok(4), max_allowed_errors(Version::Normal(1), EcLevel::M));
+        assert_eq!(Ok(6), max_allowed_errors(Version::Normal(1), EcLevel::Q));
+        assert_eq!(Ok(8), max_allowed_errors(Version::Normal(1), EcLevel::H));
+
+        assert_eq!(Ok(4), max_allowed_errors(Version::Normal(2), EcLevel::L));
+        assert_eq!(Ok(8), max_allowed_errors(Version::Normal(2), EcLevel::M));
+        assert_eq!(Ok(11), max_allowed_errors(Version::Normal(2), EcLevel::Q));
+        assert_eq!(Ok(14), max_allowed_errors(Version::Normal(2), EcLevel::H));
+
+        assert_eq!(Ok(7), max_allowed_errors(Version::Normal(3), EcLevel::L));
+        assert_eq!(Ok(13), max_allowed_errors(Version::Normal(3), EcLevel::M));
+        assert_eq!(Ok(18), max_allowed_errors(Version::Normal(3), EcLevel::Q));
+        assert_eq!(Ok(22), max_allowed_errors(Version::Normal(3), EcLevel::H));
+
+        assert_eq!(Ok(10), max_allowed_errors(Version::Normal(4), EcLevel::L));
+        assert_eq!(Ok(18), max_allowed_errors(Version::Normal(4), EcLevel::M));
+        assert_eq!(Ok(26), max_allowed_errors(Version::Normal(4), EcLevel::Q));
+        assert_eq!(Ok(32), max_allowed_errors(Version::Normal(4), EcLevel::H));
+    }
+
+    #[test]
+    fn test_high_versions() {
+        assert_eq!(Ok(375), max_allowed_errors(Version::Normal(40), EcLevel::L));
+        assert_eq!(Ok(686), max_allowed_errors(Version::Normal(40), EcLevel::M));
+        assert_eq!(Ok(1020), max_allowed_errors(Version::Normal(40), EcLevel::Q));
+        assert_eq!(Ok(1215), max_allowed_errors(Version::Normal(40), EcLevel::H));
+    }
+}
+
+//}}}
+//------------------------------------------------------------------------------
 //{{{ Precomputed tables for GF(256).
 
 /// `EXP_TABLE` encodes the value of 2<sup>n</sup> in the Galois Field GF(256).

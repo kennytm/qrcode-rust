@@ -143,6 +143,13 @@ impl QrCode {
         self.width
     }
 
+    /// Gets the maximum number of allowed erratic modules can be introduced
+    /// before the data becomes corrupted. Note that errors should not be
+    /// introduced to functional modules.
+    pub fn max_allowed_errors(&self) -> uint {
+        ec::max_allowed_errors(self.version, self.ec_level).unwrap()
+    }
+
     /// Converts the QR code into a human-readable string. This is mainly for
     /// debugging only.
     pub fn to_debug_str(&self, on_char: char, off_char: char) -> String {
