@@ -150,6 +150,12 @@ impl QrCode {
         ec::max_allowed_errors(self.version, self.ec_level).unwrap()
     }
 
+    /// Checks whether a module at coordinate (x, y) is a functional module or
+    /// not.
+    pub fn is_functional(&self, x: uint, y: uint) -> bool {
+        canvas::is_functional(self.version, self.version.width(), x as i16, y as i16)
+    }
+
     /// Converts the QR code into a human-readable string. This is mainly for
     /// debugging only.
     pub fn to_debug_str(&self, on_char: char, off_char: char) -> String {

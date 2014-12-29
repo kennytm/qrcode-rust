@@ -884,9 +884,52 @@ impl Canvas {
     }
 }
 
+/// Gets whether the module at the given coordinates represents a functional
+/// module.
+pub fn is_functional(version: Version, width: i16, x: i16, y: i16) -> bool {
+    use std::num::SignedInt;
+
+    debug_assert!(width == version.width());
+
+    let x = if x < 0 { x + width } else { x };
+    let y = if y < 0 { y + width } else { y };
+
+    match version {
+        Version::Micro(_) => x == 0 || y == 0 || (x < 9 && y < 9),
+        Version::Normal(a) => {
+            let non_alignment_test =
+                    x == 6 || y == 6 ||         // Timing patterns
+                    (x < 9 && y < 9) ||         // Top-left finder pattern
+                    (x < 9 && y >= width-8) ||  // Bottom-left finder pattern
+                    (x >= width-8 && y < 9);    // Top-right finder pattern
+            if non_alignment_test {
+                true
+            } else if a == 1 {
+                false
+            } else if 2 <= a && a <= 6 {
+                (width - 7 - x).abs() <= 2 && (width - 7 - y).abs() <= 2
+            } else {
+                let positions = ALIGNMENT_PATTERN_POSITIONS[a as uint - 7];
+                let last = positions.len() - 1;
+                for (i, align_x) in positions.iter().enumerate() {
+                    for (j, align_y) in positions.iter().enumerate() {
+                        if i == 0 && (j == 0 || j == last) || (i == last && j == 0) {
+                            continue;
+                        }
+                        if (*align_x - x).abs() <= 2 && (*align_y - y).abs() <= 2 {
+                            return true;
+                        }
+                    }
+                };
+                false
+            }
+        },
+    }
+}
+
 #[cfg(test)]
 mod all_functional_patterns_tests {
-    use canvas::Canvas;
+    use canvas::{Canvas, is_functional};
     use types::{Version, EcLevel};
 
     #[test]
@@ -938,6 +981,57 @@ mod all_functional_patterns_tests {
                     .??????????\n\
                     #??????????");
     }
+
+    #[test]
+    fn test_is_functional_qr_1() {
+        let version = Version::Normal(1);
+        assert!(is_functional(version, version.width(), 0, 0));
+        assert!(is_functional(version, version.width(), 10, 6));
+        assert!(!is_functional(version, version.width(), 10, 5));
+        assert!(!is_functional(version, version.width(), 14, 14));
+        assert!(is_functional(version, version.width(), 6, 11));
+        assert!(!is_functional(version, version.width(), 4, 11));
+        assert!(is_functional(version, version.width(), 4, 13));
+        assert!(is_functional(version, version.width(), 17, 7));
+        assert!(!is_functional(version, version.width(), 17, 17));
+    }
+
+    #[test]
+    fn test_is_functional_qr_3() {
+        let version = Version::Normal(3);
+        assert!(is_functional(version, version.width(), 0, 0));
+        assert!(!is_functional(version, version.width(), 25, 24));
+        assert!(is_functional(version, version.width(), 24, 24));
+        assert!(!is_functional(version, version.width(), 9, 25));
+        assert!(!is_functional(version, version.width(), 20, 0));
+        assert!(is_functional(version, version.width(), 21, 0));
+    }
+
+    #[test]
+    fn test_is_functional_qr_7() {
+        let version = Version::Normal(7);
+        assert!(is_functional(version, version.width(), 21, 4));
+        assert!(is_functional(version, version.width(), 7, 21));
+        assert!(is_functional(version, version.width(), 22, 22));
+        assert!(is_functional(version, version.width(), 8, 8));
+        assert!(!is_functional(version, version.width(), 19, 5));
+        assert!(!is_functional(version, version.width(), 36, 3));
+        assert!(!is_functional(version, version.width(), 4, 36));
+        assert!(is_functional(version, version.width(), 38, 38));
+    }
+
+    #[test]
+    fn test_is_functional_micro() {
+        let version = Version::Micro(1);
+        assert!(is_functional(version, version.width(), 8, 0));
+        assert!(is_functional(version, version.width(), 10, 0));
+        assert!(!is_functional(version, version.width(), 10, 1));
+        assert!(is_functional(version, version.width(), 8, 8));
+        assert!(is_functional(version, version.width(), 0, 9));
+        assert!(!is_functional(version, version.width(), 1, 9));
+    }
+
+
 }
 
 //}}}
