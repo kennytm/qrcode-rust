@@ -28,7 +28,7 @@ pub fn create_error_correction_code(data: &[u8], ec_code_size: uint) -> Vec<u8> 
         }
 
         let log_lead_coeff = LOG_TABLE[lead_coeff] as uint;
-        for (u, v) in res[mut i+1..].iter_mut().zip(log_den.iter()) {
+        for (u, v) in res.slice_from_mut(i+1).iter_mut().zip(log_den.iter()) {
             *u ^= EXP_TABLE[((*v as uint + log_lead_coeff) % 255) as uint];
         }
     }
