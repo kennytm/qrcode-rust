@@ -1,1 +1,8 @@
+env:
+  global:
+    - secure: US/OxJu6/FnoNPx+6zV4GlT+Dpfc34VOuJM73dKzBId686oNY9ibZhpzbJHvtEKbdO1GMy6eOgF43HN1V1tFX8vlcfVTvEjfMkcH6E1B9JTJrDylevC7hlCRL6gAXj+UkFOWtRjD0xGqgg/HYa2pUN9J2Kxg4JeCoBU63vGRJqY=
+
 language: rust
+
+after_script:
+  - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh

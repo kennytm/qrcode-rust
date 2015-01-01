@@ -120,7 +120,7 @@ impl Version {
         }
     }
 
-    /// Check whether is version refers to a Micro QR code.
+    /// Checks whether is version refers to a Micro QR code.
     #[unstable]
     pub fn is_micro(&self) -> bool {
         match *self {
@@ -129,6 +129,7 @@ impl Version {
         }
     }
 }
+
 
 //}}}
 //------------------------------------------------------------------------------
