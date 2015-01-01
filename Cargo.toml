@@ -7,3 +7,4 @@ authors = ["kennytm <kennytm@gmail.com>"]
 keywords = ["qrcode"]
 repository = "https://github.com/kennytm/qrcode-rust"
 readme = "README.md"
+documentation = "http://www.rust-ci.org/kennytm/qrcode-rust/doc/qrcode/index.html"
