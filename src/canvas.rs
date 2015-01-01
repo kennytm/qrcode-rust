@@ -9,7 +9,7 @@
 //!     c.apply_mask(MaskPattern::Checkerboard);
 //!     let bools = c.to_bools();
 
-use std::iter::range_inclusive;
+use std::iter::{range_inclusive, repeat};
 use std::iter::order::equals;
 use std::num::Int;
 use std::cmp::max;
@@ -102,7 +102,7 @@ impl Canvas {
             width: width,
             version: version,
             ec_level: ec_level,
-            modules: Vec::from_elem((width*width) as uint, Module::Empty),
+            modules: repeat(Module::Empty).take((width*width) as uint).collect()
         }
     }
 

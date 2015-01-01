@@ -1,5 +1,7 @@
 //! The `ec` module applies the Reed-Solomon error correction codes.
 
+use std::iter::repeat;
+
 use types::{QrResult, Version, EcLevel};
 
 //------------------------------------------------------------------------------
@@ -16,7 +18,7 @@ use types::{QrResult, Version, EcLevel};
 /// polynomial of degree N.
 pub fn create_error_correction_code(data: &[u8], ec_code_size: uint) -> Vec<u8> {
     let mut res = data.to_vec();
-    res.grow(ec_code_size, 0);
+    res.extend(repeat(0).take(ec_code_size));
 
     let data_len = data.len();
     let log_den = GENERATOR_POLYNOMIALS[ec_code_size];

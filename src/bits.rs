@@ -3,6 +3,7 @@
 //! The `bits` module encodes binary data into raw bits used in a QR code.
 
 use std::cmp::min;
+use std::iter::iterate;
 
 #[cfg(test)]
 use test::Bencher;
@@ -678,8 +679,8 @@ impl Bits {
             self.bit_offset = 0;
             let data_bytes_length = data_length / 8;
             let padding_bytes_count = data_bytes_length - self.data.len();
-            self.data.grow_fn(padding_bytes_count,
-                              |i| if i % 2 == 0 { 0b11101100 } else { 0b00010001 });
+            let padding = iterate(0b11101100, |a| a ^ 0b11111101).take(padding_bytes_count);
+            self.data.extend(padding);
         }
 
         if self.len() < data_length {
