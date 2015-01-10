@@ -6,10 +6,10 @@
 //!
 //!     let code = QrCode::new(b"Some content here.");
 //!     match code {
-//!         Err(err) => panic!("Failed to encode the QR code: {}", err),
+//!         Err(err) => panic!("Failed to encode the QR code: {:?}", err),
 //!         Ok(code) => {
-//!             for y in range(0, code.width()) {
-//!                 for x in range(0, code.width()) {
+//!             for y in (0 .. code.width()) {
+//!                 for x in (0 .. code.width()) {
 //!                     let color = if code[(x, y)] { "black" } else { "white" };
 //!                     // render color at position (x, y)
 //!                 }
@@ -21,7 +21,10 @@
 #![unstable]
 #![feature(slicing_syntax)]
 
+#[allow(unstable)]
 extern crate test;
+
+use std::ops::Index;
 
 pub use types::{QrResult, EcLevel, Version};
 
@@ -32,12 +35,12 @@ pub mod ec;
 pub mod canvas;
 
 /// The encoded QR code symbol.
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct QrCode {
     content: Vec<bool>,
     version: Version,
     ec_level: EcLevel,
-    width: uint,
+    width: usize,
 }
 
 impl QrCode {
@@ -113,7 +116,7 @@ impl QrCode {
     pub fn with_bits(bits: bits::Bits, ec_level: EcLevel) -> QrResult<QrCode> {
         let version = bits.version();
         let data = bits.into_bytes();
-        let (encoded_data, ec_data) = try!(ec::construct_codewords(data[], version, ec_level));
+        let (encoded_data, ec_data) = try!(ec::construct_codewords(&*data, version, ec_level));
         let mut canvas = canvas::Canvas::new(version, ec_level);
         canvas.draw_all_functional_patterns();
         canvas.draw_data(&*encoded_data, &*ec_data);
@@ -122,7 +125,7 @@ impl QrCode {
             content: canvas.to_bools(),
             version: version,
             ec_level: ec_level,
-            width: version.width() as uint,
+            width: version.width() as usize,
         })
     }
 
@@ -139,20 +142,20 @@ impl QrCode {
     /// Gets the number of modules per side, i.e. the width of this QR code.
     ///
     /// The width here does not contain the quiet zone paddings.
-    pub fn width(&self) -> uint {
+    pub fn width(&self) -> usize {
         self.width
     }
 
     /// Gets the maximum number of allowed erratic modules can be introduced
     /// before the data becomes corrupted. Note that errors should not be
     /// introduced to functional modules.
-    pub fn max_allowed_errors(&self) -> uint {
+    pub fn max_allowed_errors(&self) -> usize {
         ec::max_allowed_errors(self.version, self.ec_level).unwrap()
     }
 
     /// Checks whether a module at coordinate (x, y) is a functional module or
     /// not.
-    pub fn is_functional(&self, x: uint, y: uint) -> bool {
+    pub fn is_functional(&self, x: usize, y: usize) -> bool {
         canvas::is_functional(self.version, self.version.width(), x as i16, y as i16)
     }
 
@@ -162,9 +165,9 @@ impl QrCode {
         let width = self.width;
         let mut k = 0;
         let mut res = String::with_capacity(width * (width + 1));
-        for _ in range(0, width) {
+        for _ in (0 .. width) {
             res.push('\n');
-            for _ in range(0, width) {
+            for _ in (0 .. width) {
                 res.push(if self.content[k] { on_char } else { off_char });
                 k += 1;
             }
@@ -185,10 +188,12 @@ impl QrCode {
     }
 }
 
-impl Index<(uint, uint), bool> for QrCode {
-    fn index(&self, &(x, y): &(uint, uint)) -> &bool {
+impl Index<(usize, usize)> for QrCode {
+    type Output = bool;
+
+    fn index(&self, &(x, y): &(usize, usize)) -> &bool {
         let index = y * self.width + x;
-        self.content.index(&index)
+        &self.content[index]
     }
 }
 

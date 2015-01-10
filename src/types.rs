@@ -1,13 +1,14 @@
 #![unstable]
 
 use std::default::Default;
+use std::cmp::{PartialOrd, Ordering};
 
 //------------------------------------------------------------------------------
 //{{{ QrResult
 
 /// `QrError` encodes the error encountered when generating a QR code.
 #[unstable]
-#[deriving(Show, PartialEq, Eq, Copy, Clone)]
+#[derive(Show, PartialEq, Eq, Copy, Clone)]
 pub enum QrError {
     /// The data is too long to encode into a QR code for the given version.
     DataTooLong,
@@ -37,7 +38,7 @@ pub type QrResult<T> = Result<T, QrError>;
 
 /// The error correction level. It allows the original information be recovered
 /// even if parts of the code is damaged.
-#[deriving(Show, PartialEq, Eq, Copy, Clone, PartialOrd, Ord)]
+#[derive(Show, PartialEq, Eq, Copy, Clone, PartialOrd, Ord)]
 #[unstable]
 pub enum EcLevel {
     /// Low error correction. Allows up to 7% of wrong blocks.
@@ -64,7 +65,7 @@ pub enum EcLevel {
 /// The smallest version is `Version::Normal(1)` of size 21×21, and the largest
 /// is `Version::Normal(40)` of size 177×177.
 #[unstable]
-#[deriving(Show, PartialEq, Eq, Copy, Clone)]
+#[derive(Show, PartialEq, Eq, Copy, Clone)]
 pub enum Version {
     /// A normal QR code version. The parameter should be between 1 and 40.
     Normal(i16),
@@ -94,13 +95,13 @@ impl Version {
     ///
     /// If the entry compares equal to the default value of T, this method
     /// returns `Err(QrError::InvalidVersion)`.
-    pub fn fetch<T>(&self, ec_level: EcLevel, table: &[[T, ..4]]) -> QrResult<T>
+    pub fn fetch<T>(&self, ec_level: EcLevel, table: &[[T; 4]]) -> QrResult<T>
         where T: PartialEq + Default + Copy
     {
         match *self {
-            Version::Normal(v @ 1...40) => Ok(table[v as uint - 1][ec_level as uint]),
+            Version::Normal(v @ 1...40) => Ok(table[v as usize - 1][ec_level as usize]),
             Version::Micro(v @ 1...4) => {
-                let obj = table[v as uint + 39][ec_level as uint];
+                let obj = table[v as usize + 39][ec_level as usize];
                 if obj != Default::default() {
                     Ok(obj)
                 } else {
@@ -113,9 +114,9 @@ impl Version {
 
     /// The number of bits needed to encode the mode indicator.
     #[unstable]
-    pub fn mode_bits_count(&self) -> uint {
+    pub fn mode_bits_count(&self) -> usize {
         match *self {
-            Version::Micro(a) => (a - 1) as uint,
+            Version::Micro(a) => (a - 1) as usize,
             _ => 4,
         }
     }
@@ -137,7 +138,7 @@ impl Version {
 
 /// The mode indicator, which specifies the character set of the encoded data.
 #[unstable]
-#[deriving(Show, PartialEq, Eq, Copy, Clone)]
+#[derive(Show, PartialEq, Eq, Copy, Clone)]
 pub enum Mode {
     /// The data contains only characters 0 to 9.
     Numeric,
@@ -163,10 +164,10 @@ impl Mode {
     /// This method will return `Err(QrError::UnsupportedCharacterSet)` if the
     /// mode is not supported in the given version.
     #[unstable]
-    pub fn length_bits_count(&self, version: Version) -> uint {
+    pub fn length_bits_count(&self, version: Version) -> usize {
         match version {
             Version::Micro(a) => {
-                let a = a as uint;
+                let a = a as usize;
                 match *self {
                     Mode::Numeric => 2 + a,
                     Mode::Alphanumeric | Mode::Byte => 1 + a,
@@ -203,7 +204,7 @@ impl Mode {
     /// Note that in Kanji mode, the `raw_data_len` is the number of Kanjis,
     /// i.e. half the total size of bytes.
     #[unstable]
-    pub fn data_bits_count(&self, raw_data_len: uint) -> uint {
+    pub fn data_bits_count(&self, raw_data_len: usize) -> usize {
         match *self {
             Mode::Numeric => (raw_data_len * 10 + 2) / 3,
             Mode::Alphanumeric => (raw_data_len * 11 + 1) / 2,
@@ -224,8 +225,8 @@ impl Mode {
     ///
     pub fn max(&self, other: Mode) -> Mode {
         match self.partial_cmp(&other) {
-            Some(Less) | Some(Equal) => other,
-            Some(Greater) => *self,
+            Some(Ordering::Less) | Some(Ordering::Equal) => other,
+            Some(Ordering::Greater) => *self,
             None => Mode::Byte,
         }
     }
@@ -236,15 +237,15 @@ impl PartialOrd for Mode {
     /// a superset of all characters supported by `a`.
     fn partial_cmp(&self, other: &Mode) -> Option<Ordering> {
         match (*self, *other) {
-            (Mode::Numeric, Mode::Alphanumeric) => Some(Less),
-            (Mode::Alphanumeric, Mode::Numeric) => Some(Greater),
-            (Mode::Numeric, Mode::Byte) => Some(Less),
-            (Mode::Byte, Mode::Numeric) => Some(Greater),
-            (Mode::Alphanumeric, Mode::Byte) => Some(Less),
-            (Mode::Byte, Mode::Alphanumeric) => Some(Greater),
-            (Mode::Kanji, Mode::Byte) => Some(Less),
-            (Mode::Byte, Mode::Kanji) => Some(Greater),
-            (a, b) if a == b => Some(Equal),
+            (Mode::Numeric, Mode::Alphanumeric) => Some(Ordering::Less),
+            (Mode::Alphanumeric, Mode::Numeric) => Some(Ordering::Greater),
+            (Mode::Numeric, Mode::Byte) => Some(Ordering::Less),
+            (Mode::Byte, Mode::Numeric) => Some(Ordering::Greater),
+            (Mode::Alphanumeric, Mode::Byte) => Some(Ordering::Less),
+            (Mode::Byte, Mode::Alphanumeric) => Some(Ordering::Greater),
+            (Mode::Kanji, Mode::Byte) => Some(Ordering::Less),
+            (Mode::Byte, Mode::Kanji) => Some(Ordering::Greater),
+            (a, b) if a == b => Some(Ordering::Equal),
             _ => None,
         }
     }

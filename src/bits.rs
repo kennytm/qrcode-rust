@@ -17,7 +17,7 @@ use optimize::{Parser, Optimizer, total_encoded_len, Segment};
 /// The `Bits` structure stores the encoded data for a QR code.
 pub struct Bits {
     data: Vec<u8>,
-    bit_offset: uint,
+    bit_offset: usize,
     version: Version,
 }
 
@@ -32,7 +32,7 @@ impl Bits {
     /// Note: It is up to the developer to ensure that `number` really only is
     /// `n` bit in size. Otherwise the excess bits may stomp on the existing
     /// ones.
-    fn push_number(&mut self, n: uint, number: u16) {
+    fn push_number(&mut self, n: usize, number: u16) {
         debug_assert!(n == 16 || n < 16 && number < (1 << n),
                       "{} is too big as a {}-bit number", number, n);
 
@@ -65,7 +65,7 @@ impl Bits {
     /// that the number does not overflow the bits.
     ///
     /// Returns `Err(QrError::DataTooLong)` on overflow.
-    fn push_number_checked(&mut self, n: uint, number: uint) -> QrResult<()> {
+    fn push_number_checked(&mut self, n: usize, number: usize) -> QrResult<()> {
         if n > 16 || number >= (1 << n) {
             Err(QrError::DataTooLong)
         } else {
@@ -75,7 +75,7 @@ impl Bits {
     }
 
     /// Reserves `n` extra bits of space for pushing.
-    fn reserve(&mut self, n: uint) {
+    fn reserve(&mut self, n: usize) {
         let extra_bytes = (n + (8 - self.bit_offset) % 8) / 8;
         self.data.reserve(extra_bytes);
     }
@@ -86,7 +86,7 @@ impl Bits {
     }
 
     /// Total number of bits.
-    pub fn len(&self) -> uint {
+    pub fn len(&self) -> usize {
         if self.bit_offset == 0 {
             self.data.len() * 8
         } else {
@@ -130,7 +130,7 @@ fn bench_push_splitted_bytes(bencher: &mut Bencher) {
     bencher.iter(|| {
         let mut bits = Bits::new(Version::Normal(40));
         bits.push_number(4, 0b0101);
-        for _ in range(0u, 1024) {
+        for _ in 0 .. 1024 {
             bits.push_number(8, 0b10101010);
         }
         bits.into_bytes()
@@ -143,7 +143,7 @@ fn bench_push_splitted_bytes(bencher: &mut Bencher) {
 
 /// An "extended" mode indicator, includes all indicators supported by QR code
 /// beyond those bearing data.
-#[deriving(Copy)]
+#[derive(Copy)]
 pub enum ExtendedMode {
     /// ECI mode indicator, to introduce an ECI designator.
     Eci,
@@ -298,7 +298,7 @@ mod eci_tests {
 //{{{ Mode::Numeric mode
 
 impl Bits {
-    fn push_header(&mut self, mode: Mode, raw_data_len: uint) -> QrResult<()> {
+    fn push_header(&mut self, mode: Mode, raw_data_len: usize) -> QrResult<()> {
         let length_bits = mode.length_bits_count(self.version);
         self.reserve(length_bits + 4 + mode.data_bits_count(raw_data_len));
         try!(self.push_mode_indicator(ExtendedMode::Data(mode)));
@@ -605,7 +605,7 @@ impl Bits {
 //{{{ Finish
 
 // This table is copied from ISO/IEC 18004:2006 §6.4.10, Table 7.
-static DATA_LENGTHS: [[uint, ..4], ..44] = [
+static DATA_LENGTHS: [[usize; 4]; 44] = [
     // Normal versions
     [152, 128, 104, 72],
     [272, 224, 176, 128],
@@ -660,7 +660,7 @@ impl Bits {
     #[unstable]
     pub fn push_terminator(&mut self, ec_level: EcLevel) -> QrResult<()> {
         let terminator_size = match self.version {
-            Version::Micro(a) => (a as uint) * 2 + 1,
+            Version::Micro(a) => (a as usize) * 2 + 1,
             _ => 4,
         };
 
@@ -754,11 +754,11 @@ mod finish_tests {
 
 impl Bits {
     /// Push a segmented data to the bits, and then terminate it.
-    pub fn push_segments<I: Iterator<Segment>>(&mut self,
-                                               data: &[u8],
-                                               mut segments_iter: I) -> QrResult<()> {
+    pub fn push_segments<I>(&mut self, data: &[u8], mut segments_iter: I) -> QrResult<()>
+        where I: Iterator<Item=Segment>
+    {
         for segment in segments_iter {
-            let slice = data[segment.begin..segment.end];
+            let slice = data.slice(segment.begin, segment.end);
             try!(match segment.mode {
                 Mode::Numeric => self.push_numeric_data(slice),
                 Mode::Alphanumeric => self.push_alphanumeric_data(slice),
@@ -842,12 +842,12 @@ pub fn encode_auto(data: &[u8], ec_level: EcLevel) -> QrResult<Bits> {
 /// Finds the smallest version (QR code only) that can store N bits of data
 /// in the given error correction level.
 #[unstable]
-fn find_min_version(length: uint, ec_level: EcLevel) -> Version {
-    let mut min = 0u;
-    let mut max = 39u;
+fn find_min_version(length: usize, ec_level: EcLevel) -> Version {
+    let mut min = 0us;
+    let mut max = 39us;
     while min < max {
         let half = (min + max) / 2;
-        if DATA_LENGTHS[half][ec_level as uint] < length {
+        if DATA_LENGTHS[half][ec_level as usize] < length {
             min = half + 1;
         } else {
             max = half;

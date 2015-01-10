@@ -20,7 +20,7 @@ use types::{Version, EcLevel};
 //{{{ Modules
 
 /// The color of a module (pixel) in the QR code.
-#[deriving(PartialEq, Eq, Clone, Copy, Show)]
+#[derive(PartialEq, Eq, Clone, Copy, Show)]
 pub enum Module {
     /// The module is empty.
     Empty,
@@ -78,7 +78,7 @@ impl Module {
 
 /// `Canvas` is an intermediate helper structure to render error-corrected data
 /// into a QR code.
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct Canvas {
     /// The width and height of the canvas (cached as it is needed frequently).
     width: i16,
@@ -102,7 +102,7 @@ impl Canvas {
             width: width,
             version: version,
             ec_level: ec_level,
-            modules: repeat(Module::Empty).take((width*width) as uint).collect()
+            modules: repeat(Module::Empty).take((width*width) as usize).collect()
         }
     }
 
@@ -110,10 +110,10 @@ impl Canvas {
     #[cfg(test)]
     fn to_debug_str(&self) -> String {
         let width = self.width;
-        let mut res = String::with_capacity((width * (width + 1)) as uint);
-        for y in range(0, width) {
+        let mut res = String::with_capacity((width * (width + 1)) as usize);
+        for y in (0 .. width) {
             res.push('\n');
-            for x in range(0, width) {
+            for x in (0 .. width) {
                 res.push(match self.get(x, y) {
                     Module::Empty => '?',
                     Module::Light => '.',
@@ -126,10 +126,10 @@ impl Canvas {
         res
     }
 
-    fn coords_to_index(&self, x: i16, y: i16) -> uint {
-        let x = if x < 0 { x + self.width } else { x } as uint;
-        let y = if y < 0 { y + self.width } else { y } as uint;
-        y * (self.width as uint) + x
+    fn coords_to_index(&self, x: i16, y: i16) -> usize {
+        let x = if x < 0 { x + self.width } else { x } as usize;
+        let y = if y < 0 { y + self.width } else { y } as usize;
+        y * (self.width as usize) + x
     }
 
     /// Obtains a module at the given coordinates. For convenience, negative
@@ -142,7 +142,7 @@ impl Canvas {
     /// negative coordinates will wrap around.
     pub fn get_mut(&mut self, x: i16, y: i16) -> &mut Module {
         let index = self.coords_to_index(x, y);
-        self.modules.index_mut(&index)
+        &mut self.modules[index]
     }
 
     /// Sets the color of a module at the given coordinates. For convenience,
@@ -177,8 +177,8 @@ mod basic_canvas_tests {
     fn test_debug_str() {
         let mut c = Canvas::new(Version::Normal(1), EcLevel::L);
 
-        for i in range(3i16, 20) {
-            for j in range(3i16, 20) {
+        for i in 3 .. 20 {
+            for j in 3 .. 20 {
                 c.put(i, j, match ((i * 3) ^ j) % 5 {
                     0 => Module::Empty,
                     1 => Module::Light,
@@ -335,7 +335,7 @@ impl Canvas {
             Version::Micro(_) | Version::Normal(1) => { return; }
             Version::Normal(2...6) => self.draw_alignment_pattern_at(-7, -7),
             Version::Normal(a) => {
-                let positions = ALIGNMENT_PATTERN_POSITIONS[a as uint - 7];
+                let positions = ALIGNMENT_PATTERN_POSITIONS[a as usize - 7];
                 for x in positions.iter() {
                     for y in positions.iter() {
                         self.draw_alignment_pattern_at(*x, *y);
@@ -475,7 +475,7 @@ mod alignment_pattern_tests {
 /// `ALIGNMENT_PATTERN_POSITIONS` describes the x- and y-coordinates of the
 /// center of the alignment patterns. Since the QR code is symmetric, only one
 /// coordinate is needed.
-static ALIGNMENT_PATTERN_POSITIONS: [&'static [i16], ..34] = [
+static ALIGNMENT_PATTERN_POSITIONS: [&'static [i16]; 34] = [
     &[6, 22, 38],
     &[6, 24, 42],
     &[6, 26, 46],
@@ -660,7 +660,7 @@ impl Canvas {
         match self.version {
             Version::Micro(_) | Version::Normal(1...6) => { return; }
             Version::Normal(a) => {
-                let version_info = VERSION_INFOS[(a - 7) as uint] << 14;
+                let version_info = VERSION_INFOS[(a - 7) as usize] << 14;
                 self.draw_number(version_info, Module::Dark, Module::Light,
                                  &VERSION_INFO_COORDS_BL);
                 self.draw_number(version_info, Module::Dark, Module::Light,
@@ -822,7 +822,7 @@ mod draw_version_info_tests {
     }
 }
 
-static VERSION_INFO_COORDS_BL: [(i16, i16), ..18] = [
+static VERSION_INFO_COORDS_BL: [(i16, i16); 18] = [
     (5, -9), (5, -10), (5, -11),
     (4, -9), (4, -10), (4, -11),
     (3, -9), (3, -10), (3, -11),
@@ -831,7 +831,7 @@ static VERSION_INFO_COORDS_BL: [(i16, i16), ..18] = [
     (0, -9), (0, -10), (0, -11),
 ];
 
-static VERSION_INFO_COORDS_TR: [(i16, i16), ..18] = [
+static VERSION_INFO_COORDS_TR: [(i16, i16); 18] = [
     (-9, 5), (-10, 5), (-11, 5),
     (-9, 4), (-10, 4), (-11, 4),
     (-9, 3), (-10, 3), (-11, 3),
@@ -840,23 +840,23 @@ static VERSION_INFO_COORDS_TR: [(i16, i16), ..18] = [
     (-9, 0), (-10, 0), (-11, 0),
 ];
 
-static FORMAT_INFO_COORDS_QR_MAIN: [(i16, i16), ..15] = [
+static FORMAT_INFO_COORDS_QR_MAIN: [(i16, i16); 15] = [
     (0, 8), (1, 8), (2, 8), (3, 8), (4, 8), (5, 8),
     (7, 8), (8, 8), (8, 7),
     (8, 5), (8, 4), (8, 3), (8, 2), (8, 1), (8, 0),
 ];
 
-static FORMAT_INFO_COORDS_QR_SIDE: [(i16, i16), ..15] = [
+static FORMAT_INFO_COORDS_QR_SIDE: [(i16, i16); 15] = [
     (8, -1), (8, -2), (8, -3), (8, -4), (8, -5), (8, -6), (8, -7),
     (-8, 8), (-7, 8), (-6, 8), (-5, 8), (-4, 8), (-3, 8), (-2, 8), (-1, 8),
 ];
 
-static FORMAT_INFO_COORDS_MICRO_QR: [(i16, i16), ..15] = [
+static FORMAT_INFO_COORDS_MICRO_QR: [(i16, i16); 15] = [
     (1, 8), (2, 8), (3, 8), (4, 8), (5, 8), (6, 8), (7, 8), (8, 8),
     (8, 7), (8, 6), (8, 5), (8, 4), (8, 3), (8, 2), (8, 1),
 ];
 
-static VERSION_INFOS: [u32, ..34] = [
+static VERSION_INFOS: [u32; 34] = [
     0x07c94, 0x085bc, 0x09a99, 0x0a4d3, 0x0bbf6, 0x0c762, 0x0d847, 0x0e60d,
     0x0f928, 0x10b78, 0x1145d, 0x12a17, 0x13532, 0x149a6, 0x15683, 0x168c9,
     0x177ec, 0x18ec4, 0x191e1, 0x1afab, 0x1b08e, 0x1cc1a, 0x1d33f, 0x1ed75,
@@ -909,7 +909,7 @@ pub fn is_functional(version: Version, width: i16, x: i16, y: i16) -> bool {
             } else if 2 <= a && a <= 6 {
                 (width - 7 - x).abs() <= 2 && (width - 7 - y).abs() <= 2
             } else {
-                let positions = ALIGNMENT_PATTERN_POSITIONS[a as uint - 7];
+                let positions = ALIGNMENT_PATTERN_POSITIONS[a as usize - 7];
                 let last = positions.len() - 1;
                 for (i, align_x) in positions.iter().enumerate() {
                     for (j, align_y) in positions.iter().enumerate() {
@@ -1060,7 +1060,9 @@ impl DataModuleIter {
     }
 }
 
-impl Iterator<(i16, i16)> for DataModuleIter {
+impl Iterator for DataModuleIter {
+    type Item = (i16, i16);
+
     fn next(&mut self) -> Option<(i16, i16)> {
         let adjusted_ref_col = if self.x <= self.timing_pattern_column {
             self.x + 1
@@ -1269,14 +1271,14 @@ impl Canvas {
                              codewords: &[u8],
                              is_half_codeword_at_end: bool,
                              coords: &mut I)
-        where I: Iterator<(i16, i16)>
+        where I: Iterator<Item=(i16, i16)>
     {
         let length = codewords.len();
         let last_word = if is_half_codeword_at_end { length-1 } else { length };
         for (i, b) in codewords.iter().enumerate() {
             let bits_end = if i == last_word { 4 } else { 0 };
         'outside:
-            for j in range_inclusive(bits_end, 7u).rev() {
+            for j in range_inclusive(bits_end, 7us).rev() {
                 let color = if (*b & (1 << j)) != 0 {
                     Module::DarkUnmasked
                 } else {
@@ -1370,7 +1372,7 @@ mod draw_codewords_test {
 
 /// The mask patterns. Since QR code and Micro QR code do not use the same
 /// pattern number, we name them according to their shape instead of the number.
-#[deriving(Show, Copy)]
+#[derive(Show, Copy)]
 pub enum MaskPattern {
     /// QR code pattern 000: `(x + y) % 2 == 0`.
     Checkerboard = 0b000,
@@ -1426,8 +1428,8 @@ impl Canvas {
     /// patterns.
     pub fn apply_mask(&mut self, pattern: MaskPattern) {
         let mask_fn = get_mask_function(pattern);
-        for x in range(0, self.width) {
-            for y in range(0, self.width) {
+        for x in (0 .. self.width) {
+            for y in (0 .. self.width) {
                 let module = self.get_mut(x, y);
                 *module = module.mask(mask_fn(x, y));
             }
@@ -1444,7 +1446,7 @@ impl Canvas {
     fn draw_format_info_patterns(&mut self, pattern: MaskPattern) {
         let format_number = match self.version {
             Version::Normal(_) => {
-                let simple_format_number = ((self.ec_level as uint) ^ 1) << 3 | (pattern as uint);
+                let simple_format_number = ((self.ec_level as usize) ^ 1) << 3 | (pattern as usize);
                 FORMAT_INFOS_QR[simple_format_number]
             }
             Version::Micro(a) => {
@@ -1558,14 +1560,14 @@ mod mask_tests {
     }
 }
 
-static FORMAT_INFOS_QR: [u16, ..32] = [
+static FORMAT_INFOS_QR: [u16; 32] = [
     0x5412, 0x5125, 0x5e7c, 0x5b4b, 0x45f9, 0x40ce, 0x4f97, 0x4aa0,
     0x77c4, 0x72f3, 0x7daa, 0x789d, 0x662f, 0x6318, 0x6c41, 0x6976,
     0x1689, 0x13be, 0x1ce7, 0x19d0, 0x0762, 0x0255, 0x0d0c, 0x083b,
     0x355f, 0x3068, 0x3f31, 0x3a06, 0x24b4, 0x2183, 0x2eda, 0x2bed,
 ];
 
-static FORMAT_INFOS_MICRO_QR: [u16, ..32] = [
+static FORMAT_INFOS_MICRO_QR: [u16; 32] = [
     0x4445, 0x4172, 0x4e2b, 0x4b1c, 0x55ae, 0x5099, 0x5fc0, 0x5af7,
     0x6793, 0x62a4, 0x6dfd, 0x68ca, 0x7678, 0x734f, 0x7c16, 0x7921,
     0x06de, 0x03e9, 0x0cb0, 0x0987, 0x1735, 0x1202, 0x1d5b, 0x186c,
@@ -1585,15 +1587,15 @@ impl Canvas {
     fn compute_adjacent_penalty_score(&self, is_horizontal: bool) -> u16 {
         let mut total_score = 0;
 
-        for i in range(0, self.width) {
+        for i in (0 .. self.width) {
             let map_fn = |&:j| if is_horizontal {
                 self.get(j, i)
             } else {
                 self.get(i, j)
             };
 
-            let mut colors = range(0, self.width).map(map_fn)
-                                                 .chain(Some(Module::Empty).into_iter());
+            let mut colors = (0 .. self.width).map(map_fn)
+                                              .chain(Some(Module::Empty).into_iter());
             let mut last_color = Module::Empty;
             let mut consecutive_len = 1u16;
 
@@ -1621,8 +1623,8 @@ impl Canvas {
     fn compute_block_penalty_score(&self) -> u16 {
         let mut total_score = 0;
 
-        for i in range(0, self.width-1) {
-            for j in range(0, self.width-1) {
+        for i in (0 .. self.width-1) {
+            for j in (0 .. self.width-1) {
                 let this = self.get(i, j);
                 let right = self.get(i+1, j);
                 let bottom = self.get(i, j+1);
@@ -1642,27 +1644,28 @@ impl Canvas {
     /// Every pattern that looks like `#.###.#....` in any orientation will add
     /// 40 points.
     fn compute_finder_penalty_score(&self, is_horizontal: bool) -> u16 {
-        static PATTERN: [Module, ..7] = [
+        static PATTERN: [Module; 7] = [
             Module::Dark, Module::Light, Module::Dark, Module::Dark,
             Module::Dark, Module::Light, Module::Dark,
         ];
 
         let mut total_score = 0;
 
-        for i in range(0, self.width) {
-            for j in range(0, self.width-6) {
-                let get = if is_horizontal {
-                    |k: i16| self.get(k, i)
+        for i in (0 .. self.width) {
+            for j in (0 .. self.width-6) {
+                // TODO a ref to a closure should be enough?
+                let get: Box<Fn(i16) -> Module> = if is_horizontal {
+                    Box::new(|&: k: i16| self.get(k, i))
                 } else {
-                    |k: i16| self.get(i, k)
+                    Box::new(|&: k: i16| self.get(i, k))
                 };
 
-                if !equals(range(j, j+7).map(|k| get(k)), PATTERN.iter().map(|m| *m)) {
+                if !equals((j .. j+7).map(|k| get(k)), PATTERN.iter().map(|m| *m)) {
                     continue;
                 }
 
-                let check = |k| { 0 <= k && k < self.width && get(k).is_dark() };
-                if !range(j-4, j).any(|k| check(k)) || !range(j+7, j+11).any(|k| check(k)) {
+                let check = |&: k| { 0 <= k && k < self.width && get(k).is_dark() };
+                if !(j-4 .. j).any(|k| check(k)) || !(j+7 .. j+11).any(|k| check(k)) {
                     total_score += 40;
                 }
             }
@@ -1698,8 +1701,8 @@ impl Canvas {
     /// has the inverse meaning of this method, but it is very easy to convert
     /// between the two (this score is (16×width − standard-score)).
     fn compute_light_side_penalty_score(&self) -> u16 {
-        let h = range(1, self.width).filter(|j| !self.get(*j, -1).is_dark()).count();
-        let v = range(1, self.width).filter(|j| !self.get(-1, *j).is_dark()).count();
+        let h = (1 .. self.width).filter(|j| !self.get(*j, -1).is_dark()).count();
+        let v = (1 .. self.width).filter(|j| !self.get(-1, *j).is_dark()).count();
 
         (h + v + 15 * max(h, v)) as u16
     }
@@ -1792,14 +1795,14 @@ mod penalty_tests {
 
     #[test]
     fn test_penalty_score_light_sides() {
-        static HORIZONTAL_SIDE: [Module, ..17] = [
+        static HORIZONTAL_SIDE: [Module; 17] = [
             Module::Dark, Module::Light, Module::Light, Module::Dark,
             Module::Dark, Module::Dark, Module::Light, Module::Light,
             Module::Dark, Module::Light, Module::Dark, Module::Light,
             Module::Light, Module::Dark, Module::Light, Module::Light,
             Module::Light,
         ];
-        static VERTICAL_SIDE: [Module, ..17] = [
+        static VERTICAL_SIDE: [Module; 17] = [
             Module::Dark, Module::Dark, Module::Dark, Module::Light,
             Module::Light, Module::Dark, Module::Dark, Module::Light,
             Module::Dark, Module::Light, Module::Dark, Module::Light,
@@ -1808,9 +1811,9 @@ mod penalty_tests {
         ];
 
         let mut c = Canvas::new(Version::Micro(4), EcLevel::Q);
-        for i in range(0, 17) {
-            c.put(i, -1, HORIZONTAL_SIDE[i as uint]);
-            c.put(-1, i, VERTICAL_SIDE[i as uint]);
+        for i in 0 .. 17 {
+            c.put(i, -1, HORIZONTAL_SIDE[i as usize]);
+            c.put(-1, i, VERTICAL_SIDE[i as usize]);
         }
 
         assert_eq!(c.compute_light_side_penalty_score(), 168);
@@ -1821,14 +1824,14 @@ mod penalty_tests {
 //------------------------------------------------------------------------------
 //{{{ Select mask with lowest penalty score
 
-static ALL_PATTERNS_QR: [MaskPattern, ..8] = [
+static ALL_PATTERNS_QR: [MaskPattern; 8] = [
     MaskPattern::Checkerboard, MaskPattern::HorizontalLines,
     MaskPattern::VerticalLines, MaskPattern::DiagonalLines,
     MaskPattern::LargeCheckerboard, MaskPattern::Fields,
     MaskPattern::Diamonds, MaskPattern::Meadow,
 ];
 
-static ALL_PATTERNS_MICRO_QR: [MaskPattern, ..4] = [
+static ALL_PATTERNS_MICRO_QR: [MaskPattern; 4] = [
     MaskPattern::HorizontalLines, MaskPattern::LargeCheckerboard,
     MaskPattern::Diamonds, MaskPattern::Meadow,
 ];

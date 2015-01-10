@@ -1,6 +1,7 @@
 //! The `ec` module applies the Reed-Solomon error correction codes.
 
 use std::iter::repeat;
+use std::ops::Deref;
 
 use types::{QrResult, Version, EcLevel};
 
@@ -16,22 +17,22 @@ use types::{QrResult, Version, EcLevel};
 /// (a[0] x<sup>m+n</sup> + a[1] x<sup>m+n-1</sup> + … + a[m] x<sup>n</sup>) in
 /// GF(256), and then computes the polynomial modulus with a generator
 /// polynomial of degree N.
-pub fn create_error_correction_code(data: &[u8], ec_code_size: uint) -> Vec<u8> {
+pub fn create_error_correction_code(data: &[u8], ec_code_size: usize) -> Vec<u8> {
     let mut res = data.to_vec();
     res.extend(repeat(0).take(ec_code_size));
 
     let data_len = data.len();
     let log_den = GENERATOR_POLYNOMIALS[ec_code_size];
 
-    for i in range(0, data_len) {
-        let lead_coeff = res[i] as uint;
+    for i in (0 .. data_len) {
+        let lead_coeff = res[i] as usize;
         if lead_coeff == 0 {
             continue;
         }
 
-        let log_lead_coeff = LOG_TABLE[lead_coeff] as uint;
+        let log_lead_coeff = LOG_TABLE[lead_coeff] as usize;
         for (u, v) in res.slice_from_mut(i+1).iter_mut().zip(log_den.iter()) {
-            *u ^= EXP_TABLE[((*v as uint + log_lead_coeff) % 255) as uint];
+            *u ^= EXP_TABLE[((*v as usize + log_lead_coeff) % 255) as usize];
         }
     }
 
@@ -72,10 +73,10 @@ mod ec_tests {
 ///
 /// The longest slice must be at the last of `blocks`, and `blocks` must not be
 /// empty.
-fn interleave<T: Copy, V: Deref<[T]>>(blocks: &Vec<V>) -> Vec<T> {
+fn interleave<T: Copy, V: Deref<Target=[T]>>(blocks: &Vec<V>) -> Vec<T> {
     let last_block_len = blocks.last().unwrap().len();
     let mut res = Vec::with_capacity(last_block_len * blocks.len());
-    for i in range(0, last_block_len) {
+    for i in (0 .. last_block_len) {
         for t in blocks.iter() {
             if i < t.len() {
                 res.push(t[i]);
@@ -158,7 +159,7 @@ mod construct_codewords_test {
 
 /// Computes the maximum allowed number of erratic modules can be introduced to
 /// the QR code, before the data becomes truly corrupted.
-pub fn max_allowed_errors(version: Version, ec_level: EcLevel) -> QrResult<uint> {
+pub fn max_allowed_errors(version: Version, ec_level: EcLevel) -> QrResult<usize> {
     use Version::{Micro, Normal};
     use EcLevel::{L, M};
 
@@ -244,7 +245,7 @@ static LOG_TABLE: &'static [u8] = b"\xff\x00\x01\x19\x02\x32\x1a\xc6\x03\xdf\x33
 /// is the Reed-Solomon error correction code.
 ///
 /// A partial list can be found from ISO/IEC 18004:2006 Annex A.
-static GENERATOR_POLYNOMIALS: [&'static [u8], ..70] = [
+static GENERATOR_POLYNOMIALS: [&'static [u8]; 70] = [
     b"",
     b"\x00",
     b"\x19\x01",
@@ -325,7 +326,7 @@ static GENERATOR_POLYNOMIALS: [&'static [u8], ..70] = [
 /// correction per block in each version.
 ///
 /// This is a copy of ISO/IEC 18004:2006, §6.5.1, Table 9.
-static EC_BYTES_PER_BLOCK: [[uint, ..4], ..44] = [
+static EC_BYTES_PER_BLOCK: [[usize; 4]; 44] = [
     // Normal versions.
     [7, 10, 13, 17],
     [10, 16, 22, 28],
@@ -383,7 +384,7 @@ static EC_BYTES_PER_BLOCK: [[uint, ..4], ..44] = [
 /// Every entry is a 4-tuple. Take `DATA_BYTES_PER_BLOCK[39][3] == (15, 20, 16, 61)`
 /// as an example, this means in version 40 with correction level H, there are
 /// 20 blocks with 15 bytes in size, and 61 blocks with 16 bytes in size.
-static DATA_BYTES_PER_BLOCK: [[(uint, uint, uint, uint), ..4], ..44] = [
+static DATA_BYTES_PER_BLOCK: [[(usize, usize, usize, usize); 4]; 44] = [
     // Normal versions.
     [(19, 1, 0, 0), (16, 1, 0, 0), (13, 1, 0, 0), (9, 1, 0, 0)],
     [(34, 1, 0, 0), (28, 1, 0, 0), (22, 1, 0, 0), (16, 1, 0, 0)],

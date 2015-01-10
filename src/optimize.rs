@@ -11,22 +11,22 @@ use test::Bencher;
 //{{{ Segment
 
 /// A segment of data committed to an encoding mode.
-#[deriving(PartialEq, Eq, Show, Copy, Clone)]
+#[derive(PartialEq, Eq, Show, Copy, Clone)]
 pub struct Segment {
     /// The encoding mode of the segment of data.
     pub mode: Mode,
 
     /// The start index of the segment.
-    pub begin: uint,
+    pub begin: usize,
 
     /// The end index (exclusive) of the segment.
-    pub end: uint,
+    pub end: usize,
 }
 
 impl Segment {
     /// Compute the number of bits (including the size of the mode indicator and
     /// length bits) when this segment is encoded.
-    pub fn encoded_len(&self, version: Version) -> uint {
+    pub fn encoded_len(&self, version: Version) -> usize {
         let byte_size = self.end - self.begin;
         let chars_count = if self.mode == Mode::Kanji { byte_size / 2 } else { byte_size };
 
@@ -54,12 +54,14 @@ impl Segment {
 ///
 struct EcsIter<I> {
     base: I,
-    index: uint,
+    index: usize,
     ended: bool,
 }
 
-impl<'a, I: Iterator<&'a u8>> Iterator<(uint, ExclCharSet)> for EcsIter<I> {
-    fn next(&mut self) -> Option<(uint, ExclCharSet)> {
+impl<'a, I: Iterator<Item=&'a u8>> Iterator for EcsIter<I> {
+    type Item = (usize, ExclCharSet);
+
+    fn next(&mut self) -> Option<(usize, ExclCharSet)> {
         if self.ended {
             return None;
         }
@@ -82,7 +84,7 @@ impl<'a, I: Iterator<&'a u8>> Iterator<(uint, ExclCharSet)> for EcsIter<I> {
 pub struct Parser<'a> {
     ecs_iter: EcsIter<Iter<'a, u8>>,
     state: State,
-    begin: uint,
+    begin: usize,
     pending_single_byte: bool,
 }
 
@@ -108,7 +110,9 @@ impl<'a> Parser<'a> {
     }
 }
 
-impl<'a> Iterator<Segment> for Parser<'a> {
+impl<'a> Iterator for Parser<'a> {
+    type Item = Segment;
+
     fn next(&mut self) -> Option<Segment> {
         if self.pending_single_byte {
             self.pending_single_byte = false;
@@ -125,7 +129,7 @@ impl<'a> Iterator<Segment> for Parser<'a> {
                 None => { return None; },
                 Some(a) => a
             };
-            let (next_state, action) = STATE_TRANSITION[self.state as uint + ecs as uint];
+            let (next_state, action) = STATE_TRANSITION[self.state as usize + ecs as usize];
             self.state = next_state;
 
             let old_begin = self.begin;
@@ -239,12 +243,12 @@ mod parse_tests {
 pub struct Optimizer<I> {
     parser: I,
     last_segment: Segment,
-    last_segment_size: uint,
+    last_segment_size: usize,
     version: Version,
     ended: bool,
 }
 
-impl<I: Iterator<Segment>> Optimizer<I> {
+impl<I: Iterator<Item=Segment>> Optimizer<I> {
     /// Optimize the segments by combining adjacent segments when possible.
     ///
     /// Currently this method uses a greedy algorithm by combining segments from
@@ -277,7 +281,9 @@ impl<'a> Parser<'a> {
     }
 }
 
-impl<I: Iterator<Segment>> Iterator<Segment> for Optimizer<I> {
+impl<I: Iterator<Item=Segment>> Iterator for Optimizer<I> {
+    type Item = Segment;
+
     fn next(&mut self) -> Option<Segment> {
         if self.ended {
             return None;
@@ -315,7 +321,7 @@ impl<I: Iterator<Segment>> Iterator<Segment> for Optimizer<I> {
 }
 
 /// Computes the total encoded length of all segments.
-pub fn total_encoded_len(segments: &[Segment], version: Version) -> uint {
+pub fn total_encoded_len(segments: &[Segment], version: Version) -> usize {
     use std::iter::AdditiveIterator;
     segments.iter().map(|seg| seg.encoded_len(version)).sum()
 }
@@ -333,7 +339,7 @@ mod optimize_tests {
             assert!(prev_len > new_len, "{} > {}", prev_len, new_len);
         }
         assert!(opt_segs == expected,
-                "Optimization gave something better: {} < {} ({})",
+                "Optimization gave something better: {} < {} ({:?})",
                 new_len, total_encoded_len(&*expected, version), opt_segs);
     }
 
@@ -465,7 +471,7 @@ fn bench_optimize(bencher: &mut Bencher) {
 /// All values of `u8` can be split into 9 different character sets when
 /// determining which encoding to use. This enum represents these groupings for
 /// parsing purpose.
-#[deriving(Copy)]
+#[derive(Copy)]
 enum ExclCharSet {
     /// The end of string.
     End = 0,
@@ -525,7 +531,7 @@ impl ExclCharSet {
 }
 
 /// The current parsing state.
-#[deriving(Copy)]
+#[derive(Copy)]
 enum State {
     /// Just initialized.
     Init = 0,
@@ -552,7 +558,7 @@ enum State {
 }
 
 /// What should the parser do after a state transition.
-#[deriving(Copy)]
+#[derive(Copy)]
 enum Action {
     /// The parser should do nothing.
     Idle,
@@ -574,7 +580,7 @@ enum Action {
     KanjiAndSingleByte,
 }
 
-static STATE_TRANSITION: [(State, Action), ..70] = [
+static STATE_TRANSITION: [(State, Action); 70] = [
     // STATE_TRANSITION[current_state + next_character] == (next_state, what_to_do)
 
     // Init state:
