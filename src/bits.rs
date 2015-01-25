@@ -758,7 +758,7 @@ impl Bits {
         where I: Iterator<Item=Segment>
     {
         for segment in segments_iter {
-            let slice = data.slice(segment.begin, segment.end);
+            let slice = &data[segment.begin .. segment.end];
             try!(match segment.mode {
                 Mode::Numeric => self.push_numeric_data(slice),
                 Mode::Alphanumeric => self.push_alphanumeric_data(slice),

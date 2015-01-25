@@ -20,7 +20,7 @@ use types::{Version, EcLevel};
 //{{{ Modules
 
 /// The color of a module (pixel) in the QR code.
-#[derive(PartialEq, Eq, Clone, Copy, Show)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Module {
     /// The module is empty.
     Empty,
@@ -177,8 +177,8 @@ mod basic_canvas_tests {
     fn test_debug_str() {
         let mut c = Canvas::new(Version::Normal(1), EcLevel::L);
 
-        for i in 3 .. 20 {
-            for j in 3 .. 20 {
+        for i in 3i16 .. 20 {
+            for j in 3i16 .. 20 {
                 c.put(i, j, match ((i * 3) ^ j) % 5 {
                     0 => Module::Empty,
                     1 => Module::Light,
@@ -1372,7 +1372,7 @@ mod draw_codewords_test {
 
 /// The mask patterns. Since QR code and Micro QR code do not use the same
 /// pattern number, we name them according to their shape instead of the number.
-#[derive(Show, Copy)]
+#[derive(Debug, Copy)]
 pub enum MaskPattern {
     /// QR code pattern 000: `(x + y) % 2 == 0`.
     Checkerboard = 0b000,
@@ -1811,7 +1811,7 @@ mod penalty_tests {
         ];
 
         let mut c = Canvas::new(Version::Micro(4), EcLevel::Q);
-        for i in 0 .. 17 {
+        for i in 0i16 .. 17 {
             c.put(i, -1, HORIZONTAL_SIDE[i as usize]);
             c.put(-1, i, VERTICAL_SIDE[i as usize]);
         }

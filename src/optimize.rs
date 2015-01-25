@@ -11,7 +11,7 @@ use test::Bencher;
 //{{{ Segment
 
 /// A segment of data committed to an encoding mode.
-#[derive(PartialEq, Eq, Show, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub struct Segment {
     /// The encoding mode of the segment of data.
     pub mode: Mode,
