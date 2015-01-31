@@ -19,9 +19,8 @@
 //!
 
 #![unstable]
-#![feature(slicing_syntax)]
+#![feature(test, core)] // Unstable libraries
 
-#[allow(unstable)]
 extern crate test;
 
 use std::ops::Index;
