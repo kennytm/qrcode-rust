@@ -111,9 +111,9 @@ impl Canvas {
     fn to_debug_str(&self) -> String {
         let width = self.width;
         let mut res = String::with_capacity((width * (width + 1)) as usize);
-        for y in (0 .. width) {
+        for y in 0 .. width {
             res.push('\n');
-            for x in (0 .. width) {
+            for x in 0 .. width {
                 res.push(match self.get(x, y) {
                     Module::Empty => '?',
                     Module::Light => '.',
@@ -626,7 +626,7 @@ impl Canvas {
                            coords: &[(i16, i16)]) {
         let zero: N = Int::zero();
         let mut mask: N = !(!zero >> 1);
-        for &(x, y) in coords.iter() {
+        for &(x, y) in coords {
             let color = if (mask & number) == zero { off_color } else { on_color };
             self.put(x, y, color);
             mask = mask >> 1;
@@ -1428,8 +1428,8 @@ impl Canvas {
     /// patterns.
     pub fn apply_mask(&mut self, pattern: MaskPattern) {
         let mask_fn = get_mask_function(pattern);
-        for x in (0 .. self.width) {
-            for y in (0 .. self.width) {
+        for x in 0 .. self.width {
+            for y in 0 .. self.width {
                 let module = self.get_mut(x, y);
                 *module = module.mask(mask_fn(x, y));
             }
@@ -1587,15 +1587,15 @@ impl Canvas {
     fn compute_adjacent_penalty_score(&self, is_horizontal: bool) -> u16 {
         let mut total_score = 0;
 
-        for i in (0 .. self.width) {
+        for i in 0 .. self.width {
             let map_fn = |&:j| if is_horizontal {
                 self.get(j, i)
             } else {
                 self.get(i, j)
             };
 
-            let mut colors = (0 .. self.width).map(map_fn)
-                                              .chain(Some(Module::Empty).into_iter());
+            let colors = (0 .. self.width).map(map_fn)
+                                          .chain(Some(Module::Empty).into_iter());
             let mut last_color = Module::Empty;
             let mut consecutive_len = 1u16;
 
@@ -1623,8 +1623,8 @@ impl Canvas {
     fn compute_block_penalty_score(&self) -> u16 {
         let mut total_score = 0;
 
-        for i in (0 .. self.width-1) {
-            for j in (0 .. self.width-1) {
+        for i in 0 .. self.width-1 {
+            for j in 0 .. self.width-1 {
                 let this = self.get(i, j);
                 let right = self.get(i+1, j);
                 let bottom = self.get(i, j+1);
@@ -1651,8 +1651,8 @@ impl Canvas {
 
         let mut total_score = 0;
 
-        for i in (0 .. self.width) {
-            for j in (0 .. self.width-6) {
+        for i in 0 .. self.width {
+            for j in 0 .. self.width-6 {
                 // TODO a ref to a closure should be enough?
                 let get: Box<Fn(i16) -> Module> = if is_horizontal {
                     Box::new(|&: k: i16| self.get(k, i))

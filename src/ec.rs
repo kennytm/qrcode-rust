@@ -24,7 +24,7 @@ pub fn create_error_correction_code(data: &[u8], ec_code_size: usize) -> Vec<u8>
     let data_len = data.len();
     let log_den = GENERATOR_POLYNOMIALS[ec_code_size];
 
-    for i in (0 .. data_len) {
+    for i in 0 .. data_len {
         let lead_coeff = res[i] as usize;
         if lead_coeff == 0 {
             continue;
@@ -76,8 +76,8 @@ mod ec_tests {
 fn interleave<T: Copy, V: Deref<Target=[T]>>(blocks: &Vec<V>) -> Vec<T> {
     let last_block_len = blocks.last().unwrap().len();
     let mut res = Vec::with_capacity(last_block_len * blocks.len());
-    for i in (0 .. last_block_len) {
-        for t in blocks.iter() {
+    for i in 0 .. last_block_len {
+        for t in blocks {
             if i < t.len() {
                 res.push(t[i]);
             }

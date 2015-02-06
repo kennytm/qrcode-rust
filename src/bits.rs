@@ -457,7 +457,7 @@ impl Bits {
     #[unstable]
     pub fn push_byte_data(&mut self, data: &[u8]) -> QrResult<()> {
         try!(self.push_header(Mode::Byte, data.len()));
-        for b in data.iter() {
+        for b in data {
             self.push_number(8, *b as u16);
         }
         Ok(())
@@ -754,7 +754,7 @@ mod finish_tests {
 
 impl Bits {
     /// Push a segmented data to the bits, and then terminate it.
-    pub fn push_segments<I>(&mut self, data: &[u8], mut segments_iter: I) -> QrResult<()>
+    pub fn push_segments<I>(&mut self, data: &[u8], segments_iter: I) -> QrResult<()>
         where I: Iterator<Item=Segment>
     {
         for segment in segments_iter {
@@ -823,8 +823,8 @@ mod encode_tests {
 /// This method will not consider any Micro QR code versions.
 pub fn encode_auto(data: &[u8], ec_level: EcLevel) -> QrResult<Bits> {
     let segments = Parser::new(data).collect::<Vec<Segment>>();
-    for version in [Version::Normal(9), Version::Normal(26), Version::Normal(40)].iter() {
-        let opt_segments = Optimizer::new(segments.iter().map(|s| *s), *version).collect::<Vec<Segment>>();
+    for version in &[Version::Normal(9), Version::Normal(26), Version::Normal(40)] {
+        let opt_segments = Optimizer::new(segments.iter().map(|s| *s), *version).collect::<Vec<_>>();
         let total_len = total_encoded_len(&*opt_segments, *version);
         let data_capacity = version.fetch(ec_level, &DATA_LENGTHS).unwrap();
         if total_len <= data_capacity {

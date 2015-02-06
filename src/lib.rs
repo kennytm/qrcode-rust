@@ -8,8 +8,8 @@
 //!     match code {
 //!         Err(err) => panic!("Failed to encode the QR code: {:?}", err),
 //!         Ok(code) => {
-//!             for y in (0 .. code.width()) {
-//!                 for x in (0 .. code.width()) {
+//!             for y in 0 .. code.width() {
+//!                 for x in 0 .. code.width() {
 //!                     let color = if code[(x, y)] { "black" } else { "white" };
 //!                     // render color at position (x, y)
 //!                 }
@@ -164,9 +164,9 @@ impl QrCode {
         let width = self.width;
         let mut k = 0;
         let mut res = String::with_capacity(width * (width + 1));
-        for _ in (0 .. width) {
+        for _ in 0 .. width {
             res.push('\n');
-            for _ in (0 .. width) {
+            for _ in 0 .. width {
                 res.push(if self.content[k] { on_char } else { off_char });
                 k += 1;
             }
