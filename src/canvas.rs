@@ -1278,7 +1278,7 @@ impl Canvas {
         for (i, b) in codewords.iter().enumerate() {
             let bits_end = if i == last_word { 4 } else { 0 };
         'outside:
-            for j in range_inclusive(bits_end, 7us).rev() {
+            for j in range_inclusive(bits_end, 7).rev() {
                 let color = if (*b & (1 << j)) != 0 {
                     Module::DarkUnmasked
                 } else {

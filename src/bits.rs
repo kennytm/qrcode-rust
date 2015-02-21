@@ -843,8 +843,8 @@ pub fn encode_auto(data: &[u8], ec_level: EcLevel) -> QrResult<Bits> {
 /// in the given error correction level.
 #[unstable]
 fn find_min_version(length: usize, ec_level: EcLevel) -> Version {
-    let mut min = 0us;
-    let mut max = 39us;
+    let mut min = 0;
+    let mut max = 39;
     while min < max {
         let half = (min + max) / 2;
         if DATA_LENGTHS[half][ec_level as usize] < length {
