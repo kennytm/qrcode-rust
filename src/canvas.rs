@@ -1588,7 +1588,7 @@ impl Canvas {
         let mut total_score = 0;
 
         for i in 0 .. self.width {
-            let map_fn = |&:j| if is_horizontal {
+            let map_fn = |j| if is_horizontal {
                 self.get(j, i)
             } else {
                 self.get(i, j)
@@ -1655,16 +1655,16 @@ impl Canvas {
             for j in 0 .. self.width-6 {
                 // TODO a ref to a closure should be enough?
                 let get: Box<Fn(i16) -> Module> = if is_horizontal {
-                    Box::new(|&: k: i16| self.get(k, i))
+                    Box::new(|k: i16| self.get(k, i))
                 } else {
-                    Box::new(|&: k: i16| self.get(i, k))
+                    Box::new(|k: i16| self.get(i, k))
                 };
 
                 if !equals((j .. j+7).map(|k| get(k)), PATTERN.iter().map(|m| *m)) {
                     continue;
                 }
 
-                let check = |&: k| { 0 <= k && k < self.width && get(k).is_dark() };
+                let check = |k| { 0 <= k && k < self.width && get(k).is_dark() };
                 if !(j-4 .. j).any(|k| check(k)) || !(j+7 .. j+11).any(|k| check(k)) {
                     total_score += 40;
                 }
