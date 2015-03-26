@@ -190,7 +190,7 @@ impl QrCode {
 impl Index<(usize, usize)> for QrCode {
     type Output = bool;
 
-    fn index(&self, &(x, y): &(usize, usize)) -> &bool {
+    fn index(&self, (x, y): (usize, usize)) -> &bool {
         let index = y * self.width + x;
         &self.content[index]
     }
