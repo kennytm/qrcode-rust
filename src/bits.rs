@@ -3,7 +3,6 @@
 //! The `bits` module encodes binary data into raw bits used in a QR code.
 
 use std::cmp::min;
-use std::iter::iterate;
 
 #[cfg(test)]
 use test::Bencher;
@@ -143,7 +142,7 @@ fn bench_push_splitted_bytes(bencher: &mut Bencher) {
 
 /// An "extended" mode indicator, includes all indicators supported by QR code
 /// beyond those bearing data.
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub enum ExtendedMode {
     /// ECI mode indicator, to introduce an ECI designator.
     Eci,
@@ -676,10 +675,12 @@ impl Bits {
         }
 
         if self.len() < data_length {
+            const PADDING_BYTES: &'static [u8] = &[0b11101100, 0b00010001];
+
             self.bit_offset = 0;
             let data_bytes_length = data_length / 8;
             let padding_bytes_count = data_bytes_length - self.data.len();
-            let padding = iterate(0b11101100, |a| a ^ 0b11111101).take(padding_bytes_count);
+            let padding = PADDING_BYTES.iter().cloned().cycle().take(padding_bytes_count);
             self.data.extend(padding);
         }
 

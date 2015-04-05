@@ -322,8 +322,8 @@ impl<I: Iterator<Item=Segment>> Iterator for Optimizer<I> {
 
 /// Computes the total encoded length of all segments.
 pub fn total_encoded_len(segments: &[Segment], version: Version) -> usize {
-    use std::iter::AdditiveIterator;
-    segments.iter().map(|seg| seg.encoded_len(version)).sum()
+    // TODO revert to `.map().sum()` after `sum()` is stable.
+    segments.iter().fold(0, |acc, seg| acc + seg.encoded_len(version))
 }
 
 #[cfg(test)]
@@ -471,7 +471,7 @@ fn bench_optimize(bencher: &mut Bencher) {
 /// All values of `u8` can be split into 9 different character sets when
 /// determining which encoding to use. This enum represents these groupings for
 /// parsing purpose.
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 enum ExclCharSet {
     /// The end of string.
     End = 0,
@@ -531,7 +531,7 @@ impl ExclCharSet {
 }
 
 /// The current parsing state.
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 enum State {
     /// Just initialized.
     Init = 0,
@@ -558,7 +558,7 @@ enum State {
 }
 
 /// What should the parser do after a state transition.
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 enum Action {
     /// The parser should do nothing.
     Idle,

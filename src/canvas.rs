@@ -9,12 +9,18 @@
 //!     c.apply_mask(MaskPattern::Checkerboard);
 //!     let bools = c.to_bools();
 
-use std::iter::{range_inclusive, repeat};
-use std::iter::order::equals;
-use std::num::Int;
+use std::iter::repeat;
 use std::cmp::max;
+use num::traits::PrimInt;
+use std::ops::Range;
 
 use types::{Version, EcLevel};
+
+// TODO remove this after it is decided whether we want `p ... q` or
+//      `(p .. q).inclusive()`
+fn range_inclusive<N: PrimInt>(from: N, to: N) -> Range<N> {
+    from .. (to + N::one())
+}
 
 //------------------------------------------------------------------------------
 //{{{ Modules
@@ -621,10 +627,10 @@ impl Canvas {
     /// `off_color`. The coordinates will be extracted from the `coords`
     /// iterator. It will start from the most significant bits first, so
     /// *trailing* zeros will be ignored.
-    fn draw_number<N: Int>(&mut self, number: N,
-                           on_color: Module, off_color: Module,
-                           coords: &[(i16, i16)]) {
-        let zero: N = Int::zero();
+    fn draw_number<N: PrimInt>(&mut self, number: N,
+                               on_color: Module, off_color: Module,
+                               coords: &[(i16, i16)]) {
+        let zero: N = N::zero();
         let mut mask: N = !(!zero >> 1);
         for &(x, y) in coords {
             let color = if (mask & number) == zero { off_color } else { on_color };
@@ -887,8 +893,6 @@ impl Canvas {
 /// Gets whether the module at the given coordinates represents a functional
 /// module.
 pub fn is_functional(version: Version, width: i16, x: i16, y: i16) -> bool {
-    use std::num::SignedInt;
-
     debug_assert!(width == version.width());
 
     let x = if x < 0 { x + width } else { x };
@@ -1372,7 +1376,7 @@ mod draw_codewords_test {
 
 /// The mask patterns. Since QR code and Micro QR code do not use the same
 /// pattern number, we name them according to their shape instead of the number.
-#[derive(Debug, Copy)]
+#[derive(Debug, Copy, Clone)]
 pub enum MaskPattern {
     /// QR code pattern 000: `(x + y) % 2 == 0`.
     Checkerboard = 0b000,
@@ -1649,6 +1653,13 @@ impl Canvas {
             Module::Dark, Module::Light, Module::Dark,
         ];
 
+        // TODO remove this after `equals()` is stable.
+        fn equals<T, U>(left: T, right: U) -> bool
+            where T: Iterator, U: Iterator, T::Item: PartialEq<U::Item>
+        {
+            left.zip(right).all(|(p, q)| p == q)
+        }
+
         let mut total_score = 0;
 
         for i in 0 .. self.width {
@@ -1845,11 +1856,23 @@ impl Canvas {
             Version::Micro(_) => ALL_PATTERNS_MICRO_QR.iter(),
         };
 
-        patterns.map(|ptn| {
+        let mut patterns = patterns.map(|ptn| {
             let mut c = self.clone();
             c.apply_mask(*ptn);
             c
-        }).min_by(|c| c.compute_total_penalty_scores()).unwrap()
+        });
+
+        // TODO revert to `min_by` after it is stable.
+        let mut best_pattern = patterns.next().unwrap();
+        let mut best_pattern_score = best_pattern.compute_total_penalty_scores();
+        for c in patterns {
+            let score = c.compute_total_penalty_scores();
+            if score < best_pattern_score {
+                best_pattern = c;
+                best_pattern_score = score;
+            }
+        }
+        best_pattern
     }
 
     /// Convert the modules into a vector of booleans.

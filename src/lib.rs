@@ -19,9 +19,11 @@
 //!
 
 #![unstable]
-#![feature(test, core)] // Unstable libraries
+#![cfg_attr(test, feature(test))] // Unstable libraries
 
+#[cfg(test)]
 extern crate test;
+extern crate num;
 
 use std::ops::Index;
 
