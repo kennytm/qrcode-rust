@@ -1,5 +1,3 @@
-#![unstable]
-
 use std::default::Default;
 use std::cmp::{PartialOrd, Ordering};
 use std::fmt::{Display, Formatter, Error};
@@ -8,7 +6,6 @@ use std::fmt::{Display, Formatter, Error};
 //{{{ QrResult
 
 /// `QrError` encodes the error encountered when generating a QR code.
-#[unstable]
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum QrError {
     /// The data is too long to encode into a QR code for the given version.
@@ -43,7 +40,6 @@ impl Display for QrError {
 }
 
 /// `QrResult` is a convenient alias for a QR code generation result.
-#[stable]
 pub type QrResult<T> = Result<T, QrError>;
 
 //}}}
@@ -53,7 +49,6 @@ pub type QrResult<T> = Result<T, QrError>;
 /// The error correction level. It allows the original information be recovered
 /// even if parts of the code is damaged.
 #[derive(Debug, PartialEq, Eq, Copy, Clone, PartialOrd, Ord)]
-#[unstable]
 pub enum EcLevel {
     /// Low error correction. Allows up to 7% of wrong blocks.
     L = 0,
@@ -78,7 +73,6 @@ pub enum EcLevel {
 ///
 /// The smallest version is `Version::Normal(1)` of size 21×21, and the largest
 /// is `Version::Normal(40)` of size 177×177.
-#[unstable]
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum Version {
     /// A normal QR code version. The parameter should be between 1 and 40.
@@ -91,7 +85,6 @@ pub enum Version {
 impl Version {
     /// Get the number of "modules" on each size of the QR code, i.e. the width
     /// and height of the code.
-    #[unstable]
     pub fn width(&self) -> i16 {
         match *self {
             Version::Normal(v) => v * 4 + 17,
@@ -127,7 +120,6 @@ impl Version {
     }
 
     /// The number of bits needed to encode the mode indicator.
-    #[unstable]
     pub fn mode_bits_count(&self) -> usize {
         match *self {
             Version::Micro(a) => (a - 1) as usize,
@@ -136,7 +128,6 @@ impl Version {
     }
 
     /// Checks whether is version refers to a Micro QR code.
-    #[unstable]
     pub fn is_micro(&self) -> bool {
         match *self {
             Version::Normal(_) => false,
@@ -151,7 +142,6 @@ impl Version {
 //{{{ Mode indicator
 
 /// The mode indicator, which specifies the character set of the encoded data.
-#[unstable]
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum Mode {
     /// The data contains only characters 0 to 9.
@@ -177,7 +167,6 @@ impl Mode {
     ///
     /// This method will return `Err(QrError::UnsupportedCharacterSet)` if the
     /// mode is not supported in the given version.
-    #[unstable]
     pub fn length_bits_count(&self, version: Version) -> usize {
         match version {
             Version::Micro(a) => {
@@ -217,7 +206,6 @@ impl Mode {
     ///
     /// Note that in Kanji mode, the `raw_data_len` is the number of Kanjis,
     /// i.e. half the total size of bytes.
-    #[unstable]
     pub fn data_bits_count(&self, raw_data_len: usize) -> usize {
         match *self {
             Mode::Numeric => (raw_data_len * 10 + 2) / 3,

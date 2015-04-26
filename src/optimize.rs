@@ -1,5 +1,3 @@
-#![unstable]
-
 //! Find the optimal data mode sequence to encode a piece of data.
 use std::slice::Iter;
 use types::{Mode, Version};

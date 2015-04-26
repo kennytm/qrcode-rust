@@ -1,5 +1,3 @@
-#![unstable]
-
 //! The `bits` module encodes binary data into raw bits used in a QR code.
 
 use std::cmp::min;
@@ -165,7 +163,6 @@ impl Bits {
     ///
     /// If the mode is not supported in the provided version, this method
     /// returns `Err(QrError::UnsupportedCharacterSet)`.
-    #[unstable]
     pub fn push_mode_indicator(&mut self, mode: ExtendedMode) -> QrResult<()> {
         let number = match (self.version, mode) {
             (Version::Micro(1), ExtendedMode::Data(Mode::Numeric)) => return Ok(()),
@@ -308,7 +305,6 @@ impl Bits {
     /// Encodes a numeric string to the bits.
     ///
     /// The data should only contain the characters 0 to 9.
-    #[unstable]
     pub fn push_numeric_data(&mut self, data: &[u8]) -> QrResult<()> {
         try!(self.push_header(Mode::Numeric, data.len()));
         for chunk in data.chunks(3) {
@@ -405,7 +401,6 @@ impl Bits {
     ///
     /// The data should only contain the charaters A to Z (excluding lowercase),
     /// 0 to 9, space, `$`, `%`, `*`, `+`, `-`, `.`, `/` or `:`.
-    #[unstable]
     pub fn push_alphanumeric_data(&mut self, data: &[u8]) -> QrResult<()> {
         try!(self.push_header(Mode::Alphanumeric, data.len()));
         for chunk in data.chunks(2) {
@@ -453,7 +448,6 @@ mod alphanumeric_tests {
 
 impl Bits {
     /// Encodes 8-bit byte data to the bits.
-    #[unstable]
     pub fn push_byte_data(&mut self, data: &[u8]) -> QrResult<()> {
         try!(self.push_header(Mode::Byte, data.len()));
         for b in data {
@@ -503,7 +497,6 @@ mod byte_tests {
 
 impl Bits {
     /// Encodes Shift JIS double-byte data to the bits.
-    #[unstable]
     pub fn push_kanji_data(&mut self, data: &[u8]) -> QrResult<()> {
         try!(self.push_header(Mode::Kanji, data.len()/2));
         for kanji in data.chunks(2) {
@@ -656,7 +649,6 @@ static DATA_LENGTHS: [[usize; 4]; 44] = [
 
 impl Bits {
     /// Pushes the ending bits to indicate no more data.
-    #[unstable]
     pub fn push_terminator(&mut self, ec_level: EcLevel) -> QrResult<()> {
         let terminator_size = match self.version {
             Version::Micro(a) => (a as usize) * 2 + 1,
@@ -842,7 +834,6 @@ pub fn encode_auto(data: &[u8], ec_level: EcLevel) -> QrResult<Bits> {
 
 /// Finds the smallest version (QR code only) that can store N bits of data
 /// in the given error correction level.
-#[unstable]
 fn find_min_version(length: usize, ec_level: EcLevel) -> Version {
     let mut min = 0;
     let mut max = 39;

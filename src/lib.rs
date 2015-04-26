@@ -18,7 +18,6 @@
 //!     }
 //!
 
-#![unstable]
 #![cfg_attr(test, feature(test))] // Unstable libraries
 
 #[cfg(test)]

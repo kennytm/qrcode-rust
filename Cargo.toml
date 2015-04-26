@@ -2,7 +2,7 @@
 name = "qrcode"
 description = "QR code encoder in Rust"
 license = "Apache-2.0"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["kennytm <kennytm@gmail.com>"]
 keywords = ["qrcode"]
 repository = "https://github.com/kennytm/qrcode-rust"
@@ -12,3 +12,5 @@ documentation = "http://www.rust-ci.org/kennytm/qrcode-rust/doc/qrcode/index.htm
 [dependencies]
 num = "*"
 
+[[bin]]
+name = "qrencode"
