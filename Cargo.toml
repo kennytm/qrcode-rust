@@ -12,5 +12,8 @@ documentation = "http://www.rust-ci.org/kennytm/qrcode-rust/doc/qrcode/index.htm
 [dependencies]
 num = "*"
 
+[features]
+bench = []
+
 [[bin]]
 name = "qrencode"

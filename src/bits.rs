@@ -2,7 +2,7 @@
 
 use std::cmp::min;
 
-#[cfg(test)]
+#[cfg(feature="bench")]
 use test::Bencher;
 
 use types::{QrResult, QrError, Mode, EcLevel, Version};
@@ -122,6 +122,7 @@ fn test_push_number() {
                            0b1__0000000]);  // 128
 }
 
+#[cfg(feature="bench")]
 #[bench]
 fn bench_push_splitted_bytes(bencher: &mut Bencher) {
     bencher.iter(|| {
