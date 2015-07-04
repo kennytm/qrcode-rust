@@ -8,6 +8,9 @@ keywords = ["qrcode"]
 repository = "https://github.com/kennytm/qrcode-rust"
 readme = "README.md"
 documentation = "http://kennytm.github.io/qrcode-rust/qrcode-rust/qrcode/"
+exclude = [
+    "scripts/*", ".travis.yml", ".gitignore"
+]
 
 [dependencies]
 num = "*"
