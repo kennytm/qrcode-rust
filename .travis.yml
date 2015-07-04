@@ -1,10 +1,11 @@
-env:
-  global:
-    - secure: XR0z4IBBGJP6jB0CalptPbGOhAd4HvZb5l35/SPec5sAF+9Z4tQHa7nkg9TkJd6Yf6AVyfDKCA/knVrTzrf883UfWUXMLtr1/Y5kSqEJ+bSGapRAjECHS0+Ts56N6Rqrs8mhXDtl21PtUQnvQDTedm/85VXbHqnX9kgCqVQMtCs=
-
 language: rust
+sudo: false
+matrix:
+  include:
+    - rust: stable
+    - rust: beta
+    - rust: nightly
 
-after_script:
+after_success:
   - cargo doc
-  - mv target/doc doc
-  - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh
+  - curl https://raw.githubusercontent.com/kmcallister/travis-doc-upload/master/travis-doc-upload.sh | sh

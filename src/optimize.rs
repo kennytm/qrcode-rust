@@ -2,7 +2,7 @@
 use std::slice::Iter;
 use types::{Mode, Version};
 
-#[cfg(test)]
+#[cfg(feature="bench")]
 use test::Bencher;
 
 //------------------------------------------------------------------------------
@@ -451,6 +451,7 @@ mod optimize_tests {
 
 }
 
+#[cfg(feature="bench")]
 #[bench]
 fn bench_optimize(bencher: &mut Bencher) {
     use types::Version;
