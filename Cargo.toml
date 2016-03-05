@@ -2,7 +2,7 @@
 name = "qrcode"
 description = "QR code encoder in Rust"
 license = "Apache-2.0"
-version = "0.1.6"
+version = "0.1.7"
 authors = ["kennytm <kennytm@gmail.com>"]
 keywords = ["qrcode"]
 repository = "https://github.com/kennytm/qrcode-rust"
@@ -13,7 +13,7 @@ exclude = [
 ]
 
 [dependencies]
-num = "*"
+num = "0.1"
 
 [features]
 bench = []
