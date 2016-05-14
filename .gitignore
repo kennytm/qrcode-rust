@@ -4,3 +4,4 @@
 .DS_Store
 *.o
 __pycache__
+Cargo.lock

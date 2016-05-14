@@ -1,11 +1,55 @@
+# Copied from https://github.com/kennytm/extprim/blob/master/.travis.yml :)
+
 language: rust
 sudo: false
+
+addons:
+    apt:
+        packages:
+            - libcurl4-openssl-dev
+            - libelf-dev
+            - libdw-dev
+            - binutils-dev
+            - gcc-multilib
+
+os:
+    - linux
+    - osx
+
+rust:
+    - 1.8.0
+    - nightly
+
+env:
+    global:
+        - TRAVIS_CARGO_NIGHTLY_FEATURE=bench
+    matrix:
+        - ARCH=x86_64
+        - ARCH=i686
+
 matrix:
-  include:
-    - rust: stable
-    - rust: beta
-    - rust: nightly
+    allow_failures:
+        - env: ARCH=i686
+        # FIXME: all i686 build panics with the message "Box<Any>", cause all `should_panic` tests to fail.
+
+install:
+    - if [ "$TRAVIS_OS_NAME" = 'linux' ]; then OS=unknown-linux-gnu; else OS=apple-darwin; fi
+    - SYSROOT=$(rustc --print sysroot)
+    - export HOST=$ARCH-$OS
+    - |
+        if [ ! -d "$SYSROOT/lib/rustlib/$HOST" ]; then
+            curl -SfLO "https://static.rust-lang.org/dist/rust-$TRAVIS_RUST_VERSION-$HOST.tar.gz" &&
+            tar xf "rust-$TRAVIS_RUST_VERSION-$HOST.tar.gz" "rust-$TRAVIS_RUST_VERSION-$HOST/rust-std-$HOST/lib/rustlib/$HOST" &&
+            mv "rust-$TRAVIS_RUST_VERSION-$HOST/rust-std-$HOST/lib/rustlib/$HOST" "$SYSROOT/lib/rustlib"
+        fi
+
+before_script:
+    - pip install 'travis-cargo<0.2' --user
+    - export PATH=$HOME/.local/bin:$HOME/Library/Python/2.7/bin:$PATH
+
+script:
+    - cargo test --target "$HOST"
+    - travis-cargo bench -- --target "$HOST"
 
 after_success:
-  - cargo doc
-  - curl https://raw.githubusercontent.com/kmcallister/travis-doc-upload/master/travis-doc-upload.sh | sh
+    - travis-cargo coveralls --no-sudo --verify
