@@ -188,6 +188,7 @@ impl QrCode {
     }
 }
 
+/// Get the color at a point.
 impl Index<(usize, usize)> for QrCode {
     type Output = bool;
 
@@ -196,6 +197,17 @@ impl Index<(usize, usize)> for QrCode {
         &self.content[index]
     }
 }
+
+/// Get the color sequence of a row.
+impl Index<usize> for QrCode {
+    type Output = [bool];
+
+    fn index(&self, y: usize) -> &[bool] {
+        let index = y * self.width;
+        &self.content[index..index+self.width]
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
