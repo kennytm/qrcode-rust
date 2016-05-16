@@ -53,7 +53,7 @@ impl QrCode {
     ///
     ///     let code = QrCode::new(b"Some data").unwrap();
     ///
-    pub fn new(data: &[u8]) -> QrResult<QrCode> {
+    pub fn new<D: AsRef<[u8]>>(data: D) -> QrResult<QrCode> {
         QrCode::with_error_correction_level(data, EcLevel::M)
     }
 
@@ -66,8 +66,8 @@ impl QrCode {
     ///
     ///     let code = QrCode::with_error_correction_level(b"Some data", EcLevel::H).unwrap();
     ///
-    pub fn with_error_correction_level(data: &[u8], ec_level: EcLevel) -> QrResult<QrCode> {
-        let bits = try!(bits::encode_auto(data, ec_level));
+    pub fn with_error_correction_level<D: AsRef<[u8]>>(data: D, ec_level: EcLevel) -> QrResult<QrCode> {
+        let bits = try!(bits::encode_auto(data.as_ref(), ec_level));
         QrCode::with_bits(bits, ec_level)
     }
 
@@ -84,9 +84,9 @@ impl QrCode {
     ///
     ///     let micro_code = QrCode::with_version(b"123", Version::Micro(1), EcLevel::L).unwrap();
     ///
-    pub fn with_version(data: &[u8], version: Version, ec_level: EcLevel) -> QrResult<QrCode> {
+    pub fn with_version<D: AsRef<[u8]>>(data: D, version: Version, ec_level: EcLevel) -> QrResult<QrCode> {
         let mut bits = bits::Bits::new(version);
-        try!(bits.push_optimal_data(data));
+        try!(bits.push_optimal_data(data.as_ref()));
         try!(bits.push_terminator(ec_level));
         QrCode::with_bits(bits, ec_level)
     }
