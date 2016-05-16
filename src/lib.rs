@@ -184,7 +184,7 @@ impl QrCode {
     /// Converts the QR code to a vector of booleans. Each entry represents the
     /// color of the module, with "true" means dark and "false" means light.
     pub fn into_vec(self) -> Vec<bool> {
-        self.content.clone()
+        self.content
     }
 }
 
