@@ -2,18 +2,18 @@
 name = "qrcode"
 description = "QR code encoder in Rust"
 license = "Apache-2.0"
-version = "0.1.8"
+version = "0.2.0"
 authors = ["kennytm <kennytm@gmail.com>"]
 keywords = ["qrcode"]
 repository = "https://github.com/kennytm/qrcode-rust"
 readme = "README.md"
-documentation = "http://kennytm.github.io/qrcode-rust/qrcode-rust/qrcode/"
+documentation = "http://kennytm.github.io/qrcode-rust/"
 exclude = [
-    "scripts/*", ".travis.yml", ".gitignore"
+    ".travis.yml", ".gitignore"
 ]
 
 [dependencies]
-num = "0.1"
+num-traits = "0.1.32"
 
 [features]
 bench = []

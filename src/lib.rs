@@ -22,7 +22,7 @@
 
 #[cfg(feature="bench")]
 extern crate test;
-extern crate num;
+extern crate num_traits;
 
 use std::ops::Index;
 

@@ -11,13 +11,13 @@
 
 use std::iter::repeat;
 use std::cmp::max;
-use num::traits::PrimInt;
 use std::ops::Range;
+
+use num_traits::PrimInt;
 
 use types::{Version, EcLevel};
 
-// TODO remove this after it is decided whether we want `p ... q` or
-//      `(p .. q).inclusive()`
+// TODO remove this after `p ... q` becomes stable. See rust-lang/rust#28237.
 fn range_inclusive<N: PrimInt>(from: N, to: N) -> Range<N> {
     from .. (to + N::one())
 }
@@ -1884,7 +1884,7 @@ impl Canvas {
 //}}}
 //------------------------------------------------------------------------------
 
-// Copyright 2014 Kenny Chan
+// Copyright 2014-2016 kennytm
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy of
