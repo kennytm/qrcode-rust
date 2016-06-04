@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Bits` struct in crate `qrcode`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Bits">
+
+    <title>qrcode::bits::Bits - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>qrcode</a>::<wbr><a href='index.html'>bits</a></p><script>window.sidebarCurrent = {name: 'Bits', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>qrcode</a>::<wbr><a href='index.html'>bits</a>::<wbr><a class='struct' href=''>Bits</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-201' class='srclink' href='../../src/qrcode/src/bits.rs.html#15-19' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Bits {
+    // some fields omitted
+}</pre><div class='docblock'><p>The <code>Bits</code> structure stores the encoded data for a QR code.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../qrcode/bits/struct.Bits.html' title='qrcode::bits::Bits'>Bits</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-205' class='srclink' href='../../src/qrcode/src/bits.rs.html#21-104' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(version: <a class='enum' href='../../qrcode/types/enum.Version.html' title='qrcode::types::Version'>Version</a>) -&gt; <a class='struct' href='../../qrcode/bits/struct.Bits.html' title='qrcode::bits::Bits'>Bits</a></code></h4>
+<div class='docblock'><p>Constructs a new, empty bits structure.</p>
+</div><h4 id='method.into_bytes' class='method'><code>fn <a href='#method.into_bytes' class='fnname'>into_bytes</a>(self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code></h4>
+<div class='docblock'><p>Convert the bits into a bytes vector.</p>
+</div><h4 id='method.len' class='method'><code>fn <a href='#method.len' class='fnname'>len</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h4>
+<div class='docblock'><p>Total number of bits currently pushed.</p>
+</div><h4 id='method.max_len' class='method'><code>fn <a href='#method.max_len' class='fnname'>max_len</a>(&amp;self, ec_level: <a class='enum' href='../../qrcode/types/enum.EcLevel.html' title='qrcode::types::EcLevel'>EcLevel</a>) -&gt; <a class='type' href='../../qrcode/types/type.QrResult.html' title='qrcode::types::QrResult'>QrResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>&gt;</code></h4>
+<div class='docblock'><p>The maximum number of bits allowed by the provided QR code version and
+error correction level.</p>
+</div><h4 id='method.version' class='method'><code>fn <a href='#method.version' class='fnname'>version</a>(&amp;self) -&gt; <a class='enum' href='../../qrcode/types/enum.Version.html' title='qrcode::types::Version'>Version</a></code></h4>
+<div class='docblock'><p>Version of the QR code.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../qrcode/bits/struct.Bits.html' title='qrcode::bits::Bits'>Bits</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-246' class='srclink' href='../../src/qrcode/src/bits.rs.html#168-193' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.push_mode_indicator' class='method'><code>fn <a href='#method.push_mode_indicator' class='fnname'>push_mode_indicator</a>(&amp;mut self, mode: <a class='enum' href='../../qrcode/bits/enum.ExtendedMode.html' title='qrcode::bits::ExtendedMode'>ExtendedMode</a>) -&gt; <a class='type' href='../../qrcode/types/type.QrResult.html' title='qrcode::types::QrResult'>QrResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>Push the mode indicator to the end of the bits.</p>
+
+<p>If the mode is not supported in the provided version, this method
+returns <code>Err(QrError::UnsupportedCharacterSet)</code>.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../qrcode/bits/struct.Bits.html' title='qrcode::bits::Bits'>Bits</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-252' class='srclink' href='../../src/qrcode/src/bits.rs.html#199-255' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.push_eci_designator' class='method'><code>fn <a href='#method.push_eci_designator' class='fnname'>push_eci_designator</a>(&amp;mut self, eci_designator: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u32.html'>u32</a>) -&gt; <a class='type' href='../../qrcode/types/type.QrResult.html' title='qrcode::types::QrResult'>QrResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>Push an ECI (Extended Channel Interpretation) designator to the bits.</p>
+
+<p>An ECI designator is a 6-digit number to specify the character set of
+the following binary data. After calling this method, one could call
+<code>.push_byte_data()</code> or similar methods to insert the actual data, e.g.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='attribute'>#<span class='op'>!</span>[<span class='ident'>allow</span>(<span class='ident'>unused_must_use</span>)]</span>
+
+<span class='kw'>use</span> <span class='ident'>qrcode</span>::<span class='ident'>bits</span>::<span class='ident'>Bits</span>;
+<span class='kw'>use</span> <span class='ident'>qrcode</span>::<span class='ident'>types</span>::<span class='ident'>Version</span>;
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>bits</span> <span class='op'>=</span> <span class='ident'>Bits</span>::<span class='ident'>new</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>1</span>));
+<span class='ident'>bits</span>.<span class='ident'>push_eci_designator</span>(<span class='number'>9</span>); <span class='comment'>// 9 = ISO-8859-7 (Greek).</span>
+<span class='ident'>bits</span>.<span class='ident'>push_byte_data</span>(<span class='string'>b&quot;\xa1\xa2\xa3\xa4\xa5&quot;</span>); <span class='comment'>// ΑΒΓΔΕ</span></pre>
+
+<p>The full list of ECI designator values can be found from
+<a href="http://strokescribe.com/en/ECI.html">http://strokescribe.com/en/ECI.html</a>. Some example values are:</p>
+
+<table>
+<thead>
+<tr>
+<th>ECI #</th>
+<th>Character set</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>3</td>
+<td>ISO-8859-1 (Western European)</td>
+</tr>
+<tr>
+<td>20</td>
+<td>Shift JIS (Japanese)</td>
+</tr>
+<tr>
+<td>23</td>
+<td>Windows 1252 (Latin 1) (Western European)</td>
+</tr>
+<tr>
+<td>25</td>
+<td>UTF-16 Big Endian</td>
+</tr>
+<tr>
+<td>26</td>
+<td>UTF-8</td>
+</tr>
+<tr>
+<td>28</td>
+<td>Big 5 (Traditional Chinese)</td>
+</tr>
+<tr>
+<td>29</td>
+<td>GB-18030 (Simplified Chinese)</td>
+</tr>
+<tr>
+<td>30</td>
+<td>EUC-KR (Korean)</td>
+</tr>
+</tbody>
+</table>
+
+<p>If the QR code version does not support ECI, this method will return
+<code>Err(QrError::UnsupportedCharacterSet)</code>.</p>
+
+<p>If the designator is outside of the expected range, this method will
+return <code>Err(QrError::InvalidECIDesignator)</code>.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../qrcode/bits/struct.Bits.html' title='qrcode::bits::Bits'>Bits</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-258' class='srclink' href='../../src/qrcode/src/bits.rs.html#303-324' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.push_numeric_data' class='method'><code>fn <a href='#method.push_numeric_data' class='fnname'>push_numeric_data</a>(&amp;mut self, data: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='type' href='../../qrcode/types/type.QrResult.html' title='qrcode::types::QrResult'>QrResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>Encodes a numeric string to the bits.</p>
+
+<p>The data should only contain the characters 0 to 9.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../qrcode/bits/struct.Bits.html' title='qrcode::bits::Bits'>Bits</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-283' class='srclink' href='../../src/qrcode/src/bits.rs.html#406-420' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.push_alphanumeric_data' class='method'><code>fn <a href='#method.push_alphanumeric_data' class='fnname'>push_alphanumeric_data</a>(&amp;mut self, data: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='type' href='../../qrcode/types/type.QrResult.html' title='qrcode::types::QrResult'>QrResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>Encodes an alphanumeric string to the bits.</p>
+
+<p>The data should only contain the charaters A to Z (excluding lowercase),
+0 to 9, space, <code>$</code>, <code>%</code>, <code>*</code>, <code>+</code>, <code>-</code>, <code>.</code>, <code>/</code> or <code>:</code>.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../qrcode/bits/struct.Bits.html' title='qrcode::bits::Bits'>Bits</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-297' class='srclink' href='../../src/qrcode/src/bits.rs.html#456-465' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.push_byte_data' class='method'><code>fn <a href='#method.push_byte_data' class='fnname'>push_byte_data</a>(&amp;mut self, data: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='type' href='../../qrcode/types/type.QrResult.html' title='qrcode::types::QrResult'>QrResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>Encodes 8-bit byte data to the bits.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../qrcode/bits/struct.Bits.html' title='qrcode::bits::Bits'>Bits</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-304' class='srclink' href='../../src/qrcode/src/bits.rs.html#505-520' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.push_kanji_data' class='method'><code>fn <a href='#method.push_kanji_data' class='fnname'>push_kanji_data</a>(&amp;mut self, data: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='type' href='../../qrcode/types/type.QrResult.html' title='qrcode::types::QrResult'>QrResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>Encodes Shift JIS double-byte data to the bits.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../qrcode/bits/struct.Bits.html' title='qrcode::bits::Bits'>Bits</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-314' class='srclink' href='../../src/qrcode/src/bits.rs.html#556-600' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.push_fnc1_first_position' class='method'><code>fn <a href='#method.push_fnc1_first_position' class='fnname'>push_fnc1_first_position</a>(&amp;mut self) -&gt; <a class='type' href='../../qrcode/types/type.QrResult.html' title='qrcode::types::QrResult'>QrResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>Encodes an indicator that the following data are formatted according to
+the UCC/EAN Application Identifiers standard.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='attribute'>#<span class='op'>!</span>[<span class='ident'>allow</span>(<span class='ident'>unused_must_use</span>)]</span>
+
+<span class='kw'>use</span> <span class='ident'>qrcode</span>::<span class='ident'>bits</span>::<span class='ident'>Bits</span>;
+<span class='kw'>use</span> <span class='ident'>qrcode</span>::<span class='ident'>types</span>::<span class='ident'>Version</span>;
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>bits</span> <span class='op'>=</span> <span class='ident'>Bits</span>::<span class='ident'>new</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>1</span>));
+<span class='ident'>bits</span>.<span class='ident'>push_fnc1_first_position</span>();
+<span class='ident'>bits</span>.<span class='ident'>push_numeric_data</span>(<span class='string'>b&quot;01049123451234591597033130128&quot;</span>);
+<span class='ident'>bits</span>.<span class='ident'>push_alphanumeric_data</span>(<span class='string'>b&quot;%10ABC123&quot;</span>);</pre>
+
+<p>In QR code, the character <code>%</code> is used as the data field separator (0x1D).</p>
+</div><h4 id='method.push_fnc1_second_position' class='method'><code>fn <a href='#method.push_fnc1_second_position' class='fnname'>push_fnc1_second_position</a>(&amp;mut self, application_indicator: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>) -&gt; <a class='type' href='../../qrcode/types/type.QrResult.html' title='qrcode::types::QrResult'>QrResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>Encodes an indicator that the following data are formatted in accordance
+with specific industry or application specifications previously agreed
+with AIM International.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='attribute'>#<span class='op'>!</span>[<span class='ident'>allow</span>(<span class='ident'>unused_must_use</span>)]</span>
+
+<span class='kw'>use</span> <span class='ident'>qrcode</span>::<span class='ident'>bits</span>::<span class='ident'>Bits</span>;
+<span class='kw'>use</span> <span class='ident'>qrcode</span>::<span class='ident'>types</span>::<span class='ident'>Version</span>;
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>bits</span> <span class='op'>=</span> <span class='ident'>Bits</span>::<span class='ident'>new</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>1</span>));
+<span class='ident'>bits</span>.<span class='ident'>push_fnc1_second_position</span>(<span class='number'>37</span>);
+<span class='ident'>bits</span>.<span class='ident'>push_alphanumeric_data</span>(<span class='string'>b&quot;AA1234BBB112&quot;</span>);
+<span class='ident'>bits</span>.<span class='ident'>push_byte_data</span>(<span class='string'>b&quot;text text text text\r&quot;</span>);</pre>
+
+<p>If the application indicator is a single Latin alphabet (a–z / A–Z),
+please pass in its ASCII value + 100:</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='ident'>bits</span>.<span class='ident'>push_fnc1_second_position</span>(<span class='string'>b&#39;A&#39;</span> <span class='op'>+</span> <span class='number'>100</span>);</pre>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../qrcode/bits/struct.Bits.html' title='qrcode::bits::Bits'>Bits</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-325' class='srclink' href='../../src/qrcode/src/bits.rs.html#657-692' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.push_terminator' class='method'><code>fn <a href='#method.push_terminator' class='fnname'>push_terminator</a>(&amp;mut self, ec_level: <a class='enum' href='../../qrcode/types/enum.EcLevel.html' title='qrcode::types::EcLevel'>EcLevel</a>) -&gt; <a class='type' href='../../qrcode/types/type.QrResult.html' title='qrcode::types::QrResult'>QrResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>Pushes the ending bits to indicate no more data.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../qrcode/bits/struct.Bits.html' title='qrcode::bits::Bits'>Bits</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-340' class='srclink' href='../../src/qrcode/src/bits.rs.html#755-778' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.push_segments' class='method'><code>fn <a href='#method.push_segments' class='fnname'>push_segments</a>&lt;I&gt;(&amp;mut self, data: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, segments_iter: I) -&gt; <a class='type' href='../../qrcode/types/type.QrResult.html' title='qrcode::types::QrResult'>QrResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt; <span class='where'>where I: <a class='trait' href='https://doc.rust-lang.org/nightly/core/iter/iterator/trait.Iterator.html' title='core::iter::iterator::Iterator'>Iterator</a>&lt;Item=<a class='struct' href='../../qrcode/optimize/struct.Segment.html' title='qrcode::optimize::Segment'>Segment</a>&gt;</span></code></h4>
+<div class='docblock'><p>Push a segmented data to the bits, and then terminate it.</p>
+</div><h4 id='method.push_optimal_data' class='method'><code>fn <a href='#method.push_optimal_data' class='fnname'>push_optimal_data</a>(&amp;mut self, data: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='type' href='../../qrcode/types/type.QrResult.html' title='qrcode::types::QrResult'>QrResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>Pushes the data the bits, using the optimal encoding.</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "qrcode";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

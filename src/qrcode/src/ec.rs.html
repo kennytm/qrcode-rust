@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="Source to the Rust file `src/ec.rs`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang">
+
+    <title>ec.rs.html -- source</title>
+
+    <link rel="stylesheet" type="text/css" href="../../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content source"><pre class="line-numbers"><span id="1">  1</span>
+<span id="2">  2</span>
+<span id="3">  3</span>
+<span id="4">  4</span>
+<span id="5">  5</span>
+<span id="6">  6</span>
+<span id="7">  7</span>
+<span id="8">  8</span>
+<span id="9">  9</span>
+<span id="10"> 10</span>
+<span id="11"> 11</span>
+<span id="12"> 12</span>
+<span id="13"> 13</span>
+<span id="14"> 14</span>
+<span id="15"> 15</span>
+<span id="16"> 16</span>
+<span id="17"> 17</span>
+<span id="18"> 18</span>
+<span id="19"> 19</span>
+<span id="20"> 20</span>
+<span id="21"> 21</span>
+<span id="22"> 22</span>
+<span id="23"> 23</span>
+<span id="24"> 24</span>
+<span id="25"> 25</span>
+<span id="26"> 26</span>
+<span id="27"> 27</span>
+<span id="28"> 28</span>
+<span id="29"> 29</span>
+<span id="30"> 30</span>
+<span id="31"> 31</span>
+<span id="32"> 32</span>
+<span id="33"> 33</span>
+<span id="34"> 34</span>
+<span id="35"> 35</span>
+<span id="36"> 36</span>
+<span id="37"> 37</span>
+<span id="38"> 38</span>
+<span id="39"> 39</span>
+<span id="40"> 40</span>
+<span id="41"> 41</span>
+<span id="42"> 42</span>
+<span id="43"> 43</span>
+<span id="44"> 44</span>
+<span id="45"> 45</span>
+<span id="46"> 46</span>
+<span id="47"> 47</span>
+<span id="48"> 48</span>
+<span id="49"> 49</span>
+<span id="50"> 50</span>
+<span id="51"> 51</span>
+<span id="52"> 52</span>
+<span id="53"> 53</span>
+<span id="54"> 54</span>
+<span id="55"> 55</span>
+<span id="56"> 56</span>
+<span id="57"> 57</span>
+<span id="58"> 58</span>
+<span id="59"> 59</span>
+<span id="60"> 60</span>
+<span id="61"> 61</span>
+<span id="62"> 62</span>
+<span id="63"> 63</span>
+<span id="64"> 64</span>
+<span id="65"> 65</span>
+<span id="66"> 66</span>
+<span id="67"> 67</span>
+<span id="68"> 68</span>
+<span id="69"> 69</span>
+<span id="70"> 70</span>
+<span id="71"> 71</span>
+<span id="72"> 72</span>
+<span id="73"> 73</span>
+<span id="74"> 74</span>
+<span id="75"> 75</span>
+<span id="76"> 76</span>
+<span id="77"> 77</span>
+<span id="78"> 78</span>
+<span id="79"> 79</span>
+<span id="80"> 80</span>
+<span id="81"> 81</span>
+<span id="82"> 82</span>
+<span id="83"> 83</span>
+<span id="84"> 84</span>
+<span id="85"> 85</span>
+<span id="86"> 86</span>
+<span id="87"> 87</span>
+<span id="88"> 88</span>
+<span id="89"> 89</span>
+<span id="90"> 90</span>
+<span id="91"> 91</span>
+<span id="92"> 92</span>
+<span id="93"> 93</span>
+<span id="94"> 94</span>
+<span id="95"> 95</span>
+<span id="96"> 96</span>
+<span id="97"> 97</span>
+<span id="98"> 98</span>
+<span id="99"> 99</span>
+<span id="100">100</span>
+<span id="101">101</span>
+<span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
+<span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
+<span id="364">364</span>
+<span id="365">365</span>
+<span id="366">366</span>
+<span id="367">367</span>
+<span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
+<span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+<span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
+<span id="395">395</span>
+<span id="396">396</span>
+<span id="397">397</span>
+<span id="398">398</span>
+<span id="399">399</span>
+<span id="400">400</span>
+<span id="401">401</span>
+<span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
+<span id="407">407</span>
+<span id="408">408</span>
+<span id="409">409</span>
+<span id="410">410</span>
+<span id="411">411</span>
+<span id="412">412</span>
+<span id="413">413</span>
+<span id="414">414</span>
+<span id="415">415</span>
+<span id="416">416</span>
+<span id="417">417</span>
+<span id="418">418</span>
+<span id="419">419</span>
+<span id="420">420</span>
+<span id="421">421</span>
+<span id="422">422</span>
+<span id="423">423</span>
+<span id="424">424</span>
+<span id="425">425</span>
+<span id="426">426</span>
+<span id="427">427</span>
+<span id="428">428</span>
+<span id="429">429</span>
+<span id="430">430</span>
+<span id="431">431</span>
+<span id="432">432</span>
+<span id="433">433</span>
+<span id="434">434</span>
+<span id="435">435</span>
+<span id="436">436</span>
+<span id="437">437</span>
+<span id="438">438</span>
+<span id="439">439</span>
+<span id="440">440</span>
+<span id="441">441</span>
+<span id="442">442</span>
+<span id="443">443</span>
+<span id="444">444</span>
+<span id="445">445</span>
+<span id="446">446</span>
+<span id="447">447</span>
+<span id="448">448</span>
+<span id="449">449</span>
+<span id="450">450</span>
+<span id="451">451</span>
+<span id="452">452</span>
+<span id="453">453</span>
+<span id="454">454</span>
+<span id="455">455</span>
+<span id="456">456</span>
+<span id="457">457</span>
+<span id="458">458</span>
+<span id="459">459</span>
+<span id="460">460</span>
+</pre><pre class='rust '>
+<span class='doccomment'>//! The `ec` module applies the Reed-Solomon error correction codes.</span>
+
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>iter</span>::<span class='ident'>repeat</span>;
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>ops</span>::<span class='ident'>Deref</span>;
+
+<span class='kw'>use</span> <span class='ident'>types</span>::{<span class='ident'>QrResult</span>, <span class='ident'>Version</span>, <span class='ident'>EcLevel</span>};
+
+<span class='comment'>//------------------------------------------------------------------------------</span>
+<span class='comment'>//{{{ Error correction primitive</span>
+
+<span class='doccomment'>/// Creates the error correction code in N bytes.</span>
+<span class='doccomment'>///</span>
+<span class='doccomment'>/// This method only supports computing the error-correction code up to</span>
+<span class='doccomment'>/// 69 bytes. Longer blocks will result in task panic.</span>
+<span class='doccomment'>///</span>
+<span class='doccomment'>/// This method treats the data as a polynomial of the form</span>
+<span class='doccomment'>/// (a[0] x&lt;sup&gt;m+n&lt;/sup&gt; + a[1] x&lt;sup&gt;m+n-1&lt;/sup&gt; + … + a[m] x&lt;sup&gt;n&lt;/sup&gt;) in</span>
+<span class='doccomment'>/// GF(256), and then computes the polynomial modulus with a generator</span>
+<span class='doccomment'>/// polynomial of degree N.</span>
+<span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>create_error_correction_code</span>(<span class='ident'>data</span>: <span class='kw-2'>&amp;</span>[<span class='ident'>u8</span>], <span class='ident'>ec_code_size</span>: <span class='ident'>usize</span>) <span class='op'>-&gt;</span> <span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>u8</span><span class='op'>&gt;</span> {
+    <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>res</span> <span class='op'>=</span> <span class='ident'>data</span>.<span class='ident'>to_vec</span>();
+    <span class='ident'>res</span>.<span class='ident'>extend</span>(<span class='ident'>repeat</span>(<span class='number'>0</span>).<span class='ident'>take</span>(<span class='ident'>ec_code_size</span>));
+
+    <span class='kw'>let</span> <span class='ident'>data_len</span> <span class='op'>=</span> <span class='ident'>data</span>.<span class='ident'>len</span>();
+    <span class='kw'>let</span> <span class='ident'>log_den</span> <span class='op'>=</span> <span class='ident'>GENERATOR_POLYNOMIALS</span>[<span class='ident'>ec_code_size</span>];
+
+    <span class='kw'>for</span> <span class='ident'>i</span> <span class='kw'>in</span> <span class='number'>0</span> .. <span class='ident'>data_len</span> {
+        <span class='kw'>let</span> <span class='ident'>lead_coeff</span> <span class='op'>=</span> <span class='ident'>res</span>[<span class='ident'>i</span>] <span class='kw'>as</span> <span class='ident'>usize</span>;
+        <span class='kw'>if</span> <span class='ident'>lead_coeff</span> <span class='op'>==</span> <span class='number'>0</span> {
+            <span class='kw'>continue</span>;
+        }
+
+        <span class='kw'>let</span> <span class='ident'>log_lead_coeff</span> <span class='op'>=</span> <span class='ident'>LOG_TABLE</span>[<span class='ident'>lead_coeff</span>] <span class='kw'>as</span> <span class='ident'>usize</span>;
+        <span class='kw'>for</span> (<span class='ident'>u</span>, <span class='ident'>v</span>) <span class='kw'>in</span> <span class='ident'>res</span>[<span class='ident'>i</span><span class='op'>+</span><span class='number'>1</span> ..].<span class='ident'>iter_mut</span>().<span class='ident'>zip</span>(<span class='ident'>log_den</span>.<span class='ident'>iter</span>()) {
+            <span class='op'>*</span><span class='ident'>u</span> <span class='op'>^=</span> <span class='ident'>EXP_TABLE</span>[((<span class='op'>*</span><span class='ident'>v</span> <span class='kw'>as</span> <span class='ident'>usize</span> <span class='op'>+</span> <span class='ident'>log_lead_coeff</span>) <span class='op'>%</span> <span class='number'>255</span>) <span class='kw'>as</span> <span class='ident'>usize</span>];
+        }
+    }
+
+    <span class='ident'>res</span>.<span class='ident'>into_iter</span>().<span class='ident'>skip</span>(<span class='ident'>data_len</span>).<span class='ident'>collect</span>()
+}
+
+<span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>test</span>)]</span>
+<span class='kw'>mod</span> <span class='ident'>ec_tests</span> {
+    <span class='kw'>use</span> <span class='ident'>ec</span>::<span class='ident'>create_error_correction_code</span>;
+
+    <span class='attribute'>#[<span class='ident'>test</span>]</span>
+    <span class='kw'>fn</span> <span class='ident'>test_poly_mod_1</span>() {
+        <span class='kw'>let</span> <span class='ident'>res</span> <span class='op'>=</span> <span class='ident'>create_error_correction_code</span>(<span class='string'>b&quot; [\x0bx\xd1r\xdcMC@\xec\x11\xec\x11\xec\x11&quot;</span>, <span class='number'>10</span>);
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>res</span>, <span class='string'>b&quot;\xc4#&#39;w\xeb\xd7\xe7\xe2]\x17&quot;</span>);
+    }
+
+    <span class='attribute'>#[<span class='ident'>test</span>]</span>
+    <span class='kw'>fn</span> <span class='ident'>test_poly_mod_2</span>() {
+        <span class='kw'>let</span> <span class='ident'>res</span> <span class='op'>=</span> <span class='ident'>create_error_correction_code</span>(<span class='string'>b&quot; [\x0bx\xd1r\xdcMC@\xec\x11\xec&quot;</span>, <span class='number'>13</span>);
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>res</span>, <span class='string'>b&quot;\xa8H\x16R\xd96\x9c\x00.\x0f\xb4z\x10&quot;</span>);
+    }
+
+    <span class='attribute'>#[<span class='ident'>test</span>]</span>
+    <span class='kw'>fn</span> <span class='ident'>test_poly_mod_3</span>() {
+        <span class='kw'>let</span> <span class='ident'>res</span> <span class='op'>=</span> <span class='ident'>create_error_correction_code</span>(<span class='string'>b&quot;CUF\x86W&amp;U\xc2w2\x06\x12\x06g&amp;&quot;</span>, <span class='number'>18</span>);
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>res</span>, <span class='string'>b&quot;\xd5\xc7\x0b-s\xf7\xf1\xdf\xe5\xf8\x9au\x9aoV\xa1o&#39;&quot;</span>);
+    }
+}
+
+<span class='comment'>//}}}</span>
+<span class='comment'>//------------------------------------------------------------------------------</span>
+<span class='comment'>//{{{ Interleave support</span>
+
+<span class='doccomment'>/// This method interleaves a vector of slices into a single vector.</span>
+<span class='doccomment'>///</span>
+<span class='doccomment'>/// It will first insert all the first elements of the slices in `blocks`, then</span>
+<span class='doccomment'>/// all the second elements, then all the third elements, and so on.</span>
+<span class='doccomment'>///</span>
+<span class='doccomment'>/// The longest slice must be at the last of `blocks`, and `blocks` must not be</span>
+<span class='doccomment'>/// empty.</span>
+<span class='kw'>fn</span> <span class='ident'>interleave</span><span class='op'>&lt;</span><span class='ident'>T</span>: <span class='ident'>Copy</span>, <span class='ident'>V</span>: <span class='ident'>Deref</span><span class='op'>&lt;</span><span class='ident'>Target</span><span class='op'>=</span>[<span class='ident'>T</span>]<span class='op'>&gt;&gt;</span>(<span class='ident'>blocks</span>: <span class='kw-2'>&amp;</span><span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>V</span><span class='op'>&gt;</span>) <span class='op'>-&gt;</span> <span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span> {
+    <span class='kw'>let</span> <span class='ident'>last_block_len</span> <span class='op'>=</span> <span class='ident'>blocks</span>.<span class='ident'>last</span>().<span class='ident'>unwrap</span>().<span class='ident'>len</span>();
+    <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>res</span> <span class='op'>=</span> <span class='ident'>Vec</span>::<span class='ident'>with_capacity</span>(<span class='ident'>last_block_len</span> <span class='op'>*</span> <span class='ident'>blocks</span>.<span class='ident'>len</span>());
+    <span class='kw'>for</span> <span class='ident'>i</span> <span class='kw'>in</span> <span class='number'>0</span> .. <span class='ident'>last_block_len</span> {
+        <span class='kw'>for</span> <span class='ident'>t</span> <span class='kw'>in</span> <span class='ident'>blocks</span> {
+            <span class='kw'>if</span> <span class='ident'>i</span> <span class='op'>&lt;</span> <span class='ident'>t</span>.<span class='ident'>len</span>() {
+                <span class='ident'>res</span>.<span class='ident'>push</span>(<span class='ident'>t</span>[<span class='ident'>i</span>]);
+            }
+        }
+    }
+    <span class='ident'>res</span>
+}
+
+<span class='attribute'>#[<span class='ident'>test</span>]</span>
+<span class='kw'>fn</span> <span class='ident'>test_interleave</span>() {
+    <span class='kw'>let</span> <span class='ident'>res</span> <span class='op'>=</span> <span class='ident'>interleave</span>(<span class='kw-2'>&amp;</span><span class='macro'>vec</span><span class='macro'>!</span>[<span class='kw-2'>&amp;</span><span class='string'>b&quot;1234&quot;</span>[..], <span class='string'>b&quot;5678&quot;</span>, <span class='string'>b&quot;abcdef&quot;</span>, <span class='string'>b&quot;ghijkl&quot;</span>]);
+    <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>res</span>, <span class='string'>b&quot;15ag26bh37ci48djekfl&quot;</span>);
+}
+
+<span class='comment'>//}}}</span>
+<span class='comment'>//------------------------------------------------------------------------------</span>
+<span class='comment'>//{{{ QR code error correction</span>
+
+<span class='doccomment'>/// Constructs data and error correction codewords ready to be put in the QR</span>
+<span class='doccomment'>/// code matrix.</span>
+<span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>construct_codewords</span>(<span class='ident'>rawbits</span>: <span class='kw-2'>&amp;</span>[<span class='ident'>u8</span>],
+                           <span class='ident'>version</span>: <span class='ident'>Version</span>,
+                           <span class='ident'>ec_level</span>: <span class='ident'>EcLevel</span>) <span class='op'>-&gt;</span> <span class='ident'>QrResult</span><span class='op'>&lt;</span>(<span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>u8</span><span class='op'>&gt;</span>, <span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>u8</span><span class='op'>&gt;</span>)<span class='op'>&gt;</span> {
+    <span class='kw'>let</span> (<span class='ident'>block_1_size</span>, <span class='ident'>block_1_count</span>, <span class='ident'>block_2_size</span>, <span class='ident'>block_2_count</span>) <span class='op'>=</span>
+        <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>version</span>.<span class='ident'>fetch</span>(<span class='ident'>ec_level</span>, <span class='kw-2'>&amp;</span><span class='ident'>DATA_BYTES_PER_BLOCK</span>));
+
+    <span class='kw'>let</span> <span class='ident'>blocks_count</span> <span class='op'>=</span> <span class='ident'>block_1_count</span> <span class='op'>+</span> <span class='ident'>block_2_count</span>;
+    <span class='kw'>let</span> <span class='ident'>block_1_end</span> <span class='op'>=</span> <span class='ident'>block_1_size</span> <span class='op'>*</span> <span class='ident'>block_1_count</span>;
+    <span class='kw'>let</span> <span class='ident'>total_size</span> <span class='op'>=</span> <span class='ident'>block_1_end</span> <span class='op'>+</span> <span class='ident'>block_2_size</span> <span class='op'>*</span> <span class='ident'>block_2_count</span>;
+
+    <span class='macro'>debug_assert_eq</span><span class='macro'>!</span>(<span class='ident'>rawbits</span>.<span class='ident'>len</span>(), <span class='ident'>total_size</span>);
+
+    <span class='comment'>// Divide the data into blocks.</span>
+    <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>blocks</span> <span class='op'>=</span> <span class='ident'>Vec</span>::<span class='ident'>with_capacity</span>(<span class='ident'>blocks_count</span>);
+    <span class='ident'>blocks</span>.<span class='ident'>extend</span>(<span class='ident'>rawbits</span>[..<span class='ident'>block_1_end</span>].<span class='ident'>chunks</span>(<span class='ident'>block_1_size</span>));
+    <span class='kw'>if</span> <span class='ident'>block_2_size</span> <span class='op'>&gt;</span> <span class='number'>0</span> {
+        <span class='ident'>blocks</span>.<span class='ident'>extend</span>(<span class='ident'>rawbits</span>[<span class='ident'>block_1_end</span>..].<span class='ident'>chunks</span>(<span class='ident'>block_2_size</span>));
+    }
+
+    <span class='comment'>// Generate EC codes.</span>
+    <span class='kw'>let</span> <span class='ident'>ec_bytes</span> <span class='op'>=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>version</span>.<span class='ident'>fetch</span>(<span class='ident'>ec_level</span>, <span class='kw-2'>&amp;</span><span class='ident'>EC_BYTES_PER_BLOCK</span>));
+    <span class='kw'>let</span> <span class='ident'>ec_codes</span> <span class='op'>=</span> <span class='ident'>blocks</span>.<span class='ident'>iter</span>()
+                         .<span class='ident'>map</span>(<span class='op'>|</span><span class='ident'>block</span><span class='op'>|</span> <span class='ident'>create_error_correction_code</span>(<span class='op'>*</span><span class='ident'>block</span>, <span class='ident'>ec_bytes</span>))
+                         .<span class='ident'>collect</span>::<span class='op'>&lt;</span><span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>u8</span><span class='op'>&gt;&gt;</span><span class='op'>&gt;</span>();
+
+    <span class='kw'>let</span> <span class='ident'>blocks_vec</span> <span class='op'>=</span> <span class='ident'>interleave</span>(<span class='kw-2'>&amp;</span><span class='ident'>blocks</span>);
+    <span class='kw'>let</span> <span class='ident'>ec_vec</span> <span class='op'>=</span> <span class='ident'>interleave</span>(<span class='kw-2'>&amp;</span><span class='ident'>ec_codes</span>);
+
+    <span class='prelude-val'>Ok</span>((<span class='ident'>blocks_vec</span>, <span class='ident'>ec_vec</span>))
+}
+
+<span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>test</span>)]</span>
+<span class='kw'>mod</span> <span class='ident'>construct_codewords_test</span> {
+    <span class='kw'>use</span> <span class='ident'>ec</span>::<span class='ident'>construct_codewords</span>;
+    <span class='kw'>use</span> <span class='ident'>types</span>::{<span class='ident'>Version</span>, <span class='ident'>EcLevel</span>};
+
+    <span class='attribute'>#[<span class='ident'>test</span>]</span>
+    <span class='kw'>fn</span> <span class='ident'>test_add_ec_simple</span>() {
+        <span class='kw'>let</span> <span class='ident'>msg</span> <span class='op'>=</span> <span class='string'>b&quot; [\x0bx\xd1r\xdcMC@\xec\x11\xec\x11\xec\x11&quot;</span>;
+        <span class='kw'>let</span> (<span class='ident'>blocks_vec</span>, <span class='ident'>ec_vec</span>) <span class='op'>=</span> <span class='ident'>construct_codewords</span>(<span class='ident'>msg</span>, <span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>1</span>), <span class='ident'>EcLevel</span>::<span class='ident'>M</span>).<span class='ident'>unwrap</span>();
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>blocks_vec</span>, <span class='ident'>msg</span>);
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>ec_vec</span>, <span class='string'>b&quot;\xc4#&#39;w\xeb\xd7\xe7\xe2]\x17&quot;</span>);
+    }
+
+    <span class='attribute'>#[<span class='ident'>test</span>]</span>
+    <span class='kw'>fn</span> <span class='ident'>test_add_ec_complex</span>() {
+        <span class='kw'>let</span> <span class='ident'>msg</span> <span class='op'>=</span> <span class='string'>b&quot;CUF\x86W&amp;U\xc2w2\x06\x12\x06g&amp;\xf6\xf6B\x07v\x86\xf2\x07&amp;V\x16\xc6\xc7\x92\x06\xb6\xe6\xf7w2\x07v\x86W&amp;R\x06\x86\x972\x07F\xf7vV\xc2\x06\x972\x10\xec\x11\xec\x11\xec\x11\xec&quot;</span>;
+        <span class='kw'>let</span> (<span class='ident'>blocks_vec</span>, <span class='ident'>ec_vec</span>) <span class='op'>=</span> <span class='ident'>construct_codewords</span>(<span class='ident'>msg</span>, <span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>5</span>), <span class='ident'>EcLevel</span>::<span class='ident'>Q</span>).<span class='ident'>unwrap</span>();
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>blocks_vec</span>,
+                   <span class='kw-2'>&amp;</span><span class='string'>b&quot;C\xf6\xb6FU\xf6\xe6\xf7FB\xf7v\x86\x07wVWv2\xc2&amp;\x86\x07\x06U\xf2v\x97\xc2\x07\x862w&amp;W\x102V&amp;\xec\x06\x16R\x11\x12\xc6\x06\xec\x06\xc7\x86\x11g\x92\x97\xec&amp;\x062\x11\x07\xec&quot;</span>[..]);
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>ec_vec</span>,
+                   <span class='kw-2'>&amp;</span><span class='string'>b&quot;\xd5W\x94\xeb\xc7\xcct\x9f\x0b`\xb1\x05-&lt;\xd4\xads\xcaL\x18\xf7\xb6\x85\x93\xf1|K;\xdf\x9d\xf2!\xe5\xc8\xeej\xf8\x86L(\x9a\x1b\xc3\xffu\x81\xe6\xac\x9a\xd1\xbdRo\x11\n\x02V\xa3l\x83\xa1\xa3\xf0 ox\xc0\xb2&#39;\x85\x8d\xec&quot;</span>[..]);
+    }
+}
+
+<span class='comment'>//}}}</span>
+<span class='comment'>//------------------------------------------------------------------------------</span>
+<span class='comment'>//{{{ Number of allowed errors</span>
+
+<span class='doccomment'>/// Computes the maximum allowed number of erratic modules can be introduced to</span>
+<span class='doccomment'>/// the QR code, before the data becomes truly corrupted.</span>
+<span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>max_allowed_errors</span>(<span class='ident'>version</span>: <span class='ident'>Version</span>, <span class='ident'>ec_level</span>: <span class='ident'>EcLevel</span>) <span class='op'>-&gt;</span> <span class='ident'>QrResult</span><span class='op'>&lt;</span><span class='ident'>usize</span><span class='op'>&gt;</span> {
+    <span class='kw'>use</span> <span class='ident'>Version</span>::{<span class='ident'>Micro</span>, <span class='ident'>Normal</span>};
+    <span class='kw'>use</span> <span class='ident'>EcLevel</span>::{<span class='ident'>L</span>, <span class='ident'>M</span>};
+
+    <span class='kw'>let</span> <span class='ident'>p</span> <span class='op'>=</span> <span class='kw'>match</span> (<span class='ident'>version</span>, <span class='ident'>ec_level</span>) {
+        (<span class='ident'>Micro</span>(<span class='number'>2</span>), <span class='ident'>L</span>) <span class='op'>|</span> (<span class='ident'>Normal</span>(<span class='number'>1</span>), <span class='ident'>L</span>) <span class='op'>=&gt;</span> <span class='number'>3</span>,
+        (<span class='ident'>Micro</span>(_), <span class='ident'>L</span>) <span class='op'>|</span> (<span class='ident'>Normal</span>(<span class='number'>2</span>), <span class='ident'>L</span>) <span class='op'>|</span> (<span class='ident'>Micro</span>(<span class='number'>2</span>), <span class='ident'>M</span>) <span class='op'>|</span> (<span class='ident'>Normal</span>(<span class='number'>1</span>), <span class='ident'>M</span>) <span class='op'>=&gt;</span> <span class='number'>2</span>,
+        (<span class='ident'>Normal</span>(<span class='number'>1</span>), _) <span class='op'>|</span> (<span class='ident'>Normal</span>(<span class='number'>3</span>), <span class='ident'>L</span>) <span class='op'>=&gt;</span> <span class='number'>1</span>,
+        _ <span class='op'>=&gt;</span> <span class='number'>0</span>,
+    };
+
+    <span class='kw'>let</span> <span class='ident'>ec_bytes_per_block</span> <span class='op'>=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>version</span>.<span class='ident'>fetch</span>(<span class='ident'>ec_level</span>, <span class='kw-2'>&amp;</span><span class='ident'>EC_BYTES_PER_BLOCK</span>));
+    <span class='kw'>let</span> (_, <span class='ident'>count1</span>, _, <span class='ident'>count2</span>) <span class='op'>=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>version</span>.<span class='ident'>fetch</span>(<span class='ident'>ec_level</span>, <span class='kw-2'>&amp;</span><span class='ident'>DATA_BYTES_PER_BLOCK</span>));
+    <span class='kw'>let</span> <span class='ident'>ec_bytes</span> <span class='op'>=</span> (<span class='ident'>count1</span> <span class='op'>+</span> <span class='ident'>count2</span>) <span class='op'>*</span> <span class='ident'>ec_bytes_per_block</span>;
+
+    <span class='prelude-val'>Ok</span>((<span class='ident'>ec_bytes</span> <span class='op'>-</span> <span class='ident'>p</span>) <span class='op'>/</span> <span class='number'>2</span>)
+}
+
+<span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>test</span>)]</span>
+<span class='kw'>mod</span> <span class='ident'>max_allowed_errors_test</span> {
+    <span class='kw'>use</span> <span class='ident'>ec</span>::<span class='ident'>max_allowed_errors</span>;
+    <span class='kw'>use</span> <span class='ident'>types</span>::{<span class='ident'>Version</span>, <span class='ident'>EcLevel</span>};
+
+    <span class='attribute'>#[<span class='ident'>test</span>]</span>
+    <span class='kw'>fn</span> <span class='ident'>test_low_versions</span>() {
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>0</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Micro</span>(<span class='number'>1</span>), <span class='ident'>EcLevel</span>::<span class='ident'>L</span>));
+
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>1</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Micro</span>(<span class='number'>2</span>), <span class='ident'>EcLevel</span>::<span class='ident'>L</span>));
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>2</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Micro</span>(<span class='number'>2</span>), <span class='ident'>EcLevel</span>::<span class='ident'>M</span>));
+
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>2</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Micro</span>(<span class='number'>3</span>), <span class='ident'>EcLevel</span>::<span class='ident'>L</span>));
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>4</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Micro</span>(<span class='number'>3</span>), <span class='ident'>EcLevel</span>::<span class='ident'>M</span>));
+
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>3</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Micro</span>(<span class='number'>4</span>), <span class='ident'>EcLevel</span>::<span class='ident'>L</span>));
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>5</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Micro</span>(<span class='number'>4</span>), <span class='ident'>EcLevel</span>::<span class='ident'>M</span>));
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>7</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Micro</span>(<span class='number'>4</span>), <span class='ident'>EcLevel</span>::<span class='ident'>Q</span>));
+
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>2</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>1</span>), <span class='ident'>EcLevel</span>::<span class='ident'>L</span>));
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>4</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>1</span>), <span class='ident'>EcLevel</span>::<span class='ident'>M</span>));
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>6</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>1</span>), <span class='ident'>EcLevel</span>::<span class='ident'>Q</span>));
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>8</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>1</span>), <span class='ident'>EcLevel</span>::<span class='ident'>H</span>));
+
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>4</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>2</span>), <span class='ident'>EcLevel</span>::<span class='ident'>L</span>));
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>8</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>2</span>), <span class='ident'>EcLevel</span>::<span class='ident'>M</span>));
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>11</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>2</span>), <span class='ident'>EcLevel</span>::<span class='ident'>Q</span>));
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>14</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>2</span>), <span class='ident'>EcLevel</span>::<span class='ident'>H</span>));
+
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>7</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>3</span>), <span class='ident'>EcLevel</span>::<span class='ident'>L</span>));
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>13</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>3</span>), <span class='ident'>EcLevel</span>::<span class='ident'>M</span>));
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>18</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>3</span>), <span class='ident'>EcLevel</span>::<span class='ident'>Q</span>));
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>22</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>3</span>), <span class='ident'>EcLevel</span>::<span class='ident'>H</span>));
+
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>10</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>4</span>), <span class='ident'>EcLevel</span>::<span class='ident'>L</span>));
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>18</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>4</span>), <span class='ident'>EcLevel</span>::<span class='ident'>M</span>));
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>26</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>4</span>), <span class='ident'>EcLevel</span>::<span class='ident'>Q</span>));
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>32</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>4</span>), <span class='ident'>EcLevel</span>::<span class='ident'>H</span>));
+    }
+
+    <span class='attribute'>#[<span class='ident'>test</span>]</span>
+    <span class='kw'>fn</span> <span class='ident'>test_high_versions</span>() {
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>375</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>40</span>), <span class='ident'>EcLevel</span>::<span class='ident'>L</span>));
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>686</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>40</span>), <span class='ident'>EcLevel</span>::<span class='ident'>M</span>));
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>1020</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>40</span>), <span class='ident'>EcLevel</span>::<span class='ident'>Q</span>));
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='prelude-val'>Ok</span>(<span class='number'>1215</span>), <span class='ident'>max_allowed_errors</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>40</span>), <span class='ident'>EcLevel</span>::<span class='ident'>H</span>));
+    }
+}
+
+<span class='comment'>//}}}</span>
+<span class='comment'>//------------------------------------------------------------------------------</span>
+<span class='comment'>//{{{ Precomputed tables for GF(256).</span>
+
+<span class='doccomment'>/// `EXP_TABLE` encodes the value of 2&lt;sup&gt;n&lt;/sup&gt; in the Galois Field GF(256).</span>
+<span class='kw'>static</span> <span class='ident'>EXP_TABLE</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;static</span> [<span class='ident'>u8</span>] <span class='op'>=</span> <span class='string'>b&quot;\x01\x02\x04\x08\x10\x20\x40\x80\x1d\x3a\x74\xe8\xcd\x87\x13\x26\x4c\x98\x2d\x5a\xb4\x75\xea\xc9\x8f\x03\x06\x0c\x18\x30\x60\xc0\x9d\x27\x4e\x9c\x25\x4a\x94\x35\x6a\xd4\xb5\x77\xee\xc1\x9f\x23\x46\x8c\x05\x0a\x14\x28\x50\xa0\x5d\xba\x69\xd2\xb9\x6f\xde\xa1\x5f\xbe\x61\xc2\x99\x2f\x5e\xbc\x65\xca\x89\x0f\x1e\x3c\x78\xf0\xfd\xe7\xd3\xbb\x6b\xd6\xb1\x7f\xfe\xe1\xdf\xa3\x5b\xb6\x71\xe2\xd9\xaf\x43\x86\x11\x22\x44\x88\x0d\x1a\x34\x68\xd0\xbd\x67\xce\x81\x1f\x3e\x7c\xf8\xed\xc7\x93\x3b\x76\xec\xc5\x97\x33\x66\xcc\x85\x17\x2e\x5c\xb8\x6d\xda\xa9\x4f\x9e\x21\x42\x84\x15\x2a\x54\xa8\x4d\x9a\x29\x52\xa4\x55\xaa\x49\x92\x39\x72\xe4\xd5\xb7\x73\xe6\xd1\xbf\x63\xc6\x91\x3f\x7e\xfc\xe5\xd7\xb3\x7b\xf6\xf1\xff\xe3\xdb\xab\x4b\x96\x31\x62\xc4\x95\x37\x6e\xdc\xa5\x57\xae\x41\x82\x19\x32\x64\xc8\x8d\x07\x0e\x1c\x38\x70\xe0\xdd\xa7\x53\xa6\x51\xa2\x59\xb2\x79\xf2\xf9\xef\xc3\x9b\x2b\x56\xac\x45\x8a\x09\x12\x24\x48\x90\x3d\x7a\xf4\xf5\xf7\xf3\xfb\xeb\xcb\x8b\x0b\x16\x2c\x58\xb0\x7d\xfa\xe9\xcf\x83\x1b\x36\x6c\xd8\xad\x47\x8e\x01&quot;</span>;
+
+<span class='doccomment'>/// `LOG_TABLE` is the inverse function of `EXP_TABLE`.</span>
+<span class='kw'>static</span> <span class='ident'>LOG_TABLE</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;static</span> [<span class='ident'>u8</span>] <span class='op'>=</span> <span class='string'>b&quot;\xff\x00\x01\x19\x02\x32\x1a\xc6\x03\xdf\x33\xee\x1b\x68\xc7\x4b\x04\x64\xe0\x0e\x34\x8d\xef\x81\x1c\xc1\x69\xf8\xc8\x08\x4c\x71\x05\x8a\x65\x2f\xe1\x24\x0f\x21\x35\x93\x8e\xda\xf0\x12\x82\x45\x1d\xb5\xc2\x7d\x6a\x27\xf9\xb9\xc9\x9a\x09\x78\x4d\xe4\x72\xa6\x06\xbf\x8b\x62\x66\xdd\x30\xfd\xe2\x98\x25\xb3\x10\x91\x22\x88\x36\xd0\x94\xce\x8f\x96\xdb\xbd\xf1\xd2\x13\x5c\x83\x38\x46\x40\x1e\x42\xb6\xa3\xc3\x48\x7e\x6e\x6b\x3a\x28\x54\xfa\x85\xba\x3d\xca\x5e\x9b\x9f\x0a\x15\x79\x2b\x4e\xd4\xe5\xac\x73\xf3\xa7\x57\x07\x70\xc0\xf7\x8c\x80\x63\x0d\x67\x4a\xde\xed\x31\xc5\xfe\x18\xe3\xa5\x99\x77\x26\xb8\xb4\x7c\x11\x44\x92\xd9\x23\x20\x89\x2e\x37\x3f\xd1\x5b\x95\xbc\xcf\xcd\x90\x87\x97\xb2\xdc\xfc\xbe\x61\xf2\x56\xd3\xab\x14\x2a\x5d\x9e\x84\x3c\x39\x53\x47\x6d\x41\xa2\x1f\x2d\x43\xd8\xb7\x7b\xa4\x76\xc4\x17\x49\xec\x7f\x0c\x6f\xf6\x6c\xa1\x3b\x52\x29\x9d\x55\xaa\xfb\x60\x86\xb1\xbb\xcc\x3e\x5a\xcb\x59\x5f\xb0\x9c\xa9\xa0\x51\x0b\xf5\x16\xeb\x7a\x75\x2c\xd7\x4f\xae\xd5\xe9\xe6\xe7\xad\xe8\x74\xd6\xf4\xea\xa8\x50\x58\xaf&quot;</span>;
+
+<span class='doccomment'>/// The generator polynomial list.</span>
+<span class='doccomment'>///</span>
+<span class='doccomment'>/// `GENERATOR_POLYNOMIALS[i]` is the polynomial for `i` error correction code</span>
+<span class='doccomment'>/// words. Each entry encodes the log coefficients of the expanded polynomial</span>
+<span class='doccomment'>/// (x − 2&lt;sup&gt;0&lt;/sup&gt;)(x − 2&lt;sup&gt;1&lt;/sup&gt;)…(x − 2&lt;sup&gt;i-1&lt;/sup&gt;). Each entry is</span>
+<span class='doccomment'>/// used as the denominator for polynomial division to obtain the modulus which</span>
+<span class='doccomment'>/// is the Reed-Solomon error correction code.</span>
+<span class='doccomment'>///</span>
+<span class='doccomment'>/// A partial list can be found from ISO/IEC 18004:2006 Annex A.</span>
+<span class='kw'>static</span> <span class='ident'>GENERATOR_POLYNOMIALS</span>: [<span class='kw-2'>&amp;</span><span class='lifetime'>&#39;static</span> [<span class='ident'>u8</span>]; <span class='number'>70</span>] <span class='op'>=</span> [
+    <span class='string'>b&quot;&quot;</span>,
+    <span class='string'>b&quot;\x00&quot;</span>,
+    <span class='string'>b&quot;\x19\x01&quot;</span>,
+    <span class='string'>b&quot;\xc6\xc7\x03&quot;</span>,
+    <span class='string'>b&quot;\x4b\xf9\x4e\x06&quot;</span>,
+    <span class='string'>b&quot;\x71\xa4\xa6\x77\x0a&quot;</span>,
+    <span class='string'>b&quot;\xa6\x00\x86\x05\xb0\x0f&quot;</span>,
+    <span class='string'>b&quot;\x57\xe5\x92\x95\xee\x66\x15&quot;</span>,
+    <span class='string'>b&quot;\xaf\xee\xd0\xf9\xd7\xfc\xc4\x1c&quot;</span>,
+    <span class='string'>b&quot;\x5f\xf6\x89\xe7\xeb\x95\x0b\x7b\x24&quot;</span>,
+    <span class='string'>b&quot;\xfb\x43\x2e\x3d\x76\x46\x40\x5e\x20\x2d&quot;</span>,
+    <span class='string'>b&quot;\xdc\xc0\x5b\xc2\xac\xb1\xd1\x74\xe3\x0a\x37&quot;</span>,
+    <span class='string'>b&quot;\x66\x2b\x62\x79\xbb\x71\xc6\x8f\x83\x57\x9d\x42&quot;</span>,
+    <span class='string'>b&quot;\x4a\x98\xb0\x64\x56\x64\x6a\x68\x82\xda\xce\x8c\x4e&quot;</span>,
+    <span class='string'>b&quot;\xc7\xf9\x9b\x30\xbe\x7c\xda\x89\xd8\x57\xcf\x3b\x16\x5b&quot;</span>,
+    <span class='string'>b&quot;\x08\xb7\x3d\x5b\xca\x25\x33\x3a\x3a\xed\x8c\x7c\x05\x63\x69&quot;</span>,
+    <span class='string'>b&quot;\x78\x68\x6b\x6d\x66\xa1\x4c\x03\x5b\xbf\x93\xa9\xb6\xc2\xe1\x78&quot;</span>,
+    <span class='string'>b&quot;\x2b\x8b\xce\x4e\x2b\xef\x7b\xce\xd6\x93\x18\x63\x96\x27\xf3\xa3\x88&quot;</span>,
+    <span class='string'>b&quot;\xd7\xea\x9e\x5e\xb8\x61\x76\xaa\x4f\xbb\x98\x94\xfc\xb3\x05\x62\x60\x99&quot;</span>,
+    <span class='string'>b&quot;\x43\x03\x69\x99\x34\x5a\x53\x11\x96\x9f\x2c\x80\x99\x85\xfc\xde\x8a\xdc\xab&quot;</span>,
+    <span class='string'>b&quot;\x11\x3c\x4f\x32\x3d\xa3\x1a\xbb\xca\xb4\xdd\xe1\x53\xef\x9c\xa4\xd4\xd4\xbc\xbe&quot;</span>,
+    <span class='string'>b&quot;\xf0\xe9\x68\xf7\xb5\x8c\x43\x62\x55\xc8\xd2\x73\x94\x89\xe6\x24\x7a\xfe\x94\xaf\xd2&quot;</span>,
+    <span class='string'>b&quot;\xd2\xab\xf7\xf2\x5d\xe6\x0e\x6d\xdd\x35\xc8\x4a\x08\xac\x62\x50\xdb\x86\xa0\x69\xa5\xe7&quot;</span>,
+    <span class='string'>b&quot;\xab\x66\x92\x5b\x31\x67\x41\x11\xc1\x96\x0e\x19\xb7\xf8\x5e\xa4\xe0\xc0\x01\x4e\x38\x93\xfd&quot;</span>,
+    <span class='string'>b&quot;\xe5\x79\x87\x30\xd3\x75\xfb\x7e\x9f\xb4\xa9\x98\xc0\xe2\xe4\xda\x6f\x00\x75\xe8\x57\x60\xe3\x15&quot;</span>,
+    <span class='string'>b&quot;\xe7\xb5\x9c\x27\xaa\x1a\x0c\x3b\x0f\x94\xc9\x36\x42\xed\xd0\x63\xa7\x90\xb6\x5f\xf3\x81\xb2\xfc\x2d&quot;</span>,
+    <span class='string'>b&quot;\xad\x7d\x9e\x02\x67\xb6\x76\x11\x91\xc9\x6f\x1c\xa5\x35\xa1\x15\xf5\x8e\x0d\x66\x30\xe3\x99\x91\xda\x46&quot;</span>,
+    <span class='string'>b&quot;\x4f\xe4\x08\xa5\xe3\x15\xb4\x1d\x09\xed\x46\x63\x2d\x3a\x8a\x87\x49\x7e\xac\x5e\xd8\xc1\x9d\x1a\x11\x95\x60&quot;</span>,
+    <span class='string'>b&quot;\xa8\xdf\xc8\x68\xe0\xea\x6c\xb4\x6e\xbe\xc3\x93\xcd\x1b\xe8\xc9\x15\x2b\xf5\x57\x2a\xc3\xd4\x77\xf2\x25\x09\x7b&quot;</span>,
+    <span class='string'>b&quot;\x9c\x2d\xb7\x1d\x97\xdb\x36\x60\xf9\x18\x88\x05\xf1\xaf\xbd\x1c\x4b\xea\x96\x94\x17\x09\xca\xa2\x44\xfa\x8c\x18\x97&quot;</span>,
+    <span class='string'>b&quot;\x29\xad\x91\x98\xd8\x1f\xb3\xb6\x32\x30\x6e\x56\xef\x60\xde\x7d\x2a\xad\xe2\xc1\xe0\x82\x9c\x25\xfb\xd8\xee\x28\xc0\xb4&quot;</span>,
+    <span class='string'>b&quot;\x14\x25\xfc\x5d\x3f\x4b\xe1\x1f\x73\x53\x71\x27\x2c\x49\x7a\x89\x76\x77\x90\xf8\xf8\x37\x01\xe1\x69\x7b\xb7\x75\xbb\xc8\xd2&quot;</span>,
+    <span class='string'>b&quot;\x0a\x06\x6a\xbe\xf9\xa7\x04\x43\xd1\x8a\x8a\x20\xf2\x7b\x59\x1b\x78\xb9\x50\x9c\x26\x45\xab\x3c\x1c\xde\x50\x34\xfe\xb9\xdc\xf1&quot;</span>,
+    <span class='string'>b&quot;\xf5\xe7\x37\x18\x47\x4e\x4c\x51\xe1\xd4\xad\x25\xd7\x2e\x77\xe5\xf5\xa7\x7e\x48\xb5\x5e\xa5\xd2\x62\x7d\x9f\xb8\xa9\xe8\xb9\xe7\x12&quot;</span>,
+    <span class='string'>b&quot;\x6f\x4d\x92\x5e\x1a\x15\x6c\x13\x69\x5e\x71\xc1\x56\x8c\xa3\x7d\x3a\x9e\xe5\xef\xda\x67\x38\x46\x72\x3d\xb7\x81\xa7\x0d\x62\x3e\x81\x33&quot;</span>,
+    <span class='string'>b&quot;\x07\x5e\x8f\x51\xf7\x7f\xca\xca\xc2\x7d\x92\x1d\x8a\xa2\x99\x41\x69\x7a\x74\xee\x1a\x24\xd8\x70\x7d\xe4\x0f\x31\x08\xa2\x1e\x7e\x6f\x3a\x55&quot;</span>,
+    <span class='string'>b&quot;\xc8\xb7\x62\x10\xac\x1f\xf6\xea\x3c\x98\x73\x00\xa7\x98\x71\xf8\xee\x6b\x12\x3f\xda\x25\x57\xd2\x69\xb1\x78\x4a\x79\xc4\x75\xfb\x71\xe9\x1e\x78&quot;</span>,
+    <span class='string'>b&quot;\x9a\x4b\x8d\xb4\x3d\xa5\x68\xe8\x2e\xe3\x60\xb2\x5c\x87\x39\xa2\x78\xc2\xd4\xae\xfc\xb7\x2a\x23\x9d\x6f\x17\x85\x64\x08\x69\x25\xc0\xbd\x9f\x13\x9c&quot;</span>,
+    <span class='string'>b&quot;\x9f\x22\x26\xe4\xe6\x3b\xf3\x5f\x31\xda\xb0\xa4\x14\x41\x2d\x6f\x27\x51\x31\x76\x71\xde\xc1\xfa\xf2\xa8\xd9\x29\xa4\xf7\xb1\x1e\xee\x12\x78\x99\x3c\xc1&quot;</span>,
+    <span class='string'>b&quot;\x51\xd8\xae\x2f\xc8\x96\x3b\x9c\x59\x8f\x59\xa6\xb7\xaa\x98\x15\xa5\xb1\x71\x84\xea\x05\x9a\x44\x7c\xaf\xc4\x9d\xf9\xe9\x53\x18\x99\xf1\x7e\x24\x74\x13\xe7&quot;</span>,
+    <span class='string'>b&quot;\x3b\x74\x4f\xa1\xfc\x62\x80\xcd\x80\xa1\xf7\x39\xa3\x38\xeb\x6a\x35\x1a\xbb\xae\xe2\x68\xaa\x07\xaf\x23\xb5\x72\x58\x29\x2f\xa3\x7d\x86\x48\x14\xe8\x35\x23\x0f&quot;</span>,
+    <span class='string'>b&quot;\x84\xa7\x34\x8b\xb8\xdf\x95\x5c\xfa\x12\x53\x21\x7f\x6d\xc2\x07\xd3\xf2\x6d\x42\x56\xa9\x57\x60\xbb\x9f\x72\xac\x76\xd0\xb7\xc8\x52\xb3\x26\x27\x22\xf2\x8e\x93\x37&quot;</span>,
+    <span class='string'>b&quot;\xfa\x67\xdd\xe6\x19\x12\x89\xe7\x00\x03\x3a\xf2\xdd\xbf\x6e\x54\xe6\x08\xbc\x6a\x60\x93\x0f\x83\x8b\x22\x65\xdf\x27\x65\xd5\xc7\xed\xfe\xc9\x7b\xab\xa2\xc2\x75\x32\x60&quot;</span>,
+    <span class='string'>b&quot;\x60\x43\x03\xf5\xd9\xd7\x21\x41\xf0\x6d\x90\x3f\x15\x83\x26\x65\x99\x80\x37\x1f\xed\x03\x5e\xa0\x14\x57\x4d\x38\xbf\x7b\xcf\x4b\x52\x00\x7a\x84\x65\x91\xd7\x0f\x79\xc0\x8a&quot;</span>,
+    <span class='string'>b&quot;\xbe\x07\x3d\x79\x47\xf6\x45\x37\xa8\xbc\x59\xf3\xbf\x19\x48\x7b\x09\x91\x0e\xf7\x01\xee\x2c\x4e\x8f\x3e\xe0\x7e\x76\x72\x44\xa3\x34\xc2\xd9\x93\xcc\xa9\x25\x82\x71\x66\x49\xb5&quot;</span>,
+    <span class='string'>b&quot;\x06\xac\x48\xfa\x12\xab\xab\xa2\xe5\xbb\xef\x04\xbb\x0b\x25\xe4\x66\x48\x66\x16\x21\x49\x5f\x63\x84\x01\x0f\x59\x04\x70\x82\x5f\xd3\xeb\xe3\x3a\x23\x58\x84\x17\x2c\xa5\x36\xbb\xe1&quot;</span>,
+    <span class='string'>b&quot;\x70\x5e\x58\x70\xfd\xe0\xca\x73\xbb\x63\x59\x05\x36\x71\x81\x2c\x3a\x10\x87\xd8\xa9\xd3\x24\x01\x04\x60\x3c\xf1\x49\x68\xea\x08\xf9\xf5\x77\xae\x34\x19\x9d\xe0\x2b\xca\xdf\x13\x52\x0f&quot;</span>,
+    <span class='string'>b&quot;\x4c\xa4\xe5\x5c\x4f\xa8\xdb\x6e\x68\x15\xdc\x4a\x13\xc7\xc3\x64\x5d\xbf\x2b\xd5\x48\x38\x8a\xa1\x7d\xbb\x77\xfa\xbd\x89\xbe\x4c\x7e\xf7\x5d\x1e\x84\x06\x3a\xd5\xd0\xa5\xe0\x98\x85\x5b\x3d&quot;</span>,
+    <span class='string'>b&quot;\xe4\x19\xc4\x82\xd3\x92\x3c\x18\xfb\x5a\x27\x66\xf0\x3d\xb2\x3f\x2e\x7b\x73\x12\xdd\x6f\x87\xa0\xb6\xcd\x6b\xce\x5f\x96\x78\xb8\x5b\x15\xf7\x9c\x8c\xee\xbf\x0b\x5e\xe3\x54\x32\xa3\x27\x22\x6c&quot;</span>,
+    <span class='string'>b&quot;\xac\x79\x01\x29\xc1\xde\xed\x40\x6d\xb5\x34\x78\xd4\xe2\xef\xf5\xd0\x14\xf6\x22\xe1\xcc\x86\x65\x7d\xce\x45\x8a\xfa\x00\x4d\x3a\x8f\xb9\xdc\xfe\xd2\xbe\x70\x58\x5b\x39\x5a\x6d\x05\x0d\xb5\x19\x9c&quot;</span>,
+    <span class='string'>b&quot;\xe8\x7d\x9d\xa1\xa4\x09\x76\x2e\xd1\x63\xcb\xc1\x23\x03\xd1\x6f\xc3\xf2\xcb\xe1\x2e\x0d\x20\xa0\x7e\xd1\x82\xa0\xf2\xd7\xf2\x4b\x4d\x2a\xbd\x20\x71\x41\x7c\x45\xe4\x72\xeb\xaf\x7c\xaa\xd7\xe8\x85\xcd&quot;</span>,
+    <span class='string'>b&quot;\xd5\xa6\x8e\x2b\x0a\xd8\x8d\xa3\xac\xb4\x66\x46\x59\x3e\xde\x3e\x2a\xd2\x97\xa3\xda\x46\x4d\x27\xa6\xbf\x72\xca\xf5\xbc\xb7\xdd\x4b\xd4\x1b\xed\x7f\xcc\xeb\x3e\xbe\xe8\x12\x2e\xab\x0f\x62\xf7\x42\xa3\x00&quot;</span>,
+    <span class='string'>b&quot;\x74\x32\x56\xba\x32\xdc\xfb\x59\xc0\x2e\x56\x7f\x7c\x13\xb8\xe9\x97\xd7\x16\x0e\x3b\x91\x25\xf2\xcb\x86\xfe\x59\xbe\x5e\x3b\x41\x7c\x71\x64\xe9\xeb\x79\x16\x4c\x56\x61\x27\xf2\xc8\xdc\x65\x21\xef\xfe\x74\x33&quot;</span>,
+    <span class='string'>b&quot;\x7a\xd6\xe7\x88\xc7\x0b\x06\xcd\x7c\x48\xd5\x75\xbb\x3c\x93\xc9\x49\x4b\x21\x92\xab\xf7\x76\xd0\x9d\xb1\xcb\xeb\x53\x2d\xe2\xca\xe5\xa8\x07\x39\xed\xeb\xc8\x7c\x6a\xfe\xa5\x0e\x93\x00\x39\x2a\x1f\xb2\xd5\xad\x67&quot;</span>,
+    <span class='string'>b&quot;\xb7\x1a\xc9\x57\xd2\xdd\x71\x15\x2e\x41\x2d\x32\xee\xb8\xf9\xe1\x66\x3a\xd1\xda\x6d\xa5\x1a\x5f\xb8\xc0\x34\xf5\x23\xfe\xee\xaf\xac\x4f\x7b\x19\x7a\x2b\x78\x6c\xd7\x50\x80\xc9\xeb\x08\x99\x3b\x65\x1f\xc6\x4c\x1f\x9c&quot;</span>,
+    <span class='string'>b&quot;\x26\xc5\x7b\xa7\x10\x57\xb2\xee\xe3\x61\x94\xf7\x1a\x5a\xe4\xb6\xec\xc5\x2f\xf9\x24\xd5\x36\x71\xb5\x4a\xb1\xcc\x9b\x3d\x2f\x2a\x00\x84\x90\xfb\xc8\x26\x26\x8a\x36\x2c\x40\x13\x16\xce\x10\x0a\xe4\xd3\xa1\xab\x2c\xc2\xd2&quot;</span>,
+    <span class='string'>b&quot;\x6a\x78\x6b\x9d\xa4\xd8\x70\x74\x02\x5b\xf8\xa3\x24\xc9\xca\xe5\x06\x90\xfe\x9b\x87\xd0\xaa\xd1\x0c\x8b\x7f\x8e\xb6\xf9\xb1\xae\xbe\x1c\x0a\x55\xef\xb8\x65\x7c\x98\xce\x60\x17\xa3\x3d\x1b\xc4\xf7\x97\x9a\xca\xcf\x14\x3d\x0a&quot;</span>,
+    <span class='string'>b&quot;\x3a\x8c\xed\x5d\x6a\x3d\xc1\x02\x57\x49\xc2\xd7\x9f\xa3\x0a\x9b\x05\x79\x99\x3b\xf8\x04\x75\x16\x3c\xb1\x90\x2c\x48\xe4\x3e\x01\x13\xaa\x71\x9e\x19\xaf\xc7\x8b\x5a\x01\xd2\x07\x77\x9a\x59\x9f\x82\x7a\x2e\x93\xbe\x87\x5e\x44\x42&quot;</span>,
+    <span class='string'>b&quot;\x52\x74\x1a\xf7\x42\x1b\x3e\x6b\xfc\xb6\xc8\xb9\xeb\x37\xfb\xf2\xd2\x90\x9a\xed\xb0\x8d\xc0\xf8\x98\xf9\xce\x55\xfd\x8e\x41\xa5\x7d\x17\x18\x1e\x7a\xf0\xd6\x06\x81\xda\x1d\x91\x7f\x86\xce\xf5\x75\x1d\x29\x3f\x9f\x8e\xe9\x7d\x94\x7b&quot;</span>,
+    <span class='string'>b&quot;\x39\x73\xe8\x0b\xc3\xd9\x03\xce\x4d\x43\x1d\xa6\xb4\x6a\x76\xcb\x11\x45\x98\xd5\x4a\x2c\x31\x2b\x62\x3d\xfd\x7a\x0e\x2b\xd1\x8f\x09\x68\x6b\xab\xe0\x39\xfe\xfb\xe2\xe8\xdd\xc2\xf0\x75\xa1\x52\xb2\xf6\xb2\x21\x32\x56\xd7\xef\xb4\xb4\xb5&quot;</span>,
+    <span class='string'>b&quot;\x6b\x8c\x1a\x0c\x09\x8d\xf3\xc5\xe2\xc5\xdb\x2d\xd3\x65\xdb\x78\x1c\xb5\x7f\x06\x64\xf7\x02\xcd\xc6\x39\x73\xdb\x65\x6d\xa0\x52\x25\x26\xee\x31\xa0\xd1\x79\x56\x0b\x7c\x1e\xb5\x54\x19\xc2\x57\x41\x66\xbe\xdc\x46\x1b\xd1\x10\x59\x07\x21\xf0&quot;</span>,
+    <span class='string'>b&quot;\xa1\xf4\x69\x73\x40\x09\xdd\xec\x10\x91\x94\x22\x90\xba\x0d\x14\xfe\xf6\x26\x23\xca\x48\x04\xd4\x9f\xd3\xa5\x87\xfc\xfa\x19\x57\x1e\x78\xe2\xea\x5c\xc7\x48\x07\x9b\xda\xe7\x2c\x7d\xb2\x9c\xae\x7c\x2b\x64\x1f\x38\x65\xcc\x40\xaf\xe1\xa9\x92\x2d&quot;</span>,
+    <span class='string'>b&quot;\x41\xca\x71\x62\x47\xdf\xf8\x76\xd6\x5e\x00\x7a\x25\x17\x02\xe4\x3a\x79\x07\x69\x87\x4e\xf3\x76\x46\x4c\xdf\x59\x48\x32\x46\x6f\xc2\x11\xd4\x7e\xb5\x23\xdd\x75\xeb\x0b\xe5\x95\x93\x7b\xd5\x28\x73\x06\xc8\x64\x1a\xf6\xb6\xda\x7f\xd7\x24\xba\x6e\x6a&quot;</span>,
+    <span class='string'>b&quot;\x1e\x47\x24\x47\x13\xc3\xac\x6e\x3d\x02\xa9\xc2\x5a\x88\x3b\xb6\xe7\x91\x66\x27\xaa\xe7\xd6\x43\xc4\xcf\x35\x70\xf6\x5a\x5a\x79\xb7\x92\x4a\x4d\x26\x59\x16\xe7\x37\x38\xf2\x70\xd9\x6e\x7b\x3e\xc9\xd9\x80\xa5\x3c\xb5\x25\xa1\xf6\x84\xf6\x12\x73\x88\xa8&quot;</span>,
+    <span class='string'>b&quot;\x2d\x33\xaf\x09\x07\x9e\x9f\x31\x44\x77\x5c\x7b\xb1\xcc\xbb\xfe\xc8\x4e\x8d\x95\x77\x1a\x7f\x35\xa0\x5d\xc7\xd4\x1d\x18\x91\x9c\xd0\x96\xda\xd1\x04\xd8\x5b\x2f\xb8\x92\x2f\x8c\xc3\xc3\x7d\xf2\xee\x3f\x63\x6c\x8c\xe6\xf2\x1f\xcc\x0b\xb2\xf3\xd9\x9c\xd5\xe7&quot;</span>,
+    <span class='string'>b&quot;\x89\x9e\xf7\xf0\x25\xee\xd6\x80\x63\xda\x2e\x8a\xc6\x80\x5c\xdb\x6d\x8b\xa6\x19\x42\x43\x0e\x3a\xee\x95\xb1\xc3\xdd\x9a\xab\x30\x50\x0c\x3b\xbe\xe4\x13\x37\xd0\x5c\x70\xe5\x25\x3c\x0a\x2f\x51\x00\xc0\x25\xab\xaf\x93\x80\x49\xa6\x3d\x95\x0c\x18\x5f\x46\x71\x28&quot;</span>,
+    <span class='string'>b&quot;\x05\x76\xde\xb4\x88\x88\xa2\x33\x2e\x75\x0d\xd7\x51\x11\x8b\xf7\xc5\xab\x5f\xad\x41\x89\xb2\x44\x6f\x5f\x65\x29\x48\xd6\xa9\xc5\x5f\x07\x2c\x9a\x4d\x6f\xec\x28\x79\x8f\x3f\x57\x50\xfd\xf0\x7e\xd9\x4d\x22\xe8\x6a\x32\xa8\x52\x4c\x92\x43\x6a\xab\x19\x84\x5d\x2d\x69&quot;</span>,
+    <span class='string'>b&quot;\xbf\xac\x71\x56\x07\xa6\xf6\xb9\x9b\xfa\x62\x71\x59\x56\xd6\xe1\x9c\xbe\x3a\x21\x90\x43\xb3\xa3\x34\x9a\xe9\x97\x68\xfb\xa0\x7e\xaf\xd0\xe1\x46\xe3\x92\x04\x98\x8b\x67\x19\x6b\x3d\xcc\x9f\xfa\xc1\xe1\x69\xa0\x62\xa7\x02\x35\x10\xf2\x53\xd2\xc4\x67\xf8\x56\xd3\x29\xab&quot;</span>,
+    <span class='string'>b&quot;\xf7\x9f\xdf\x21\xe0\x5d\x4d\x46\x5a\xa0\x20\xfe\x2b\x96\x54\x65\xbe\xcd\x85\x34\x3c\xca\xa5\xdc\xcb\x97\x5d\x54\x0f\x54\xfd\xad\xa0\x59\xe3\x34\xc7\x61\x5f\xe7\x34\xb1\x29\x7d\x89\xf1\xa6\xe1\x76\x02\x36\x20\x52\xd7\xaf\xc6\x2b\xee\xeb\x1b\x65\xb8\x7f\x03\x05\x08\xa3\xee&quot;</span>,
+    <span class='string'>b&quot;\x69\x49\x44\x01\x1d\xa8\x75\x0e\x58\xd0\x37\x2e\x2a\xd9\x06\x54\xb3\x61\x06\xf0\xc0\xe7\x9e\x40\x76\xa0\xcb\x39\x3d\x6c\xc7\x7c\x41\xbb\xdd\xa7\x27\xb6\x9f\xb4\xf4\xcb\xe4\xfe\x0d\xaf\x3d\x5a\xce\x28\xc7\x5e\x43\x39\x51\xe5\x2e\x7b\x59\x25\x1f\xca\x42\xfa\x23\xaa\xf3\x58\x33&quot;</span>,
+];
+
+<span class='comment'>//}}}</span>
+<span class='comment'>//------------------------------------------------------------------------------</span>
+<span class='comment'>//{{{ Tables for error correction sizes</span>
+
+<span class='doccomment'>/// `EC_BYTES_PER_BLOCK` provides the number of codewords (bytes) used for error</span>
+<span class='doccomment'>/// correction per block in each version.</span>
+<span class='doccomment'>///</span>
+<span class='doccomment'>/// This is a copy of ISO/IEC 18004:2006, §6.5.1, Table 9 (The 4th column divide</span>
+<span class='doccomment'>/// by the sum of the 6th column).</span>
+<span class='kw'>static</span> <span class='ident'>EC_BYTES_PER_BLOCK</span>: [[<span class='ident'>usize</span>; <span class='number'>4</span>]; <span class='number'>44</span>] <span class='op'>=</span> [
+    <span class='comment'>// Normal versions.</span>
+    [<span class='number'>7</span>, <span class='number'>10</span>, <span class='number'>13</span>, <span class='number'>17</span>],    <span class='comment'>// 1</span>
+    [<span class='number'>10</span>, <span class='number'>16</span>, <span class='number'>22</span>, <span class='number'>28</span>],   <span class='comment'>// 2</span>
+    [<span class='number'>15</span>, <span class='number'>26</span>, <span class='number'>18</span>, <span class='number'>22</span>],   <span class='comment'>// 3</span>
+    [<span class='number'>20</span>, <span class='number'>18</span>, <span class='number'>26</span>, <span class='number'>16</span>],   <span class='comment'>// 4</span>
+    [<span class='number'>26</span>, <span class='number'>24</span>, <span class='number'>18</span>, <span class='number'>22</span>],   <span class='comment'>// 5</span>
+    [<span class='number'>18</span>, <span class='number'>16</span>, <span class='number'>24</span>, <span class='number'>28</span>],   <span class='comment'>// 6</span>
+    [<span class='number'>20</span>, <span class='number'>18</span>, <span class='number'>18</span>, <span class='number'>26</span>],   <span class='comment'>// 7</span>
+    [<span class='number'>24</span>, <span class='number'>22</span>, <span class='number'>22</span>, <span class='number'>26</span>],   <span class='comment'>// 8</span>
+    [<span class='number'>30</span>, <span class='number'>22</span>, <span class='number'>20</span>, <span class='number'>24</span>],   <span class='comment'>// 9</span>
+    [<span class='number'>18</span>, <span class='number'>26</span>, <span class='number'>24</span>, <span class='number'>28</span>],   <span class='comment'>// 10</span>
+
+    [<span class='number'>20</span>, <span class='number'>30</span>, <span class='number'>28</span>, <span class='number'>24</span>],   <span class='comment'>// 11</span>
+    [<span class='number'>24</span>, <span class='number'>22</span>, <span class='number'>26</span>, <span class='number'>28</span>],   <span class='comment'>// 12</span>
+    [<span class='number'>26</span>, <span class='number'>22</span>, <span class='number'>24</span>, <span class='number'>22</span>],   <span class='comment'>// 13</span>
+    [<span class='number'>30</span>, <span class='number'>24</span>, <span class='number'>20</span>, <span class='number'>24</span>],   <span class='comment'>// 14</span>
+    [<span class='number'>22</span>, <span class='number'>24</span>, <span class='number'>30</span>, <span class='number'>24</span>],   <span class='comment'>// 15</span>
+    [<span class='number'>24</span>, <span class='number'>28</span>, <span class='number'>24</span>, <span class='number'>30</span>],   <span class='comment'>// 16</span>
+    [<span class='number'>28</span>, <span class='number'>28</span>, <span class='number'>28</span>, <span class='number'>28</span>],   <span class='comment'>// 17</span>
+    [<span class='number'>30</span>, <span class='number'>26</span>, <span class='number'>28</span>, <span class='number'>28</span>],   <span class='comment'>// 18</span>
+    [<span class='number'>28</span>, <span class='number'>26</span>, <span class='number'>26</span>, <span class='number'>26</span>],   <span class='comment'>// 19</span>
+    [<span class='number'>28</span>, <span class='number'>26</span>, <span class='number'>30</span>, <span class='number'>28</span>],   <span class='comment'>// 20</span>
+
+    [<span class='number'>28</span>, <span class='number'>26</span>, <span class='number'>28</span>, <span class='number'>30</span>],   <span class='comment'>// 21</span>
+    [<span class='number'>28</span>, <span class='number'>28</span>, <span class='number'>30</span>, <span class='number'>24</span>],   <span class='comment'>// 22</span>
+    [<span class='number'>30</span>, <span class='number'>28</span>, <span class='number'>30</span>, <span class='number'>30</span>],   <span class='comment'>// 23</span>
+    [<span class='number'>30</span>, <span class='number'>28</span>, <span class='number'>30</span>, <span class='number'>30</span>],   <span class='comment'>// 24</span>
+    [<span class='number'>26</span>, <span class='number'>28</span>, <span class='number'>30</span>, <span class='number'>30</span>],   <span class='comment'>// 25</span>
+    [<span class='number'>28</span>, <span class='number'>28</span>, <span class='number'>28</span>, <span class='number'>30</span>],   <span class='comment'>// 26</span>
+    [<span class='number'>30</span>, <span class='number'>28</span>, <span class='number'>30</span>, <span class='number'>30</span>],   <span class='comment'>// 27</span>
+    [<span class='number'>30</span>, <span class='number'>28</span>, <span class='number'>30</span>, <span class='number'>30</span>],   <span class='comment'>// 28</span>
+    [<span class='number'>30</span>, <span class='number'>28</span>, <span class='number'>30</span>, <span class='number'>30</span>],   <span class='comment'>// 29</span>
+    [<span class='number'>30</span>, <span class='number'>28</span>, <span class='number'>30</span>, <span class='number'>30</span>],   <span class='comment'>// 30</span>
+
+    [<span class='number'>30</span>, <span class='number'>28</span>, <span class='number'>30</span>, <span class='number'>30</span>],   <span class='comment'>// 31</span>
+    [<span class='number'>30</span>, <span class='number'>28</span>, <span class='number'>30</span>, <span class='number'>30</span>],   <span class='comment'>// 32</span>
+    [<span class='number'>30</span>, <span class='number'>28</span>, <span class='number'>30</span>, <span class='number'>30</span>],   <span class='comment'>// 33</span>
+    [<span class='number'>30</span>, <span class='number'>28</span>, <span class='number'>30</span>, <span class='number'>30</span>],   <span class='comment'>// 34</span>
+    [<span class='number'>30</span>, <span class='number'>28</span>, <span class='number'>30</span>, <span class='number'>30</span>],   <span class='comment'>// 35</span>
+    [<span class='number'>30</span>, <span class='number'>28</span>, <span class='number'>30</span>, <span class='number'>30</span>],   <span class='comment'>// 36</span>
+    [<span class='number'>30</span>, <span class='number'>28</span>, <span class='number'>30</span>, <span class='number'>30</span>],   <span class='comment'>// 37</span>
+    [<span class='number'>30</span>, <span class='number'>28</span>, <span class='number'>30</span>, <span class='number'>30</span>],   <span class='comment'>// 38</span>
+    [<span class='number'>30</span>, <span class='number'>28</span>, <span class='number'>30</span>, <span class='number'>30</span>],   <span class='comment'>// 39</span>
+    [<span class='number'>30</span>, <span class='number'>28</span>, <span class='number'>30</span>, <span class='number'>30</span>],   <span class='comment'>// 40</span>
+
+    <span class='comment'>// Micro versions.</span>
+    [<span class='number'>2</span>, <span class='number'>0</span>, <span class='number'>0</span>, <span class='number'>0</span>],       <span class='comment'>// M1</span>
+    [<span class='number'>5</span>, <span class='number'>6</span>, <span class='number'>0</span>, <span class='number'>0</span>],       <span class='comment'>// M2</span>
+    [<span class='number'>6</span>, <span class='number'>8</span>, <span class='number'>0</span>, <span class='number'>0</span>],       <span class='comment'>// M3</span>
+    [<span class='number'>8</span>, <span class='number'>10</span>, <span class='number'>14</span>, <span class='number'>0</span>],     <span class='comment'>// M4</span>
+];
+
+<span class='doccomment'>/// `DATA_BYTES_PER_BLOCK` provides the number of codewords (bytes) used for</span>
+<span class='doccomment'>/// real data per block in each version.</span>
+<span class='doccomment'>///</span>
+<span class='doccomment'>/// This is a copy of ISO/IEC 18004:2006, §6.5.1, Table 9 (The value &quot;k&quot; of the</span>
+<span class='doccomment'>/// 7th column, followed by the 6th column).</span>
+<span class='doccomment'>///</span>
+<span class='doccomment'>/// Every entry is a 4-tuple. Take `DATA_BYTES_PER_BLOCK[39][3] == (15, 20, 16, 61)`</span>
+<span class='doccomment'>/// as an example, this means in version 40 with correction level H, there are</span>
+<span class='doccomment'>/// 20 blocks with 15 bytes in size, and 61 blocks with 16 bytes in size.</span>
+<span class='kw'>static</span> <span class='ident'>DATA_BYTES_PER_BLOCK</span>: [[(<span class='ident'>usize</span>, <span class='ident'>usize</span>, <span class='ident'>usize</span>, <span class='ident'>usize</span>); <span class='number'>4</span>]; <span class='number'>44</span>] <span class='op'>=</span> [
+    <span class='comment'>// Normal versions.</span>
+    [(<span class='number'>19</span>, <span class='number'>1</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>16</span>, <span class='number'>1</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>13</span>, <span class='number'>1</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>9</span>, <span class='number'>1</span>, <span class='number'>0</span>, <span class='number'>0</span>)],                <span class='comment'>// 1</span>
+    [(<span class='number'>34</span>, <span class='number'>1</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>28</span>, <span class='number'>1</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>22</span>, <span class='number'>1</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>16</span>, <span class='number'>1</span>, <span class='number'>0</span>, <span class='number'>0</span>)],               <span class='comment'>// 2</span>
+    [(<span class='number'>55</span>, <span class='number'>1</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>44</span>, <span class='number'>1</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>17</span>, <span class='number'>2</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>13</span>, <span class='number'>2</span>, <span class='number'>0</span>, <span class='number'>0</span>)],               <span class='comment'>// 3</span>
+    [(<span class='number'>80</span>, <span class='number'>1</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>32</span>, <span class='number'>2</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>24</span>, <span class='number'>2</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>9</span>, <span class='number'>4</span>, <span class='number'>0</span>, <span class='number'>0</span>)],                <span class='comment'>// 4</span>
+    [(<span class='number'>108</span>, <span class='number'>1</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>43</span>, <span class='number'>2</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>15</span>, <span class='number'>2</span>, <span class='number'>16</span>, <span class='number'>2</span>), (<span class='number'>11</span>, <span class='number'>2</span>, <span class='number'>12</span>, <span class='number'>2</span>)],            <span class='comment'>// 5</span>
+    [(<span class='number'>68</span>, <span class='number'>2</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>27</span>, <span class='number'>4</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>19</span>, <span class='number'>4</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>15</span>, <span class='number'>4</span>, <span class='number'>0</span>, <span class='number'>0</span>)],               <span class='comment'>// 6</span>
+    [(<span class='number'>78</span>, <span class='number'>2</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>31</span>, <span class='number'>4</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>14</span>, <span class='number'>2</span>, <span class='number'>15</span>, <span class='number'>4</span>), (<span class='number'>13</span>, <span class='number'>4</span>, <span class='number'>14</span>, <span class='number'>1</span>)],             <span class='comment'>// 7</span>
+    [(<span class='number'>97</span>, <span class='number'>2</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>38</span>, <span class='number'>2</span>, <span class='number'>39</span>, <span class='number'>2</span>), (<span class='number'>18</span>, <span class='number'>4</span>, <span class='number'>19</span>, <span class='number'>2</span>), (<span class='number'>14</span>, <span class='number'>4</span>, <span class='number'>15</span>, <span class='number'>2</span>)],            <span class='comment'>// 8</span>
+    [(<span class='number'>116</span>, <span class='number'>2</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>36</span>, <span class='number'>3</span>, <span class='number'>37</span>, <span class='number'>2</span>), (<span class='number'>16</span>, <span class='number'>4</span>, <span class='number'>17</span>, <span class='number'>4</span>), (<span class='number'>12</span>, <span class='number'>4</span>, <span class='number'>13</span>, <span class='number'>4</span>)],           <span class='comment'>// 9</span>
+    [(<span class='number'>68</span>, <span class='number'>2</span>, <span class='number'>69</span>, <span class='number'>2</span>), (<span class='number'>43</span>, <span class='number'>4</span>, <span class='number'>44</span>, <span class='number'>1</span>), (<span class='number'>19</span>, <span class='number'>6</span>, <span class='number'>20</span>, <span class='number'>2</span>), (<span class='number'>15</span>, <span class='number'>6</span>, <span class='number'>16</span>, <span class='number'>2</span>)],           <span class='comment'>// 10</span>
+
+    [(<span class='number'>81</span>, <span class='number'>4</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>50</span>, <span class='number'>1</span>, <span class='number'>51</span>, <span class='number'>4</span>), (<span class='number'>22</span>, <span class='number'>4</span>, <span class='number'>23</span>, <span class='number'>4</span>), (<span class='number'>12</span>, <span class='number'>3</span>, <span class='number'>13</span>, <span class='number'>8</span>)],            <span class='comment'>// 11</span>
+    [(<span class='number'>92</span>, <span class='number'>2</span>, <span class='number'>93</span>, <span class='number'>2</span>), (<span class='number'>36</span>, <span class='number'>6</span>, <span class='number'>37</span>, <span class='number'>2</span>), (<span class='number'>20</span>, <span class='number'>4</span>, <span class='number'>21</span>, <span class='number'>6</span>), (<span class='number'>14</span>, <span class='number'>7</span>, <span class='number'>15</span>, <span class='number'>4</span>)],           <span class='comment'>// 12</span>
+    [(<span class='number'>107</span>, <span class='number'>4</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>37</span>, <span class='number'>8</span>, <span class='number'>38</span>, <span class='number'>1</span>), (<span class='number'>20</span>, <span class='number'>8</span>, <span class='number'>21</span>, <span class='number'>4</span>), (<span class='number'>11</span>, <span class='number'>12</span>, <span class='number'>12</span>, <span class='number'>4</span>)],          <span class='comment'>// 13</span>
+    [(<span class='number'>115</span>, <span class='number'>3</span>, <span class='number'>116</span>, <span class='number'>1</span>), (<span class='number'>40</span>, <span class='number'>4</span>, <span class='number'>41</span>, <span class='number'>5</span>), (<span class='number'>16</span>, <span class='number'>11</span>, <span class='number'>17</span>, <span class='number'>5</span>), (<span class='number'>12</span>, <span class='number'>11</span>, <span class='number'>13</span>, <span class='number'>5</span>)],       <span class='comment'>// 14</span>
+    [(<span class='number'>87</span>, <span class='number'>5</span>, <span class='number'>88</span>, <span class='number'>1</span>), (<span class='number'>41</span>, <span class='number'>5</span>, <span class='number'>42</span>, <span class='number'>5</span>), (<span class='number'>24</span>, <span class='number'>5</span>, <span class='number'>25</span>, <span class='number'>7</span>), (<span class='number'>12</span>, <span class='number'>11</span>, <span class='number'>13</span>, <span class='number'>7</span>)],          <span class='comment'>// 15</span>
+    [(<span class='number'>98</span>, <span class='number'>5</span>, <span class='number'>99</span>, <span class='number'>1</span>), (<span class='number'>45</span>, <span class='number'>7</span>, <span class='number'>46</span>, <span class='number'>3</span>), (<span class='number'>19</span>, <span class='number'>15</span>, <span class='number'>20</span>, <span class='number'>2</span>), (<span class='number'>15</span>, <span class='number'>3</span>, <span class='number'>16</span>, <span class='number'>13</span>)],         <span class='comment'>// 16</span>
+    [(<span class='number'>107</span>, <span class='number'>1</span>, <span class='number'>108</span>, <span class='number'>5</span>), (<span class='number'>46</span>, <span class='number'>10</span>, <span class='number'>47</span>, <span class='number'>1</span>), (<span class='number'>22</span>, <span class='number'>1</span>, <span class='number'>23</span>, <span class='number'>15</span>), (<span class='number'>14</span>, <span class='number'>2</span>, <span class='number'>15</span>, <span class='number'>17</span>)],      <span class='comment'>// 17</span>
+    [(<span class='number'>120</span>, <span class='number'>5</span>, <span class='number'>121</span>, <span class='number'>1</span>), (<span class='number'>43</span>, <span class='number'>9</span>, <span class='number'>44</span>, <span class='number'>4</span>), (<span class='number'>22</span>, <span class='number'>17</span>, <span class='number'>23</span>, <span class='number'>1</span>), (<span class='number'>14</span>, <span class='number'>2</span>, <span class='number'>15</span>, <span class='number'>19</span>)],       <span class='comment'>// 18</span>
+    [(<span class='number'>113</span>, <span class='number'>3</span>, <span class='number'>114</span>, <span class='number'>4</span>), (<span class='number'>44</span>, <span class='number'>3</span>, <span class='number'>45</span>, <span class='number'>11</span>), (<span class='number'>21</span>, <span class='number'>17</span>, <span class='number'>22</span>, <span class='number'>4</span>), (<span class='number'>13</span>, <span class='number'>9</span>, <span class='number'>14</span>, <span class='number'>16</span>)],      <span class='comment'>// 19</span>
+    [(<span class='number'>107</span>, <span class='number'>3</span>, <span class='number'>108</span>, <span class='number'>5</span>), (<span class='number'>41</span>, <span class='number'>3</span>, <span class='number'>42</span>, <span class='number'>13</span>), (<span class='number'>24</span>, <span class='number'>15</span>, <span class='number'>25</span>, <span class='number'>5</span>), (<span class='number'>15</span>, <span class='number'>15</span>, <span class='number'>16</span>, <span class='number'>10</span>)],     <span class='comment'>// 20</span>
+
+    [(<span class='number'>116</span>, <span class='number'>4</span>, <span class='number'>117</span>, <span class='number'>4</span>), (<span class='number'>42</span>, <span class='number'>17</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>22</span>, <span class='number'>17</span>, <span class='number'>23</span>, <span class='number'>6</span>), (<span class='number'>16</span>, <span class='number'>19</span>, <span class='number'>17</span>, <span class='number'>6</span>)],       <span class='comment'>// 21</span>
+    [(<span class='number'>111</span>, <span class='number'>2</span>, <span class='number'>112</span>, <span class='number'>7</span>), (<span class='number'>46</span>, <span class='number'>17</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>24</span>, <span class='number'>7</span>, <span class='number'>25</span>, <span class='number'>16</span>), (<span class='number'>13</span>, <span class='number'>34</span>, <span class='number'>0</span>, <span class='number'>0</span>)],        <span class='comment'>// 22</span>
+    [(<span class='number'>121</span>, <span class='number'>4</span>, <span class='number'>122</span>, <span class='number'>5</span>), (<span class='number'>47</span>, <span class='number'>4</span>, <span class='number'>48</span>, <span class='number'>14</span>), (<span class='number'>24</span>, <span class='number'>11</span>, <span class='number'>25</span>, <span class='number'>14</span>), (<span class='number'>15</span>, <span class='number'>16</span>, <span class='number'>16</span>, <span class='number'>14</span>)],    <span class='comment'>// 23</span>
+    [(<span class='number'>117</span>, <span class='number'>6</span>, <span class='number'>118</span>, <span class='number'>4</span>), (<span class='number'>45</span>, <span class='number'>6</span>, <span class='number'>46</span>, <span class='number'>14</span>), (<span class='number'>24</span>, <span class='number'>11</span>, <span class='number'>25</span>, <span class='number'>16</span>), (<span class='number'>16</span>, <span class='number'>30</span>, <span class='number'>17</span>, <span class='number'>2</span>)],     <span class='comment'>// 24</span>
+    [(<span class='number'>106</span>, <span class='number'>8</span>, <span class='number'>107</span>, <span class='number'>4</span>), (<span class='number'>47</span>, <span class='number'>8</span>, <span class='number'>48</span>, <span class='number'>13</span>), (<span class='number'>24</span>, <span class='number'>7</span>, <span class='number'>25</span>, <span class='number'>22</span>), (<span class='number'>15</span>, <span class='number'>22</span>, <span class='number'>16</span>, <span class='number'>13</span>)],     <span class='comment'>// 25</span>
+    [(<span class='number'>114</span>, <span class='number'>10</span>, <span class='number'>115</span>, <span class='number'>2</span>), (<span class='number'>46</span>, <span class='number'>19</span>, <span class='number'>47</span>, <span class='number'>4</span>), (<span class='number'>22</span>, <span class='number'>28</span>, <span class='number'>23</span>, <span class='number'>6</span>), (<span class='number'>16</span>, <span class='number'>33</span>, <span class='number'>17</span>, <span class='number'>4</span>)],     <span class='comment'>// 26</span>
+    [(<span class='number'>122</span>, <span class='number'>8</span>, <span class='number'>123</span>, <span class='number'>4</span>), (<span class='number'>45</span>, <span class='number'>22</span>, <span class='number'>46</span>, <span class='number'>3</span>), (<span class='number'>23</span>, <span class='number'>8</span>, <span class='number'>24</span>, <span class='number'>26</span>), (<span class='number'>15</span>, <span class='number'>12</span>, <span class='number'>16</span>, <span class='number'>28</span>)],     <span class='comment'>// 27</span>
+    [(<span class='number'>117</span>, <span class='number'>3</span>, <span class='number'>118</span>, <span class='number'>10</span>), (<span class='number'>45</span>, <span class='number'>3</span>, <span class='number'>46</span>, <span class='number'>23</span>), (<span class='number'>24</span>, <span class='number'>4</span>, <span class='number'>25</span>, <span class='number'>31</span>), (<span class='number'>15</span>, <span class='number'>11</span>, <span class='number'>16</span>, <span class='number'>31</span>)],    <span class='comment'>// 28</span>
+    [(<span class='number'>116</span>, <span class='number'>7</span>, <span class='number'>117</span>, <span class='number'>7</span>), (<span class='number'>45</span>, <span class='number'>21</span>, <span class='number'>46</span>, <span class='number'>7</span>), (<span class='number'>23</span>, <span class='number'>1</span>, <span class='number'>24</span>, <span class='number'>37</span>), (<span class='number'>15</span>, <span class='number'>19</span>, <span class='number'>16</span>, <span class='number'>26</span>)],     <span class='comment'>// 29</span>
+    [(<span class='number'>115</span>, <span class='number'>5</span>, <span class='number'>116</span>, <span class='number'>10</span>), (<span class='number'>47</span>, <span class='number'>19</span>, <span class='number'>48</span>, <span class='number'>10</span>), (<span class='number'>24</span>, <span class='number'>15</span>, <span class='number'>25</span>, <span class='number'>25</span>), (<span class='number'>15</span>, <span class='number'>23</span>, <span class='number'>16</span>, <span class='number'>25</span>)],  <span class='comment'>// 30</span>
+
+    [(<span class='number'>115</span>, <span class='number'>13</span>, <span class='number'>116</span>, <span class='number'>3</span>), (<span class='number'>46</span>, <span class='number'>2</span>, <span class='number'>47</span>, <span class='number'>29</span>), (<span class='number'>24</span>, <span class='number'>42</span>, <span class='number'>25</span>, <span class='number'>1</span>), (<span class='number'>15</span>, <span class='number'>23</span>, <span class='number'>16</span>, <span class='number'>28</span>)],    <span class='comment'>// 31</span>
+    [(<span class='number'>115</span>, <span class='number'>17</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>46</span>, <span class='number'>10</span>, <span class='number'>47</span>, <span class='number'>23</span>), (<span class='number'>24</span>, <span class='number'>10</span>, <span class='number'>25</span>, <span class='number'>35</span>), (<span class='number'>15</span>, <span class='number'>19</span>, <span class='number'>16</span>, <span class='number'>35</span>)],    <span class='comment'>// 32</span>
+    [(<span class='number'>115</span>, <span class='number'>17</span>, <span class='number'>116</span>, <span class='number'>1</span>), (<span class='number'>46</span>, <span class='number'>14</span>, <span class='number'>47</span>, <span class='number'>21</span>), (<span class='number'>24</span>, <span class='number'>29</span>, <span class='number'>25</span>, <span class='number'>19</span>), (<span class='number'>15</span>, <span class='number'>11</span>, <span class='number'>16</span>, <span class='number'>46</span>)],  <span class='comment'>// 33</span>
+    [(<span class='number'>115</span>, <span class='number'>13</span>, <span class='number'>116</span>, <span class='number'>6</span>), (<span class='number'>46</span>, <span class='number'>14</span>, <span class='number'>47</span>, <span class='number'>23</span>), (<span class='number'>24</span>, <span class='number'>44</span>, <span class='number'>25</span>, <span class='number'>7</span>), (<span class='number'>16</span>, <span class='number'>59</span>, <span class='number'>17</span>, <span class='number'>1</span>)],    <span class='comment'>// 34</span>
+    [(<span class='number'>121</span>, <span class='number'>12</span>, <span class='number'>122</span>, <span class='number'>7</span>), (<span class='number'>47</span>, <span class='number'>12</span>, <span class='number'>48</span>, <span class='number'>26</span>), (<span class='number'>24</span>, <span class='number'>39</span>, <span class='number'>25</span>, <span class='number'>14</span>), (<span class='number'>15</span>, <span class='number'>22</span>, <span class='number'>16</span>, <span class='number'>41</span>)],  <span class='comment'>// 35</span>
+    [(<span class='number'>121</span>, <span class='number'>6</span>, <span class='number'>122</span>, <span class='number'>14</span>), (<span class='number'>47</span>, <span class='number'>6</span>, <span class='number'>48</span>, <span class='number'>34</span>), (<span class='number'>24</span>, <span class='number'>46</span>, <span class='number'>25</span>, <span class='number'>10</span>), (<span class='number'>15</span>, <span class='number'>2</span>, <span class='number'>16</span>, <span class='number'>64</span>)],    <span class='comment'>// 36</span>
+    [(<span class='number'>122</span>, <span class='number'>17</span>, <span class='number'>123</span>, <span class='number'>4</span>), (<span class='number'>46</span>, <span class='number'>29</span>, <span class='number'>47</span>, <span class='number'>14</span>), (<span class='number'>24</span>, <span class='number'>49</span>, <span class='number'>25</span>, <span class='number'>10</span>), (<span class='number'>15</span>, <span class='number'>24</span>, <span class='number'>16</span>, <span class='number'>46</span>)],  <span class='comment'>// 37</span>
+    [(<span class='number'>122</span>, <span class='number'>4</span>, <span class='number'>123</span>, <span class='number'>18</span>), (<span class='number'>46</span>, <span class='number'>13</span>, <span class='number'>47</span>, <span class='number'>32</span>), (<span class='number'>24</span>, <span class='number'>48</span>, <span class='number'>25</span>, <span class='number'>14</span>), (<span class='number'>15</span>, <span class='number'>42</span>, <span class='number'>16</span>, <span class='number'>32</span>)],  <span class='comment'>// 38</span>
+    [(<span class='number'>117</span>, <span class='number'>20</span>, <span class='number'>118</span>, <span class='number'>4</span>), (<span class='number'>47</span>, <span class='number'>40</span>, <span class='number'>48</span>, <span class='number'>7</span>), (<span class='number'>24</span>, <span class='number'>43</span>, <span class='number'>25</span>, <span class='number'>22</span>), (<span class='number'>15</span>, <span class='number'>10</span>, <span class='number'>16</span>, <span class='number'>67</span>)],   <span class='comment'>// 39</span>
+    [(<span class='number'>118</span>, <span class='number'>19</span>, <span class='number'>119</span>, <span class='number'>6</span>), (<span class='number'>47</span>, <span class='number'>18</span>, <span class='number'>48</span>, <span class='number'>31</span>), (<span class='number'>24</span>, <span class='number'>34</span>, <span class='number'>25</span>, <span class='number'>34</span>), (<span class='number'>15</span>, <span class='number'>20</span>, <span class='number'>16</span>, <span class='number'>61</span>)],  <span class='comment'>// 40</span>
+
+    <span class='comment'>// Micro versions.</span>
+    [(<span class='number'>3</span>, <span class='number'>1</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>0</span>, <span class='number'>0</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>0</span>, <span class='number'>0</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>0</span>, <span class='number'>0</span>, <span class='number'>0</span>, <span class='number'>0</span>)],                   <span class='comment'>// M1</span>
+    [(<span class='number'>5</span>, <span class='number'>1</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>4</span>, <span class='number'>1</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>0</span>, <span class='number'>0</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>0</span>, <span class='number'>0</span>, <span class='number'>0</span>, <span class='number'>0</span>)],                   <span class='comment'>// M2</span>
+    [(<span class='number'>11</span>, <span class='number'>1</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>9</span>, <span class='number'>1</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>0</span>, <span class='number'>0</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>0</span>, <span class='number'>0</span>, <span class='number'>0</span>, <span class='number'>0</span>)],                  <span class='comment'>// M3</span>
+    [(<span class='number'>16</span>, <span class='number'>1</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>14</span>, <span class='number'>1</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>10</span>, <span class='number'>1</span>, <span class='number'>0</span>, <span class='number'>0</span>), (<span class='number'>0</span>, <span class='number'>0</span>, <span class='number'>0</span>, <span class='number'>0</span>)],                <span class='comment'>// M4</span>
+];
+
+<span class='comment'>//}}}</span>
+
+<span class='comment'>// Copyright 2014-2016 kennytm</span>
+<span class='comment'>//</span>
+<span class='comment'>// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may not</span>
+<span class='comment'>// use this file except in compliance with the License. You may obtain a copy of</span>
+<span class='comment'>// the License at</span>
+<span class='comment'>//</span>
+<span class='comment'>//     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class='comment'>//</span>
+<span class='comment'>// Unless required by applicable law or agreed to in writing, software</span>
+<span class='comment'>// distributed under the License is distributed on an &quot;AS IS&quot; BASIS, WITHOUT</span>
+<span class='comment'>// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the</span>
+<span class='comment'>// License for the specific language governing permissions and limitations under</span>
+<span class='comment'>// the License.</span>
+
+</pre>
+</section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../../";
+        window.currentCrate = "qrcode";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../../jquery.js"></script>
+    <script src="../../../main.js"></script>
+    
+    <script defer src="../../../search-index.js"></script>
+</body>
+</html>

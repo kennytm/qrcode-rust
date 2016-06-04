@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `canvas` mod in crate `qrcode`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, canvas">
+
+    <title>qrcode::canvas - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>qrcode</a></p><script>window.sidebarCurrent = {name: 'canvas', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>qrcode</a>::<wbr><a class='mod' href=''>canvas</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-650' class='srclink' href='../../src/qrcode/src/canvas.rs.html#1-1882' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>The <code>canvas</code> module puts raw bits into the QR code canvas.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>qrcode</span>::<span class='ident'>types</span>::{<span class='ident'>Version</span>, <span class='ident'>EcLevel</span>};
+<span class='kw'>use</span> <span class='ident'>qrcode</span>::<span class='ident'>canvas</span>::{<span class='ident'>Canvas</span>, <span class='ident'>MaskPattern</span>};
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>c</span> <span class='op'>=</span> <span class='ident'>Canvas</span>::<span class='ident'>new</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>1</span>), <span class='ident'>EcLevel</span>::<span class='ident'>L</span>);
+<span class='ident'>c</span>.<span class='ident'>draw_all_functional_patterns</span>();
+<span class='ident'>c</span>.<span class='ident'>draw_data</span>(<span class='string'>b&quot;data_here&quot;</span>, <span class='string'>b&quot;ec_code_here&quot;</span>);
+<span class='ident'>c</span>.<span class='ident'>apply_mask</span>(<span class='ident'>MaskPattern</span>::<span class='ident'>Checkerboard</span>);
+<span class='kw'>let</span> <span class='ident'>bools</span> <span class='op'>=</span> <span class='ident'>c</span>.<span class='ident'>to_bools</span>();</pre>
+</div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Canvas.html'
+                                  title='qrcode::canvas::Canvas'>Canvas</a></td>
+                           <td class='docblock short'>
+                                <p><code>Canvas</code> is an intermediate helper structure to render error-corrected data
+into a QR code.</p>
+                           </td>
+                       </tr></table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.MaskPattern.html'
+                                  title='qrcode::canvas::MaskPattern'>MaskPattern</a></td>
+                           <td class='docblock short'>
+                                <p>The mask patterns. Since QR code and Micro QR code do not use the same
+pattern number, we name them according to their shape instead of the number.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Module.html'
+                                  title='qrcode::canvas::Module'>Module</a></td>
+                           <td class='docblock short'>
+                                <p>The color of a module (pixel) in the QR code.</p>
+                           </td>
+                       </tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.is_functional.html'
+                                  title='qrcode::canvas::is_functional'>is_functional</a></td>
+                           <td class='docblock short'>
+                                <p>Gets whether the module at the given coordinates represents a functional
+module.</p>
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "qrcode";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

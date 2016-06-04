@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["ExtendedMode","An \"extended\" mode indicator, includes all indicators supported by QR code beyond those bearing data."]],"fn":[["encode_auto","Automatically determines the minimum version to store the data, and encode the result."]],"struct":[["Bits","The `Bits` structure stores the encoded data for a QR code."]]});

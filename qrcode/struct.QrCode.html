@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `QrCode` struct in crate `qrcode`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, QrCode">
+
+    <title>qrcode::QrCode - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='index.html'>qrcode</a></p><script>window.sidebarCurrent = {name: 'QrCode', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>qrcode</a>::<wbr><a class='struct' href=''>QrCode</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-1053' class='srclink' href='../src/qrcode/src/lib.rs.html#39-44' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct QrCode {
+    // some fields omitted
+}</pre><div class='docblock'><p>The encoded QR code symbol.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../qrcode/struct.QrCode.html' title='qrcode::QrCode'>QrCode</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1065' class='srclink' href='../src/qrcode/src/lib.rs.html#46-189' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>&lt;D: <a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.AsRef.html' title='core::convert::AsRef'>AsRef</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>&gt;&gt;(data: D) -&gt; <a class='type' href='../qrcode/types/type.QrResult.html' title='qrcode::types::QrResult'>QrResult</a>&lt;<a class='struct' href='../qrcode/struct.QrCode.html' title='qrcode::QrCode'>QrCode</a>&gt;</code></h4>
+<div class='docblock'><p>Constructs a new QR code which automatically encodes the given data.</p>
+
+<p>This method uses the &quot;medium&quot; error correction level and automatically
+chooses the smallest QR code.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>qrcode</span>::<span class='ident'>QrCode</span>;
+
+<span class='kw'>let</span> <span class='ident'>code</span> <span class='op'>=</span> <span class='ident'>QrCode</span>::<span class='ident'>new</span>(<span class='string'>b&quot;Some data&quot;</span>).<span class='ident'>unwrap</span>();</pre>
+</div><h4 id='method.with_error_correction_level' class='method'><code>fn <a href='#method.with_error_correction_level' class='fnname'>with_error_correction_level</a>&lt;D: <a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.AsRef.html' title='core::convert::AsRef'>AsRef</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>&gt;&gt;(data: D, ec_level: <a class='enum' href='../qrcode/types/enum.EcLevel.html' title='qrcode::types::EcLevel'>EcLevel</a>) -&gt; <a class='type' href='../qrcode/types/type.QrResult.html' title='qrcode::types::QrResult'>QrResult</a>&lt;<a class='struct' href='../qrcode/struct.QrCode.html' title='qrcode::QrCode'>QrCode</a>&gt;</code></h4>
+<div class='docblock'><p>Constructs a new QR code which automatically encodes the given data at a
+specific error correction level.</p>
+
+<p>This method automatically chooses the smallest QR code.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>qrcode</span>::{<span class='ident'>QrCode</span>, <span class='ident'>EcLevel</span>};
+
+<span class='kw'>let</span> <span class='ident'>code</span> <span class='op'>=</span> <span class='ident'>QrCode</span>::<span class='ident'>with_error_correction_level</span>(<span class='string'>b&quot;Some data&quot;</span>, <span class='ident'>EcLevel</span>::<span class='ident'>H</span>).<span class='ident'>unwrap</span>();</pre>
+</div><h4 id='method.with_version' class='method'><code>fn <a href='#method.with_version' class='fnname'>with_version</a>&lt;D: <a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.AsRef.html' title='core::convert::AsRef'>AsRef</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>&gt;&gt;(data: D, version: <a class='enum' href='../qrcode/types/enum.Version.html' title='qrcode::types::Version'>Version</a>, ec_level: <a class='enum' href='../qrcode/types/enum.EcLevel.html' title='qrcode::types::EcLevel'>EcLevel</a>) -&gt; <a class='type' href='../qrcode/types/type.QrResult.html' title='qrcode::types::QrResult'>QrResult</a>&lt;<a class='struct' href='../qrcode/struct.QrCode.html' title='qrcode::QrCode'>QrCode</a>&gt;</code></h4>
+<div class='docblock'><p>Constructs a new QR code for the given version and error correction
+level.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>qrcode</span>::{<span class='ident'>QrCode</span>, <span class='ident'>Version</span>, <span class='ident'>EcLevel</span>};
+
+<span class='kw'>let</span> <span class='ident'>code</span> <span class='op'>=</span> <span class='ident'>QrCode</span>::<span class='ident'>with_version</span>(<span class='string'>b&quot;Some data&quot;</span>, <span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>5</span>), <span class='ident'>EcLevel</span>::<span class='ident'>M</span>).<span class='ident'>unwrap</span>();</pre>
+
+<p>This method can also be used to generate Micro QR code.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>qrcode</span>::{<span class='ident'>QrCode</span>, <span class='ident'>Version</span>, <span class='ident'>EcLevel</span>};
+
+<span class='kw'>let</span> <span class='ident'>micro_code</span> <span class='op'>=</span> <span class='ident'>QrCode</span>::<span class='ident'>with_version</span>(<span class='string'>b&quot;123&quot;</span>, <span class='ident'>Version</span>::<span class='ident'>Micro</span>(<span class='number'>1</span>), <span class='ident'>EcLevel</span>::<span class='ident'>L</span>).<span class='ident'>unwrap</span>();</pre>
+</div><h4 id='method.with_bits' class='method'><code>fn <a href='#method.with_bits' class='fnname'>with_bits</a>(bits: <a class='struct' href='../qrcode/bits/struct.Bits.html' title='qrcode::bits::Bits'>Bits</a>, ec_level: <a class='enum' href='../qrcode/types/enum.EcLevel.html' title='qrcode::types::EcLevel'>EcLevel</a>) -&gt; <a class='type' href='../qrcode/types/type.QrResult.html' title='qrcode::types::QrResult'>QrResult</a>&lt;<a class='struct' href='../qrcode/struct.QrCode.html' title='qrcode::QrCode'>QrCode</a>&gt;</code></h4>
+<div class='docblock'><p>Constructs a new QR code with encoded bits.</p>
+
+<p>Use this method only if there are very special need to manipulate the
+raw bits before encoding. Some examples are:</p>
+
+<ul>
+<li>Encode data using specific character set with ECI</li>
+<li>Use the FNC1 modes</li>
+<li>Avoid the optimal segmentation algorithm</li>
+</ul>
+
+<p>See the <code>Bits</code> structure for detail.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='attribute'>#<span class='op'>!</span>[<span class='ident'>allow</span>(<span class='ident'>unused_must_use</span>)]</span>
+
+<span class='kw'>use</span> <span class='ident'>qrcode</span>::{<span class='ident'>QrCode</span>, <span class='ident'>Version</span>, <span class='ident'>EcLevel</span>};
+<span class='kw'>use</span> <span class='ident'>qrcode</span>::<span class='ident'>bits</span>::<span class='ident'>Bits</span>;
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>bits</span> <span class='op'>=</span> <span class='ident'>Bits</span>::<span class='ident'>new</span>(<span class='ident'>Version</span>::<span class='ident'>Normal</span>(<span class='number'>1</span>));
+<span class='ident'>bits</span>.<span class='ident'>push_eci_designator</span>(<span class='number'>9</span>);
+<span class='ident'>bits</span>.<span class='ident'>push_byte_data</span>(<span class='string'>b&quot;\xca\xfe\xe4\xe9\xea\xe1\xf2 QR&quot;</span>);
+<span class='ident'>bits</span>.<span class='ident'>push_terminator</span>(<span class='ident'>EcLevel</span>::<span class='ident'>L</span>);
+<span class='kw'>let</span> <span class='ident'>qrcode</span> <span class='op'>=</span> <span class='ident'>QrCode</span>::<span class='ident'>with_bits</span>(<span class='ident'>bits</span>, <span class='ident'>EcLevel</span>::<span class='ident'>L</span>);</pre>
+</div><h4 id='method.version' class='method'><code>fn <a href='#method.version' class='fnname'>version</a>(&amp;self) -&gt; <a class='enum' href='../qrcode/types/enum.Version.html' title='qrcode::types::Version'>Version</a></code></h4>
+<div class='docblock'><p>Gets the version of this QR code.</p>
+</div><h4 id='method.error_correction_level' class='method'><code>fn <a href='#method.error_correction_level' class='fnname'>error_correction_level</a>(&amp;self) -&gt; <a class='enum' href='../qrcode/types/enum.EcLevel.html' title='qrcode::types::EcLevel'>EcLevel</a></code></h4>
+<div class='docblock'><p>Gets the error correction level of this QR code.</p>
+</div><h4 id='method.width' class='method'><code>fn <a href='#method.width' class='fnname'>width</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h4>
+<div class='docblock'><p>Gets the number of modules per side, i.e. the width of this QR code.</p>
+
+<p>The width here does not contain the quiet zone paddings.</p>
+</div><h4 id='method.max_allowed_errors' class='method'><code>fn <a href='#method.max_allowed_errors' class='fnname'>max_allowed_errors</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h4>
+<div class='docblock'><p>Gets the maximum number of allowed erratic modules can be introduced
+before the data becomes corrupted. Note that errors should not be
+introduced to functional modules.</p>
+</div><h4 id='method.is_functional' class='method'><code>fn <a href='#method.is_functional' class='fnname'>is_functional</a>(&amp;self, x: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, y: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>Checks whether a module at coordinate (x, y) is a functional module or
+not.</p>
+</div><h4 id='method.to_debug_str' class='method'><code>fn <a href='#method.to_debug_str' class='fnname'>to_debug_str</a>(&amp;self, on_char: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.char.html'>char</a>, off_char: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.char.html'>char</a>) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a></code></h4>
+<div class='docblock'><p>Converts the QR code into a human-readable string. This is mainly for
+debugging only.</p>
+</div><h4 id='method.to_vec' class='method'><code>fn <a href='#method.to_vec' class='fnname'>to_vec</a>(&amp;self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>&gt;</code></h4>
+<div class='docblock'><p>Converts the QR code to a vector of booleans. Each entry represents the
+color of the module, with &quot;true&quot; means dark and &quot;false&quot; means light.</p>
+</div><h4 id='method.into_vec' class='method'><code>fn <a href='#method.into_vec' class='fnname'>into_vec</a>(self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>&gt;</code></h4>
+<div class='docblock'><p>Converts the QR code to a vector of booleans. Each entry represents the
+color of the module, with &quot;true&quot; means dark and &quot;false&quot; means light.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Index.html' title='core::ops::Index'>Index</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a>&gt; for <a class='struct' href='../qrcode/struct.QrCode.html' title='qrcode::QrCode'>QrCode</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1120' class='srclink' href='../src/qrcode/src/lib.rs.html#191-198' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Output' class='type'><code>type <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Index.html#associatedtype.Output' class='type'>Output</a> = <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>The returned type after indexing</p>
+</div><h4 id='method.index' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Index.html#tymethod.index' class='fnname'>index</a>(&amp;self, (x, y): <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a>) -&gt; &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>The method for the indexing (<code>Foo[Bar]</code>) operation</p>
+</div></div><h3 id='derived_implementations'>Derived Implementations </h3><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../qrcode/struct.QrCode.html' title='qrcode::QrCode'>QrCode</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1058' class='srclink' href='../src/qrcode/src/lib.rs.html#38' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../qrcode/struct.QrCode.html' title='qrcode::QrCode'>QrCode</a></code></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "qrcode";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

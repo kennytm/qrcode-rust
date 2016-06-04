@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["construct_codewords","Constructs data and error correction codewords ready to be put in the QR code matrix."],["create_error_correction_code","Creates the error correction code in N bytes."],["max_allowed_errors","Computes the maximum allowed number of erratic modules can be introduced to the QR code, before the data becomes truly corrupted."]]});
