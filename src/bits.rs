@@ -82,13 +82,19 @@ impl Bits {
         self.data
     }
 
-    /// Total number of bits.
+    /// Total number of bits currently pushed.
     pub fn len(&self) -> usize {
         if self.bit_offset == 0 {
             self.data.len() * 8
         } else {
             (self.data.len() - 1) * 8 + self.bit_offset
         }
+    }
+
+    /// The maximum number of bits allowed by the provided QR code version and
+    /// error correction level.
+    pub fn max_len(&self, ec_level: EcLevel) -> QrResult<usize> {
+        self.version.fetch(ec_level, &DATA_LENGTHS)
     }
 
     /// Version of the QR code.
@@ -657,7 +663,7 @@ impl Bits {
         };
 
         let cur_length = self.len();
-        let data_length = try!(self.version.fetch(ec_level, &DATA_LENGTHS));
+        let data_length = try!(self.max_len(ec_level));
         if cur_length > data_length {
             return Err(QrError::DataTooLong);
         }
