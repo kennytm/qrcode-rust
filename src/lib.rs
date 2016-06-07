@@ -2,37 +2,46 @@
 //!
 //! This crate provides a QR code and Micro QR code encoder for binary data.
 //!
-//!     use qrcode::QrCode;
+//! ```
+//! extern crate image;
+//! extern crate qrcode;
 //!
-//!     let code = QrCode::new(b"Some content here.");
-//!     match code {
-//!         Err(err) => panic!("Failed to encode the QR code: {:?}", err),
-//!         Ok(code) => {
-//!             for y in 0 .. code.width() {
-//!                 for x in 0 .. code.width() {
-//!                     let color = if code[(x, y)] { "black" } else { "white" };
-//!                     // render color at position (x, y)
-//!                 }
-//!             }
-//!         }
+//! use image::GrayImage;
+//! use qrcode::QrCode;
+//!
+//! # fn main() {
+//!
+//! let code = QrCode::new(b"Some content here.");
+//! match code {
+//!     Err(err) => panic!("Failed to encode the QR code: {:?}", err),
+//!     Ok(code) => {
+//!         let image: GrayImage = code.render().min_width(100).to_image();
+//!         // render `image`...
 //!     }
+//! }
+//!
+//! # }
+//! ```
 //!
 
 #![cfg_attr(feature="bench", feature(test))] // Unstable libraries
 
-#[cfg(feature="bench")]
-extern crate test;
+#[cfg(feature="bench")] extern crate test;
 extern crate num_traits;
+#[cfg(feature="image")] extern crate image;
 
 use std::ops::Index;
-
-pub use types::{QrResult, EcLevel, Version};
 
 pub mod types;
 pub mod bits;
 pub mod optimize;
 pub mod ec;
 pub mod canvas;
+pub mod render;
+
+pub use types::{QrResult, EcLevel, Version};
+
+#[cfg(feature="image")] use render::{BlankAndWhitePixel, Renderer};
 
 /// The encoded QR code symbol.
 #[derive(Clone)]
@@ -186,6 +195,12 @@ impl QrCode {
     pub fn into_vec(self) -> Vec<bool> {
         self.content
     }
+
+    #[cfg(feature="image")]
+    pub fn render<P: BlankAndWhitePixel + 'static>(&self) -> Renderer<P> {
+        let quiet_zone = if self.version.is_micro() { 2 } else { 4 };
+        Renderer::new(&self.content, self.width, quiet_zone)
+    }
 }
 
 impl Index<(usize, usize)> for QrCode {
@@ -249,4 +264,30 @@ mod tests {
     }
 }
 
+#[cfg(all(test, feature="image"))]
+mod image_tests {
+    use image::{GrayImage, Rgb, load_from_memory};
+    use {QrCode, Version, EcLevel};
+
+    #[test]
+    fn test_annex_i_qr_as_image() {
+        let code = QrCode::new(b"01234567").unwrap();
+        let image: GrayImage = code.render().to_image();
+        let expected = load_from_memory(include_bytes!("test_annex_i_qr_as_image.png")).unwrap().to_luma();
+        assert_eq!(image.dimensions(), expected.dimensions());
+        assert_eq!(image.into_raw(), expected.into_raw());
+    }
+
+    #[test]
+    fn test_annex_i_micro_qr_as_image() {
+        let code = QrCode::with_version(b"01234567", Version::Micro(2), EcLevel::L).unwrap();
+        let image = code.render().min_width(200)
+                                 .dark_color(Rgb { data: [128, 0, 0] })
+                                 .light_color(Rgb { data: [255, 255, 128] })
+                                 .to_image();
+        let expected = load_from_memory(include_bytes!("test_annex_i_micro_qr_as_image.png")).unwrap().to_rgb();
+        assert_eq!(image.dimensions(), expected.dimensions());
+        assert_eq!(image.into_raw(), expected.into_raw());
+    }
+}
 

@@ -14,8 +14,10 @@ exclude = [
 
 [dependencies]
 num-traits = "0.1.32"
+image = { version = "0.10.0", optional = true }
 
 [features]
+default = ["image"]
 bench = []
 
 [[bin]]
