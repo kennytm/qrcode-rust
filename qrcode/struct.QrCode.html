@@ -51,7 +51,7 @@
 <pre class='rust struct'>pub struct QrCode {
     // some fields omitted
 }</pre><div class='docblock'><p>The encoded QR code symbol.</p>
-</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../qrcode/struct.QrCode.html' title='qrcode::QrCode'>QrCode</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1144' class='srclink' href='../src/qrcode/src/lib.rs.html#55-204' title='goto source code'>[src]</a></span></h3>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../qrcode/struct.QrCode.html' title='qrcode::QrCode'>QrCode</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1144' class='srclink' href='../src/qrcode/src/lib.rs.html#55-227' title='goto source code'>[src]</a></span></h3>
 <div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>&lt;D:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.AsRef.html' title='core::convert::AsRef'>AsRef</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>&gt;&gt;(data: D) -&gt; <a class='type' href='../qrcode/types/type.QrResult.html' title='qrcode::types::QrResult'>QrResult</a>&lt;<a class='struct' href='../qrcode/struct.QrCode.html' title='qrcode::QrCode'>QrCode</a>&gt;</code></h4>
 <div class='docblock'><p>Constructs a new QR code which automatically encodes the given data.</p>
 
@@ -137,7 +137,24 @@ color of the module, with &quot;true&quot; means dark and &quot;false&quot; mean
 <div class='docblock'><p>Converts the QR code to a vector of booleans. Each entry represents the
 color of the module, with &quot;true&quot; means dark and &quot;false&quot; means light.</p>
 </div><h4 id='method.render' class='method'><code>fn <a href='#method.render' class='fnname'>render</a>&lt;P:&nbsp;<a class='trait' href='../qrcode/render/trait.BlankAndWhitePixel.html' title='qrcode::render::BlankAndWhitePixel'>BlankAndWhitePixel</a> + 'static&gt;(&amp;self) -&gt; <a class='struct' href='../qrcode/render/struct.Renderer.html' title='qrcode::render::Renderer'>Renderer</a>&lt;P&gt;</code></h4>
-</div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Index.html' title='core::ops::Index'>Index</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a>&gt; for <a class='struct' href='../qrcode/struct.QrCode.html' title='qrcode::QrCode'>QrCode</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1203' class='srclink' href='../src/qrcode/src/lib.rs.html#206-213' title='goto source code'>[src]</a></span></h3>
+<div class='docblock'><p>Renders the QR code into an image. The result is an image builder, which
+you may do some additional configuration before copying it into a
+concrete image.</p>
+
+<h1 id='examples' class='section-header'><a href='#examples'>Examples</a></h1>
+<pre class='rust rust-example-rendered'>
+
+<span class='kw'>let</span> <span class='ident'>image</span> <span class='op'>=</span> <span class='ident'>QrCode</span>::<span class='ident'>new</span>(<span class='string'>b&quot;hello&quot;</span>).<span class='ident'>unwrap</span>()
+                    .<span class='ident'>render</span>()
+                    .<span class='ident'>dark_color</span>(<span class='ident'>Rgb</span> { <span class='ident'>data</span>: [<span class='number'>0</span>, <span class='number'>0</span>, <span class='number'>128</span>] })
+                    .<span class='ident'>light_color</span>(<span class='ident'>Rgb</span> { <span class='ident'>data</span>: [<span class='number'>224</span>, <span class='number'>224</span>, <span class='number'>224</span>] }) <span class='comment'>// adjust colors</span>
+                    .<span class='ident'>quiet_zone</span>(<span class='boolvalue'>false</span>)      <span class='comment'>// disable quiet zone (white border)</span>
+                    .<span class='ident'>min_width</span>(<span class='number'>300</span>)         <span class='comment'>// sets minimum image size</span>
+                    .<span class='ident'>to_image</span>();</pre>
+
+<p>Note: the <code>image</code> crate itself also provides method to rotate the image,
+or overlay a logo on top of the QR code.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Index.html' title='core::ops::Index'>Index</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a>&gt; for <a class='struct' href='../qrcode/struct.QrCode.html' title='qrcode::QrCode'>QrCode</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1203' class='srclink' href='../src/qrcode/src/lib.rs.html#229-236' title='goto source code'>[src]</a></span></h3>
 <div class='impl-items'><h4 id='associatedtype.Output' class='type'><code>type <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Index.html#associatedtype.Output' class='type'>Output</a> = <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
 <div class='docblock'><p>The returned type after indexing</p>
 </div><h4 id='method.index' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Index.html#tymethod.index' class='fnname'>index</a>(&amp;self, (x, y): <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a>) -&gt; &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>

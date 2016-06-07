@@ -335,6 +335,29 @@
 <span id="291">291</span>
 <span id="292">292</span>
 <span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! QRCode encoder</span>
 <span class='doccomment'>//!</span>
@@ -534,6 +557,29 @@
         <span class='self'>self</span>.<span class='ident'>content</span>
     }
 
+    <span class='doccomment'>/// Renders the QR code into an image. The result is an image builder, which</span>
+    <span class='doccomment'>/// you may do some additional configuration before copying it into a</span>
+    <span class='doccomment'>/// concrete image.</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// # Examples</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// ```</span>
+    <span class='doccomment'>/// # extern crate image;</span>
+    <span class='doccomment'>/// # extern crate qrcode;</span>
+    <span class='doccomment'>/// # use qrcode::QrCode;</span>
+    <span class='doccomment'>/// # use image::Rgb;</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// let image = QrCode::new(b&quot;hello&quot;).unwrap()</span>
+    <span class='doccomment'>///                     .render()</span>
+    <span class='doccomment'>///                     .dark_color(Rgb { data: [0, 0, 128] })</span>
+    <span class='doccomment'>///                     .light_color(Rgb { data: [224, 224, 224] }) // adjust colors</span>
+    <span class='doccomment'>///                     .quiet_zone(false)      // disable quiet zone (white border)</span>
+    <span class='doccomment'>///                     .min_width(300)         // sets minimum image size</span>
+    <span class='doccomment'>///                     .to_image();</span>
+    <span class='doccomment'>/// ```</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// Note: the `image` crate itself also provides method to rotate the image,</span>
+    <span class='doccomment'>/// or overlay a logo on top of the QR code.</span>
     <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>feature</span><span class='op'>=</span><span class='string'>&quot;image&quot;</span>)]</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>render</span><span class='op'>&lt;</span><span class='ident'>P</span>: <span class='ident'>BlankAndWhitePixel</span> <span class='op'>+</span> <span class='lifetime'>&#39;static</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>Renderer</span><span class='op'>&lt;</span><span class='ident'>P</span><span class='op'>&gt;</span> {
         <span class='kw'>let</span> <span class='ident'>quiet_zone</span> <span class='op'>=</span> <span class='kw'>if</span> <span class='self'>self</span>.<span class='ident'>version</span>.<span class='ident'>is_micro</span>() { <span class='number'>2</span> } <span class='kw'>else</span> { <span class='number'>4</span> };
