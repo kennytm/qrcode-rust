@@ -196,6 +196,32 @@ impl QrCode {
         self.content
     }
 
+    /// Renders the QR code into an image. The result is an image builder, which
+    /// you may do some additional configuration before copying it into a
+    /// concrete image.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate image;
+    /// # extern crate qrcode;
+    /// # use qrcode::QrCode;
+    /// # use image::Rgb;
+    /// # fn main() {
+    ///
+    /// let image = QrCode::new(b"hello").unwrap()
+    ///                     .render()
+    ///                     .dark_color(Rgb { data: [0, 0, 128] })
+    ///                     .light_color(Rgb { data: [224, 224, 224] }) // adjust colors
+    ///                     .quiet_zone(false)      // disable quiet zone (white border)
+    ///                     .min_width(300)         // sets minimum image size
+    ///                     .to_image();
+    ///
+    /// # }
+    /// ```
+    ///
+    /// Note: the `image` crate itself also provides method to rotate the image,
+    /// or overlay a logo on top of the QR code.
     #[cfg(feature="image")]
     pub fn render<P: BlankAndWhitePixel + 'static>(&self) -> Renderer<P> {
         let quiet_zone = if self.version.is_micro() { 2 } else { 4 };

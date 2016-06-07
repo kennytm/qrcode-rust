@@ -9,7 +9,7 @@ repository = "https://github.com/kennytm/qrcode-rust"
 readme = "README.md"
 documentation = "http://kennytm.github.io/qrcode-rust/"
 exclude = [
-    ".travis.yml", ".gitignore"
+    ".travis.yml", ".gitignore", "update_doc.sh"
 ]
 
 [dependencies]
