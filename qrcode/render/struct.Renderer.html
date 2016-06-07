@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Renderer` struct in crate `qrcode`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Renderer">
+
+    <title>qrcode::render::Renderer - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>qrcode</a>::<wbr><a href='index.html'>render</a></p><script>window.sidebarCurrent = {name: 'Renderer', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>qrcode</a>::<wbr><a href='index.html'>render</a>::<wbr><a class='struct' href=''>Renderer</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-1079' class='srclink' href='../../src/qrcode/src/render.rs.html#55-64' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Renderer&lt;'a,&nbsp;P:&nbsp;<a class='trait' href='../../qrcode/render/trait.BlankAndWhitePixel.html' title='qrcode::render::BlankAndWhitePixel'>BlankAndWhitePixel</a>&gt; {
+    // some fields omitted
+}</pre><div class='docblock'><p>A QR code renderer. This is a builder type which converts a bool-vector into
+an image.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a,&nbsp;P:&nbsp;<a class='trait' href='../../qrcode/render/trait.BlankAndWhitePixel.html' title='qrcode::render::BlankAndWhitePixel'>BlankAndWhitePixel</a> + 'static&gt; <a class='struct' href='../../qrcode/render/struct.Renderer.html' title='qrcode::render::Renderer'>Renderer</a>&lt;'a,&nbsp;P&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1089' class='srclink' href='../../src/qrcode/src/render.rs.html#66-150' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(content: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;'a [</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, modules_count: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, quiet_zone: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u32.html'>u32</a>) -&gt; <a class='struct' href='../../qrcode/render/struct.Renderer.html' title='qrcode::render::Renderer'>Renderer</a>&lt;'a,&nbsp;P&gt;</code></h4>
+<div class='docblock'><p>Creates a new renderer.</p>
+</div><h4 id='method.dark_color' class='method'><code>fn <a href='#method.dark_color' class='fnname'>dark_color</a>(&amp;mut self, color: P) -&gt; &amp;mut Self</code></h4>
+<div class='docblock'><p>Sets color of a dark module. Default is opaque black.</p>
+</div><h4 id='method.light_color' class='method'><code>fn <a href='#method.light_color' class='fnname'>light_color</a>(&amp;mut self, color: P) -&gt; &amp;mut Self</code></h4>
+<div class='docblock'><p>Sets color of a light module. Default is opaque white.</p>
+</div><h4 id='method.quiet_zone' class='method'><code>fn <a href='#method.quiet_zone' class='fnname'>quiet_zone</a>(&amp;mut self, has_quiet_zone: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; &amp;mut Self</code></h4>
+<div class='docblock'><p>Whether to include the quiet zone in the generated image.</p>
+</div><h4 id='method.module_size' class='method'><code>fn <a href='#method.module_size' class='fnname'>module_size</a>(&amp;mut self, size: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u32.html'>u32</a>) -&gt; &amp;mut Self</code></h4>
+<div class='docblock'><p>Sets the size of each module in pixels. Default is 8px.</p>
+</div><h4 id='method.min_width' class='method'><code>fn <a href='#method.min_width' class='fnname'>min_width</a>(&amp;mut self, width: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u32.html'>u32</a>) -&gt; &amp;mut Self</code></h4>
+<div class='docblock'><p>Sets the minimal total image width (and thus height) in pixels,
+including the quiet zone if applicable. The renderer will try to find
+the dimension as small as possible, such that each module in the QR code
+has uniform size (no distortion).</p>
+
+<p>For instance, a version 1 QR code has 19 modules across including the
+quiet zone. If we request an image of width ≥200px, we get that each
+module&#39;s size should be 11px, so the actual image size will be 209px.</p>
+</div><h4 id='method.to_image' class='method'><code>fn <a href='#method.to_image' class='fnname'>to_image</a>(&amp;self) -&gt; <a class='struct' href='../../image/buffer/struct.ImageBuffer.html' title='image::buffer::ImageBuffer'>ImageBuffer</a>&lt;P,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;P::Subpixel&gt;&gt;</code></h4>
+<div class='docblock'><p>Renders the QR code into an image.</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "qrcode";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

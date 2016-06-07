@@ -1929,19 +1929,6 @@
 <span id="1885">1885</span>
 <span id="1886">1886</span>
 <span id="1887">1887</span>
-<span id="1888">1888</span>
-<span id="1889">1889</span>
-<span id="1890">1890</span>
-<span id="1891">1891</span>
-<span id="1892">1892</span>
-<span id="1893">1893</span>
-<span id="1894">1894</span>
-<span id="1895">1895</span>
-<span id="1896">1896</span>
-<span id="1897">1897</span>
-<span id="1898">1898</span>
-<span id="1899">1899</span>
-<span id="1900">1900</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! The `canvas` module puts raw bits into the QR code canvas.</span>
 <span class='doccomment'>//!</span>
@@ -1956,13 +1943,13 @@
 
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>iter</span>::<span class='ident'>repeat</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>cmp</span>::<span class='ident'>max</span>;
-<span class='kw'>use</span> <span class='ident'>num</span>::<span class='ident'>traits</span>::<span class='ident'>PrimInt</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>ops</span>::<span class='ident'>Range</span>;
+
+<span class='kw'>use</span> <span class='ident'>num_traits</span>::<span class='ident'>PrimInt</span>;
 
 <span class='kw'>use</span> <span class='ident'>types</span>::{<span class='ident'>Version</span>, <span class='ident'>EcLevel</span>};
 
-<span class='comment'>// TODO remove this after it is decided whether we want `p ... q` or</span>
-<span class='comment'>//      `(p .. q).inclusive()`</span>
+<span class='comment'>// TODO remove this after `p ... q` becomes stable. See rust-lang/rust#28237.</span>
 <span class='kw'>fn</span> <span class='ident'>range_inclusive</span><span class='op'>&lt;</span><span class='ident'>N</span>: <span class='ident'>PrimInt</span><span class='op'>&gt;</span>(<span class='ident'>from</span>: <span class='ident'>N</span>, <span class='ident'>to</span>: <span class='ident'>N</span>) <span class='op'>-&gt;</span> <span class='ident'>Range</span><span class='op'>&lt;</span><span class='ident'>N</span><span class='op'>&gt;</span> {
     <span class='ident'>from</span> .. (<span class='ident'>to</span> <span class='op'>+</span> <span class='ident'>N</span>::<span class='ident'>one</span>())
 }
@@ -3829,19 +3816,6 @@
 <span class='comment'>//}}}</span>
 <span class='comment'>//------------------------------------------------------------------------------</span>
 
-<span class='comment'>// Copyright 2014 Kenny Chan</span>
-<span class='comment'>//</span>
-<span class='comment'>// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may not</span>
-<span class='comment'>// use this file except in compliance with the License. You may obtain a copy of</span>
-<span class='comment'>// the License at</span>
-<span class='comment'>//</span>
-<span class='comment'>//     http://www.apache.org/licenses/LICENSE-2.0</span>
-<span class='comment'>//</span>
-<span class='comment'>// Unless required by applicable law or agreed to in writing, software</span>
-<span class='comment'>// distributed under the License is distributed on an &quot;AS IS&quot; BASIS, WITHOUT</span>
-<span class='comment'>// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the</span>
-<span class='comment'>// License for the specific language governing permissions and limitations under</span>
-<span class='comment'>// the License.</span>
 
 </pre>
 </section>

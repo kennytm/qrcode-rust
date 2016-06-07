@@ -58,9 +58,9 @@ more information.</p>
 <p>The smallest version is <code>Version::Normal(1)</code> of size 21×21, and the largest
 is <code>Version::Normal(40)</code> of size 177×177.</p>
 </div><h2 class='variants'>Variants</h2>
-<table class='variants_table'><tr><td id='variant.Normal'><code>Normal</code></td><td><div class='docblock'><p>A normal QR code version. The parameter should be between 1 and 40.</p>
-</div></td><td></td></tr><tr><td id='variant.Micro'><code>Micro</code></td><td><div class='docblock'><p>A Micro QR code version. The parameter should be between 1 and 4.</p>
-</div></td><td></td></tr></table><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='enum' href='../../qrcode/types/enum.Version.html' title='qrcode::types::Version'>Version</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-132' class='srclink' href='../../src/qrcode/src/types.rs.html#85-137' title='goto source code'>[src]</a></span></h3>
+<span id='variant.Normal' class='variant'><code>Normal(<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i16.html'>i16</a>)</code></span><div class='docblock'><p>A normal QR code version. The parameter should be between 1 and 40.</p>
+</div><span id='variant.Micro' class='variant'><code>Micro(<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i16.html'>i16</a>)</code></span><div class='docblock'><p>A Micro QR code version. The parameter should be between 1 and 4.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='enum' href='../../qrcode/types/enum.Version.html' title='qrcode::types::Version'>Version</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-132' class='srclink' href='../../src/qrcode/src/types.rs.html#85-137' title='goto source code'>[src]</a></span></h3>
 <div class='impl-items'><h4 id='method.width' class='method'><code>fn <a href='#method.width' class='fnname'>width</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i16.html'>i16</a></code></h4>
 <div class='docblock'><p>Get the number of &quot;modules&quot; on each size of the QR code, i.e. the width
 and height of the code.</p>

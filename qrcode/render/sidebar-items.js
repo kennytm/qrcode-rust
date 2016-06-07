@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Renderer","A QR code renderer. This is a builder type which converts a bool-vector into an image."]],"trait":[["BlankAndWhitePixel","A pixel which can support black and white colors."]]});

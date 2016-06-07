@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="API documentation for the Rust `QrResult` type in crate `qrcode`.">
-    <meta name="keywords" content="rust, rustlang, rust-lang, QrResult">
+    <meta name="description" content="API documentation for the Rust `render` mod in crate `qrcode`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, render">
 
-    <title>qrcode::types::QrResult - Rust</title>
+    <title>qrcode::render - Rust</title>
 
     <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../../main.css">
@@ -28,7 +28,7 @@
 
     <nav class="sidebar">
         
-        <p class='location'><a href='../index.html'>qrcode</a>::<wbr><a href='index.html'>types</a></p><script>window.sidebarCurrent = {name: 'QrResult', ty: 'type', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+        <p class='location'><a href='../index.html'>qrcode</a></p><script>window.sidebarCurrent = {name: 'render', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
     </nav>
 
     <nav class="sub">
@@ -42,14 +42,31 @@
         </form>
     </nav>
 
-    <section id='main' class="content type">
-<h1 class='fqn'><span class='in-band'><a href='../index.html'>qrcode</a>::<wbr><a href='index.html'>types</a>::<wbr><a class='type' href=''>QrResult</a></span><span class='out-of-band'><span id='render-detail'>
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>qrcode</a>::<wbr><a class='mod' href=''>render</a></span><span class='out-of-band'><span id='render-detail'>
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-45' class='srclink' href='../../src/qrcode/src/types.rs.html#43' title='goto source code'>[src]</a></span></h1>
-<pre class='rust typedef'>type QrResult&lt;T&gt; = <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;T,&nbsp;<a class='enum' href='../../qrcode/types/enum.QrError.html' title='qrcode::types::QrError'>QrError</a>&gt;;</pre><div class='docblock'><p><code>QrResult</code> is a convenient alias for a QR code generation result.</p>
-</div></section>
+               </span><a id='src-1053' class='srclink' href='../../src/qrcode/src/render.rs.html#1-220' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>Render a QR code into image.</p>
+</div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Renderer.html'
+                                  title='qrcode::render::Renderer'>Renderer</a></td>
+                           <td class='docblock short'>
+                                <p>A QR code renderer. This is a builder type which converts a bool-vector into
+an image.</p>
+                           </td>
+                       </tr></table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.BlankAndWhitePixel.html'
+                                  title='qrcode::render::BlankAndWhitePixel'>BlankAndWhitePixel</a></td>
+                           <td class='docblock short'>
+                                <p>A pixel which can support black and white colors.</p>
+                           </td>
+                       </tr></table></section>
     <section id='search' class="content hidden"></section>
 
     <section class="footer"></section>

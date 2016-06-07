@@ -56,16 +56,16 @@
     DarkUnmasked,
 }</pre><div class='docblock'><p>The color of a module (pixel) in the QR code.</p>
 </div><h2 class='variants'>Variants</h2>
-<table class='variants_table'><tr><td id='variant.Empty'><code>Empty</code></td><td><div class='docblock'><p>The module is empty.</p>
-</div></td><td></td></tr><tr><td id='variant.Light'><code>Light</code></td><td><div class='docblock'><p>The module is light (white), and cannot be masked. This mainly refers to
+<span id='variant.Empty' class='variant'><code>Empty</code></span><div class='docblock'><p>The module is empty.</p>
+</div><span id='variant.Light' class='variant'><code>Light</code></span><div class='docblock'><p>The module is light (white), and cannot be masked. This mainly refers to
 modules of functional patterns.</p>
-</div></td><td></td></tr><tr><td id='variant.Dark'><code>Dark</code></td><td><div class='docblock'><p>The module is dark (black), and cannot be masked. This mainly refers to
+</div><span id='variant.Dark' class='variant'><code>Dark</code></span><div class='docblock'><p>The module is dark (black), and cannot be masked. This mainly refers to
 modules of functional patterns.</p>
-</div></td><td></td></tr><tr><td id='variant.LightUnmasked'><code>LightUnmasked</code></td><td><div class='docblock'><p>The module is light (white), but not yet masked. This mainly refers to
+</div><span id='variant.LightUnmasked' class='variant'><code>LightUnmasked</code></span><div class='docblock'><p>The module is light (white), but not yet masked. This mainly refers to
 modules of data and error correction bits before masking.</p>
-</div></td><td></td></tr><tr><td id='variant.DarkUnmasked'><code>DarkUnmasked</code></td><td><div class='docblock'><p>The module is dark (black), but not yet masked. This mainly refers to
+</div><span id='variant.DarkUnmasked' class='variant'><code>DarkUnmasked</code></span><div class='docblock'><p>The module is dark (black), but not yet masked. This mainly refers to
 modules of data and error correction bits before masking.</p>
-</div></td><td></td></tr></table><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='enum' href='../../qrcode/canvas/enum.Module.html' title='qrcode::canvas::Module'>Module</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-689' class='srclink' href='../../src/qrcode/src/canvas.rs.html#51-79' title='goto source code'>[src]</a></span></h3>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='enum' href='../../qrcode/canvas/enum.Module.html' title='qrcode::canvas::Module'>Module</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-689' class='srclink' href='../../src/qrcode/src/canvas.rs.html#51-79' title='goto source code'>[src]</a></span></h3>
 <div class='impl-items'><h4 id='method.is_dark' class='method'><code>fn <a href='#method.is_dark' class='fnname'>is_dark</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
 <div class='docblock'><p>Checks whether a module is dark.</p>
 </div><h4 id='method.mask' class='method'><code>fn <a href='#method.mask' class='fnname'>mask</a>(&amp;self, should_invert: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='enum' href='../../qrcode/canvas/enum.Module.html' title='qrcode::canvas::Module'>Module</a></code></h4>
