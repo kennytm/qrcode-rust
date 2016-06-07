@@ -31,6 +31,9 @@ matrix:
         - env: ARCH=i686
           rust: 1.8.0
         # Note: on 1.8.0, all i686 build panics with the message "Box<Any>", cause all `should_panic` tests to fail.
+        - env: ARCH=i686
+          rust: nightly
+        # Note: nightly-i686 keeps failing, it seems that travis's nightly is outdated.
 
 install:
     - if [ "$TRAVIS_OS_NAME" = 'linux' ]; then OS=unknown-linux-gnu; else OS=apple-darwin; fi
