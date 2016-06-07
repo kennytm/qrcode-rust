@@ -1,7 +1,7 @@
 [package]
 name = "qrcode"
 description = "QR code encoder in Rust"
-license = "Apache-2.0"
+license = "MIT / Apache-2.0"
 version = "0.2.0"
 authors = ["kennytm <kennytm@gmail.com>"]
 keywords = ["qrcode"]
