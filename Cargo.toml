@@ -7,9 +7,9 @@ authors = ["kennytm <kennytm@gmail.com>"]
 keywords = ["qrcode"]
 repository = "https://github.com/kennytm/qrcode-rust"
 readme = "README.md"
-documentation = "http://kennytm.github.io/qrcode-rust/"
+documentation = "http://docs.rs/qrcode"
 exclude = [
-    ".travis.yml", ".gitignore", "update_doc.sh", "test-data"
+    ".travis.yml", ".gitignore", "test-data"
 ]
 
 [dependencies]

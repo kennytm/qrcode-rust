@@ -6,7 +6,7 @@ qrcode-rust
 [![crates.io](http://meritbadge.herokuapp.com/qrcode)](https://crates.io/crates/qrcode)
 [![MIT / Apache 2.0](https://img.shields.io/badge/license-MIT%20%2f%20Apache%202.0-blue.svg)](./LICENSE-APACHE.txt)
 
-QR code and Micro QR code encoder in Rust. [Documentation](https://kennytm.github.io/qrcode-rust).
+QR code and Micro QR code encoder in Rust. [Documentation](https://docs.rs/qrcode).
 
 Cargo.toml
 ----------

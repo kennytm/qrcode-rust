@@ -17,8 +17,7 @@ os:
     - osx
 
 rust:
-    - 1.8.0
-    - 1.9.0
+    - 1.13.0
     - 1.14.0
     - nightly
 
@@ -29,9 +28,6 @@ env:
 
 matrix:
     allow_failures:
-        - env: ARCH=i686
-          rust: 1.8.0
-        # Note: on 1.8.0, all i686 build panics with the message "Box<Any>", cause all `should_panic` tests to fail.
         - env: ARCH=i686
           rust: nightly
         # Note: nightly-i686 keeps failing, it seems that travis's nightly is outdated.
