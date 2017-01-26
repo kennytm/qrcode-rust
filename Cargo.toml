@@ -9,7 +9,7 @@ repository = "https://github.com/kennytm/qrcode-rust"
 readme = "README.md"
 documentation = "http://docs.rs/qrcode"
 exclude = [
-    ".travis.yml", ".gitignore", "test-data"
+    ".travis.yml", ".gitignore", "test-data/**"
 ]
 
 [badges]
