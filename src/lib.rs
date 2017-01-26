@@ -3,26 +3,23 @@
 //! This crate provides a QR code and Micro QR code encoder for binary data.
 //!
 //! ```
-//! extern crate image;
 //! extern crate qrcode;
+//! extern crate image;
 //!
-//! use image::GrayImage;
 //! use qrcode::QrCode;
+//! use image::GrayImage;
 //!
-//! # fn main() {
+//! fn main() {
+//!     // Encode some data into bits.
+//!     let code = QrCode::new(b"01234567").unwrap();
 //!
-//! let code = QrCode::new(b"Some content here.");
-//! match code {
-//!     Err(err) => panic!("Failed to encode the QR code: {:?}", err),
-//!     Ok(code) => {
-//!         let image: GrayImage = code.render().min_width(100).to_image();
-//!         // render `image`...
-//!     }
+//!     // Render the bits into an image.
+//!     let image: GrayImage = code.render().to_image();
+//!
+//!     // Save the image.
+//!     image.save("/tmp/qrcode.png").unwrap();
 //! }
-//!
-//! # }
 //! ```
-//!
 
 #![cfg_attr(feature="bench", feature(test))] // Unstable libraries
 
