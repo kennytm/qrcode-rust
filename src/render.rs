@@ -147,6 +147,51 @@ impl<'a, P: BlankAndWhitePixel + 'static> Renderer<'a, P> {
 
         image
     }
+
+    /// Renders the QR code into String.
+    ///
+    /// # Examples
+    ///
+    /// Renders and prints QR Code in terminal:
+    ///
+    /// ```
+    /// # extern crate qrcode;
+    /// # extern crate image;
+    ///
+    /// # use qrcode::QrCode;
+    /// # use image::Luma;
+    ///
+    /// # fn main() {
+    ///    let code = QrCode::new(b"01234567").unwrap();
+    ///    let s = code.render::<Luma<u8>>()
+    ///        .to_string("\x1b[49m  \x1b[0m", "\x1b[7m  \x1b[0m");
+    ///    println!("{}", s);
+    /// # }
+    /// ```
+    pub fn to_string(&self, on_str: &str, off_str: &str) -> String {
+        let w = self.modules_count;
+        let qz = if self.has_quiet_zone { self.quiet_zone } else { 0 };
+        let width = w + 2 * qz;
+
+        let mut str = String::new();
+        let mut i = 0;
+        for y in 0..width {
+            for x in 0..width {
+                if qz <= x && x < w + qz && qz <= y && y < w + qz {
+                    if self.content[i] {
+                        str += on_str;
+                    } else {
+                        str += off_str;
+                    };
+                    i += 1;
+                } else {
+                    str += off_str;
+                };
+            }
+            str.push('\n')
+        }
+        str
+    }
 }
 
 #[cfg(test)]
