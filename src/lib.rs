@@ -4,9 +4,11 @@
 //!
 //! ```
 //! extern crate qrcode;
+//! # #[cfg(feature="image")]
 //! extern crate image;
 //!
 //! use qrcode::QrCode;
+//! # #[cfg(feature="image")]
 //! use image::GrayImage;
 //!
 //! fn main() {
@@ -14,9 +16,11 @@
 //!     let code = QrCode::new(b"01234567").unwrap();
 //!
 //!     // Render the bits into an image.
+//! #   #[cfg(feature="image")]
 //!     let image: GrayImage = code.render().to_image();
 //!
 //!     // Save the image.
+//! #   #[cfg(feature="image")]
 //!     image.save("/tmp/qrcode.png").unwrap();
 //! }
 //! ```

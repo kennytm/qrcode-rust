@@ -39,7 +39,7 @@ install:
 script:
     - cargo test --no-default-features
     - cargo test
-    - if [ "$TRAVIS_RUST_VERSION" = 'nightly' ]; then cargo bench; fi
+    - if [ "$TRAVIS_RUST_VERSION" = 'nightly' ]; then cargo bench --features=bench; fi
 
 after_success:
     - cargo install cargo-kcov
