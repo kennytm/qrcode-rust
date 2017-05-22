@@ -1,8 +1,7 @@
-# Copied from https://github.com/kennytm/extprim/blob/master/.travis.yml :)
-
 language: rust
-sudo: false
 
+sudo: false
+dist: trusty
 addons:
     apt:
         packages:
@@ -10,6 +9,7 @@ addons:
             - libelf-dev
             - libdw-dev
             - binutils-dev
+            - libiberty-dev
             - gcc-multilib
 
 os:
@@ -21,28 +21,22 @@ rust:
     - beta
     - nightly
 
-env:
-    matrix:
-        - ARCH=x86_64
-        - ARCH=i686
+matrix:
+    allow_failures:
+        - rust: beta
 
 install:
     - if [ "$TRAVIS_OS_NAME" = 'linux' ]; then OS=unknown-linux-gnu; else OS=apple-darwin; fi
-    - export HOST=$ARCH-$OS
-    - curl -SfLO "https://static.rust-lang.org/rustup/dist/$HOST/rustup-init"
-    - chmod u+x rustup-init
-    - ./rustup-init -y --default-host "$HOST" --default-toolchain "$TRAVIS_RUST_VERSION"
-    - export PATH=$HOME/.cargo/bin:$HOME/.local/bin:$PATH
-    - rustc -vV
-    - cargo -vV
+    - rustup target add i686-$OS
 
 script:
     - cargo test --no-default-features
     - cargo test
     - if [ "$TRAVIS_RUST_VERSION" = 'nightly' ]; then cargo bench --features=bench; fi
+    - cargo test --target i686-$OS
 
 after_success:
     - cargo install cargo-kcov
     - cargo kcov --print-install-kcov-sh | bash
-    - cargo kcov --coveralls -- --verify
+    - cargo kcov --coveralls
 
