@@ -16,7 +16,6 @@ exclude = [
 travis-ci = { repository = "kennytm/qrcode-rust" }
 
 [dependencies]
-num-traits = "0.1"
 image = { version = "0.13", optional = true }
 
 [features]

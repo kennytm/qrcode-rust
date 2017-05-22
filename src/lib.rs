@@ -28,7 +28,6 @@
 #![cfg_attr(feature="bench", feature(test))] // Unstable libraries
 
 #[cfg(feature="bench")] extern crate test;
-extern crate num_traits;
 #[cfg(feature="image")] extern crate image;
 
 use std::ops::Index;

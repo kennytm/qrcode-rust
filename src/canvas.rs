@@ -12,13 +12,11 @@
 use std::cmp::max;
 use std::ops::Range;
 
-use num_traits::PrimInt;
-
 use types::{Version, EcLevel, Color};
 
 // TODO remove this after `p ... q` becomes stable. See rust-lang/rust#28237.
-fn range_inclusive<N: PrimInt>(from: N, to: N) -> Range<N> {
-    from .. (to + N::one())
+fn range_inclusive(from: i16, to: i16) -> Range<i16> {
+    from .. (to + 1)
 }
 
 //------------------------------------------------------------------------------
@@ -623,29 +621,28 @@ impl Canvas {
     /// `off_color`. The coordinates will be extracted from the `coords`
     /// iterator. It will start from the most significant bits first, so
     /// *trailing* zeros will be ignored.
-    fn draw_number<N: PrimInt>(&mut self, number: N,
-                               on_color: Color, off_color: Color,
-                               coords: &[(i16, i16)]) {
-        let zero: N = N::zero();
-        let mut mask: N = !(!zero >> 1);
+    fn draw_number(&mut self, number: u32, bits: u32,
+                   on_color: Color, off_color: Color, coords: &[(i16, i16)]) {
+        let mut mask = 1 << (bits - 1);
         for &(x, y) in coords {
-            let color = if (mask & number) == zero { off_color } else { on_color };
+            let color = if (mask & number) == 0 { off_color } else { on_color };
             self.put(x, y, color);
-            mask = mask >> 1;
+            mask >>= 1;
         }
     }
 
     /// Draws the format info patterns for an encoded number.
     fn draw_format_info_patterns_with_number(&mut self, format_info: u16) {
+        let format_info = format_info as u32;
         match self.version {
             Version::Micro(_) => {
-                self.draw_number(format_info, Color::Dark, Color::Light,
+                self.draw_number(format_info, 15, Color::Dark, Color::Light,
                                  &FORMAT_INFO_COORDS_MICRO_QR);
             }
             Version::Normal(_) => {
-                self.draw_number(format_info, Color::Dark, Color::Light,
+                self.draw_number(format_info, 15, Color::Dark, Color::Light,
                                  &FORMAT_INFO_COORDS_QR_MAIN);
-                self.draw_number(format_info, Color::Dark, Color::Light,
+                self.draw_number(format_info, 15, Color::Dark, Color::Light,
                                  &FORMAT_INFO_COORDS_QR_SIDE);
                 self.put(8, -8, Color::Dark); // Dark module.
             }
@@ -662,10 +659,10 @@ impl Canvas {
         match self.version {
             Version::Micro(_) | Version::Normal(1...6) => { return; }
             Version::Normal(a) => {
-                let version_info = VERSION_INFOS[(a - 7) as usize] << 14;
-                self.draw_number(version_info, Color::Dark, Color::Light,
+                let version_info = VERSION_INFOS[(a - 7) as usize];
+                self.draw_number(version_info, 18, Color::Dark, Color::Light,
                                  &VERSION_INFO_COORDS_BL);
-                self.draw_number(version_info, Color::Dark, Color::Light,
+                self.draw_number(version_info, 18, Color::Dark, Color::Light,
                                  &VERSION_INFO_COORDS_TR);
             }
         }
@@ -680,7 +677,7 @@ mod draw_version_info_tests {
     #[test]
     fn test_draw_number() {
         let mut c = Canvas::new(Version::Micro(1), EcLevel::L);
-        c.draw_number(0b10101101u8, Color::Dark, Color::Light,
+        c.draw_number(0b10101101, 8, Color::Dark, Color::Light,
                       &[(0,0), (0,-1), (-2,-2), (-2,0)]);
         assert_eq!(&*c.to_debug_str(), "\n\
                     #????????.?\n\
@@ -1472,7 +1469,7 @@ impl Canvas {
                 FORMAT_INFOS_MICRO_QR[simple_format_number]
             }
         };
-        self.draw_format_info_patterns_with_number(format_number << 1);
+        self.draw_format_info_patterns_with_number(format_number);
     }
 }
 
