@@ -2,7 +2,7 @@
 name = "qrcode"
 description = "QR code encoder in Rust"
 license = "MIT / Apache-2.0"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["kennytm <kennytm@gmail.com>"]
 keywords = ["qrcode"]
 repository = "https://github.com/kennytm/qrcode-rust"
@@ -25,3 +25,14 @@ svg = []
 
 [[bin]]
 name = "qrencode"
+
+[[example]]
+name = "encode_image"
+required-features = ["image"]
+
+[[example]]
+name = "encode_string"
+
+[[example]]
+name = "encode_svg"
+required-features = ["svg"]

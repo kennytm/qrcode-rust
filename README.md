@@ -26,21 +26,21 @@ qrcode = { version = "0.4", default-features = false }
 Example
 -------
 
-This code:
+## Image generation
 
 ```rust
 extern crate qrcode;
 extern crate image;
 
 use qrcode::QrCode;
-use image::GrayImage;
+use image::Luma;
 
 fn main() {
     // Encode some data into bits.
     let code = QrCode::new(b"01234567").unwrap();
 
     // Render the bits into an image.
-    let image: GrayImage = code.render().to_image();
+    let image = code.render::<Luma<u8>>().build();
 
     // Save the image.
     image.save("/tmp/qrcode.png").unwrap();
@@ -51,3 +51,67 @@ Generates this image:
 
 ![Output](src/test_annex_i_qr_as_image.png)
 
+## String generation
+
+```rust
+extern crate qrcode;
+use qrcode::QrCode;
+
+fn main() {
+    let code = QrCode::new(b"Hello").unwrap();
+    let string = code.render::<char>()
+        .quiet_zone(false)
+        .module_dimensions(2, 1)
+        .build();
+    println!("{}", string);
+}
+```
+
+Generates this output:
+
+```none
+##############    ########  ##############
+##          ##          ##  ##          ##
+##  ######  ##  ##  ##  ##  ##  ######  ##
+##  ######  ##  ##  ##      ##  ######  ##
+##  ######  ##  ####    ##  ##  ######  ##
+##          ##  ####  ##    ##          ##
+##############  ##  ##  ##  ##############
+                ##  ##
+##  ##########    ##  ##    ##########
+      ##        ##    ########    ####  ##
+    ##########    ####  ##  ####  ######
+    ##    ##  ####  ##########    ####
+  ######    ##########  ##    ##        ##
+                ##      ##    ##  ##
+##############    ##  ##  ##    ##  ####
+##          ##  ##  ##        ##########
+##  ######  ##  ##    ##  ##    ##    ##
+##  ######  ##  ####  ##########  ##
+##  ######  ##  ####    ##  ####    ##
+##          ##    ##  ########  ######
+##############  ####    ##      ##    ##
+```
+
+## SVG generation
+
+```rust
+extern crate qrcode;
+
+use qrcode::{QrCode, Version, EcLevel};
+use qrcode::render::svg;
+
+fn main() {
+    let code = QrCode::with_version(b"01234567", Version::Micro(2), EcLevel::L).unwrap();
+    let image = code.render()
+        .min_dimensions(200, 200)
+        .dark_color(svg::Color("#800000"))
+        .light_color(svg::Color("#ffff80"))
+        .build();
+    println!("{}", string);
+}
+```
+
+Generates this SVG:
+
+[![Output](src/test_annex_i_micro_qr_as_svg.svg)](src/test_annex_i_micro_qr_as_svg.svg)
