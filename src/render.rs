@@ -3,6 +3,7 @@
 #![cfg(feature="image")]
 
 use image::{Pixel, Rgb, Rgba, Luma, LumaA, Primitive, ImageBuffer};
+use types::Color;
 
 /// A pixel which can support black and white colors.
 pub trait BlankAndWhitePixel: Pixel {
@@ -53,7 +54,7 @@ impl<S: Primitive + 'static> BlankAndWhitePixel for LumaA<S> {
 /// A QR code renderer. This is a builder type which converts a bool-vector into
 /// an image.
 pub struct Renderer<'a, P: BlankAndWhitePixel> {
-    content: &'a [bool],
+    content: &'a [Color],
     modules_count: u32, // <- we call it `modules_count` here to avoid ambiguity of `width`.
     quiet_zone: u32,
     module_size: u32,
@@ -65,7 +66,7 @@ pub struct Renderer<'a, P: BlankAndWhitePixel> {
 
 impl<'a, P: BlankAndWhitePixel + 'static> Renderer<'a, P> {
     /// Creates a new renderer.
-    pub fn new(content: &'a [bool], modules_count: usize, quiet_zone: u32) -> Renderer<'a, P> {
+    pub fn new(content: &'a [Color], modules_count: usize, quiet_zone: u32) -> Renderer<'a, P> {
         assert!(modules_count * modules_count == content.len());
         Renderer {
             content: content,
@@ -131,7 +132,11 @@ impl<'a, P: BlankAndWhitePixel + 'static> Renderer<'a, P> {
         for y in 0 .. width {
             for x in 0 .. width {
                 let color = if qz <= x && x < w + qz && qz <= y && y < w + qz {
-                    let c = if self.content[i] { self.dark_color } else { self.light_color };
+                    let c = if self.content[i] != Color::Light {
+                        self.dark_color
+                    } else {
+                        self.light_color
+                    };
                     i += 1;
                     c
                 } else {
@@ -153,13 +158,14 @@ impl<'a, P: BlankAndWhitePixel + 'static> Renderer<'a, P> {
 mod render_tests {
     use render::Renderer;
     use image::{Luma, Rgba};
+    use types::Color;
 
     #[test]
     fn test_render_luma8_unsized() {
         let image = Renderer::<Luma<u8>>::new(&[
-            false, true, true,
-            true, false, false,
-            false, true, false,
+            Color::Light, Color::Dark, Color::Dark,
+            Color::Dark, Color::Light, Color::Light,
+            Color::Light, Color::Dark, Color::Light,
         ], 3, 1).module_size(1).to_image();
 
         let expected = [
@@ -175,8 +181,8 @@ mod render_tests {
     #[test]
     fn test_render_rgba_unsized() {
         let image = Renderer::<Rgba<u8>>::new(&[
-            false, true,
-            true, true,
+            Color::Light, Color::Dark,
+            Color::Dark, Color::Dark,
         ], 2, 1).module_size(1).to_image();
 
         let expected: &[u8] = &[
@@ -192,8 +198,8 @@ mod render_tests {
     #[test]
     fn test_render_resized() {
         let image = Renderer::<Luma<u8>>::new(&[
-            true, false,
-            false, true,
+            Color::Dark, Color::Light,
+            Color::Light, Color::Dark,
         ], 2, 1).min_width(10).to_image();
 
         let expected: &[u8] = &[

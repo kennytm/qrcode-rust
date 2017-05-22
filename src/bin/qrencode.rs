@@ -12,7 +12,7 @@ pub fn main() {
 
     for y in 0 .. code.width() {
         for x in 0 .. code.width() {
-            let block = if code[(x, y)] { '█' } else { SPACE };
+            let block = code[(x, y)].select('█', SPACE);
             print!("{}{}", block, block);
         }
         print!("\n{}{}{}{}{}", SPACE, SPACE, SPACE, SPACE, SPACE);

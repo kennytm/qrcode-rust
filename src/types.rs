@@ -1,6 +1,7 @@
 use std::default::Default;
 use std::cmp::{PartialOrd, Ordering};
 use std::fmt::{Display, Formatter, Error};
+use std::ops::Not;
 
 //------------------------------------------------------------------------------
 //{{{ QrResult
@@ -41,6 +42,48 @@ impl Display for QrError {
 
 /// `QrResult` is a convenient alias for a QR code generation result.
 pub type QrResult<T> = Result<T, QrError>;
+
+//}}}
+//------------------------------------------------------------------------------
+//{{{ Color
+
+/// The color of a module.
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub enum Color {
+    /// The module is light colored.
+    Light,
+    /// The module is dark colored.
+    Dark,
+}
+
+impl Color {
+    /// Selects a value according to color of the module. Equivalent to
+    /// `if self != Color::Light { dark } else { light }`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use qrcode::types::Color;
+    /// assert_eq!(Color::Light.select(1, 0), 0);
+    /// assert_eq!(Color::Dark.select("black", "white"), "black");
+    /// ```
+    pub fn select<T>(self, dark: T, light: T) -> T {
+        match self {
+            Color::Light => light,
+            Color::Dark => dark,
+        }
+    }
+}
+
+impl Not for Color {
+    type Output = Color;
+    fn not(self) -> Color {
+        match self {
+            Color::Light => Color::Dark,
+            Color::Dark => Color::Light,
+        }
+    }
+}
 
 //}}}
 //------------------------------------------------------------------------------

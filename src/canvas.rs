@@ -9,13 +9,12 @@
 //!     c.apply_mask(MaskPattern::Checkerboard);
 //!     let bools = c.to_bools();
 
-use std::iter::repeat;
 use std::cmp::max;
 use std::ops::Range;
 
 use num_traits::PrimInt;
 
-use types::{Version, EcLevel};
+use types::{Version, EcLevel, Color};
 
 // TODO remove this after `p ... q` becomes stable. See rust-lang/rust#28237.
 fn range_inclusive<N: PrimInt>(from: N, to: N) -> Range<N> {
@@ -31,49 +30,47 @@ pub enum Module {
     /// The module is empty.
     Empty,
 
-    /// The module is light (white), and cannot be masked. This mainly refers to
-    /// modules of functional patterns.
-    Light,
+    /// The module is of functional patterns which cannot be masked, or pixels
+    /// which have been masked.
+    Masked(Color),
 
-    /// The module is dark (black), and cannot be masked. This mainly refers to
-    /// modules of functional patterns.
-    Dark,
+    /// The module is of data and error correction bits before masking.
+    Unmasked(Color),
+}
 
-    /// The module is light (white), but not yet masked. This mainly refers to
-    /// modules of data and error correction bits before masking.
-    LightUnmasked,
-
-    /// The module is dark (black), but not yet masked. This mainly refers to
-    /// modules of data and error correction bits before masking.
-    DarkUnmasked,
+impl From<Module> for Color {
+    fn from(module: Module) -> Color {
+        match module {
+            Module::Empty => Color::Light,
+            Module::Masked(c) | Module::Unmasked(c) => c,
+        }
+    }
 }
 
 impl Module {
     /// Checks whether a module is dark.
-    pub fn is_dark(&self) -> bool {
-        match *self {
-            Module::Dark | Module::DarkUnmasked => true,
-            _ => false,
-        }
+    pub fn is_dark(self) -> bool {
+        Color::from(self) == Color::Dark
     }
 
     /// Apply a mask to the unmasked modules.
     ///
     ///     use qrcode::canvas::Module;
+    ///     use qrcode::types::Color;
     ///
-    ///     assert_eq!(Module::LightUnmasked.mask(true), Module::Dark);
-    ///     assert_eq!(Module::DarkUnmasked.mask(true), Module::Light);
-    ///     assert_eq!(Module::LightUnmasked.mask(false), Module::Light);
-    ///     assert_eq!(Module::Dark.mask(true), Module::Dark);
-    ///     assert_eq!(Module::Dark.mask(false), Module::Dark);
+    ///     assert_eq!(Module::Unmasked(Color::Light).mask(true), Module::Masked(Color::Dark));
+    ///     assert_eq!(Module::Unmasked(Color::Dark).mask(true), Module::Masked(Color::Light));
+    ///     assert_eq!(Module::Unmasked(Color::Light).mask(false), Module::Masked(Color::Light));
+    ///     assert_eq!(Module::Masked(Color::Dark).mask(true), Module::Masked(Color::Dark));
+    ///     assert_eq!(Module::Masked(Color::Dark).mask(false), Module::Masked(Color::Dark));
     ///
-    pub fn mask(&self, should_invert: bool) -> Module {
-        match (*self, should_invert) {
-            (Module::Empty, true) | (Module::LightUnmasked, true) => Module::Dark,
-            (Module::Empty, false) | (Module::LightUnmasked, false) => Module::Light,
-            (Module::DarkUnmasked, true) => Module::Light,
-            (Module::DarkUnmasked, false) => Module::Dark,
-            (a, _) => a,
+    pub fn mask(self, should_invert: bool) -> Module {
+        match (self, should_invert) {
+            (Module::Empty, true) => Module::Masked(Color::Dark),
+            (Module::Empty, false) => Module::Masked(Color::Light),
+            (Module::Unmasked(c), true) => Module::Masked(!c),
+            (Module::Unmasked(c), false) |
+            (Module::Masked(c), _) => Module::Masked(c),
         }
     }
 }
@@ -108,7 +105,7 @@ impl Canvas {
             width: width,
             version: version,
             ec_level: ec_level,
-            modules: repeat(Module::Empty).take((width*width) as usize).collect()
+            modules: vec![Module::Empty; (width*width) as usize],
         }
     }
 
@@ -122,10 +119,10 @@ impl Canvas {
             for x in 0 .. width {
                 res.push(match self.get(x, y) {
                     Module::Empty => '?',
-                    Module::Light => '.',
-                    Module::Dark => '#',
-                    Module::LightUnmasked => '-',
-                    Module::DarkUnmasked => '*',
+                    Module::Masked(Color::Light) => '.',
+                    Module::Masked(Color::Dark) => '#',
+                    Module::Unmasked(Color::Light) => '-',
+                    Module::Unmasked(Color::Dark) => '*',
                 });
             }
         }
@@ -151,18 +148,17 @@ impl Canvas {
         &mut self.modules[index]
     }
 
-    /// Sets the color of a module at the given coordinates. For convenience,
-    /// negative coordinates will wrap around.
-    pub fn put(&mut self, x: i16, y: i16, module: Module) {
-        *self.get_mut(x, y) = module;
+    /// Sets the color of a functional module at the given coordinates. For
+    /// convenience, negative coordinates will wrap around.
+    pub fn put(&mut self, x: i16, y: i16, color: Color) {
+        *self.get_mut(x, y) = Module::Masked(color);
     }
-
 }
 
 #[cfg(test)]
 mod basic_canvas_tests {
     use canvas::{Canvas, Module};
-    use types::{Version, EcLevel};
+    use types::{Version, EcLevel, Color};
 
     #[test]
     fn test_index() {
@@ -172,11 +168,11 @@ mod basic_canvas_tests {
         assert_eq!(c.get(-1, -7), Module::Empty);
         assert_eq!(c.get(21-1, 21-7), Module::Empty);
 
-        c.put(0, 0, Module::Dark);
-        c.put(-1, -7, Module::Light);
-        assert_eq!(c.get(0, 0), Module::Dark);
-        assert_eq!(c.get(21-1, -7), Module::Light);
-        assert_eq!(c.get(-1, 21-7), Module::Light);
+        c.put(0, 0, Color::Dark);
+        c.put(-1, -7, Color::Light);
+        assert_eq!(c.get(0, 0), Module::Masked(Color::Dark));
+        assert_eq!(c.get(21-1, -7), Module::Masked(Color::Light));
+        assert_eq!(c.get(-1, 21-7), Module::Masked(Color::Light));
     }
 
     #[test]
@@ -185,14 +181,14 @@ mod basic_canvas_tests {
 
         for i in 3i16 .. 20 {
             for j in 3i16 .. 20 {
-                c.put(i, j, match ((i * 3) ^ j) % 5 {
+                *c.get_mut(i, j) = match ((i * 3) ^ j) % 5 {
                     0 => Module::Empty,
-                    1 => Module::Light,
-                    2 => Module::Dark,
-                    3 => Module::LightUnmasked,
-                    4 => Module::DarkUnmasked,
-                    _ => panic!(),
-                });
+                    1 => Module::Masked(Color::Light),
+                    2 => Module::Masked(Color::Dark),
+                    3 => Module::Unmasked(Color::Light),
+                    4 => Module::Unmasked(Color::Dark),
+                    _ => unreachable!(),
+                };
             }
         }
 
@@ -233,10 +229,10 @@ impl Canvas {
         for j in range_inclusive(dy_top, dy_bottom) {
             for i in range_inclusive(dx_left, dx_right) {
                 self.put(x+i, y+j, match (i, j) {
-                    (4, _) | (_, 4) | (-4, _) | (_, -4) => Module::Light,
-                    (3, _) | (_, 3) | (-3, _) | (_, -3) => Module::Dark,
-                    (2, _) | (_, 2) | (-2, _) | (_, -2) => Module::Light,
-                    _ => Module::Dark,
+                    (4, _) | (_, 4) | (-4, _) | (_, -4) => Color::Light,
+                    (3, _) | (_, 3) | (-3, _) | (_, -3) => Color::Dark,
+                    (2, _) | (_, 2) | (-2, _) | (_, -2) => Color::Light,
+                    _ => Color::Dark,
                 });
             }
         }
@@ -325,8 +321,8 @@ impl Canvas {
         for j in range_inclusive(-2, 2) {
             for i in range_inclusive(-2, 2) {
                 self.put(x+i, y+j, match (i, j) {
-                    (2, _) | (_, 2) | (-2, _) | (_, -2) | (0, 0) => Module::Dark,
-                    _ => Module::Light,
+                    (2, _) | (_, 2) | (-2, _) | (_, -2) | (0, 0) => Color::Dark,
+                    _ => Color::Light,
                 });
             }
         }
@@ -534,7 +530,7 @@ impl Canvas {
     /// drawn using this method.
     ///
     fn draw_line(&mut self, x1: i16, y1: i16, x2: i16, y2: i16,
-                 color_even: Module, color_odd: Module) {
+                 color_even: Color, color_odd: Color) {
         debug_assert!(x1 == x2 || y1 == y2);
 
         if y1 == y2 {   // Horizontal line.
@@ -559,8 +555,8 @@ impl Canvas {
             Version::Micro(_) => (0, 8, width-1),
             Version::Normal(_) => (6, 8, width-9),
         };
-        self.draw_line(x1, y, x2, y, Module::Dark, Module::Light);
-        self.draw_line(y, x1, y, x2, Module::Dark, Module::Light);
+        self.draw_line(x1, y, x2, y, Color::Dark, Color::Light);
+        self.draw_line(y, x1, y, x2, Color::Dark, Color::Light);
     }
 }
 
@@ -628,7 +624,7 @@ impl Canvas {
     /// iterator. It will start from the most significant bits first, so
     /// *trailing* zeros will be ignored.
     fn draw_number<N: PrimInt>(&mut self, number: N,
-                               on_color: Module, off_color: Module,
+                               on_color: Color, off_color: Color,
                                coords: &[(i16, i16)]) {
         let zero: N = N::zero();
         let mut mask: N = !(!zero >> 1);
@@ -643,15 +639,15 @@ impl Canvas {
     fn draw_format_info_patterns_with_number(&mut self, format_info: u16) {
         match self.version {
             Version::Micro(_) => {
-                self.draw_number(format_info, Module::Dark, Module::Light,
+                self.draw_number(format_info, Color::Dark, Color::Light,
                                  &FORMAT_INFO_COORDS_MICRO_QR);
             }
             Version::Normal(_) => {
-                self.draw_number(format_info, Module::Dark, Module::Light,
+                self.draw_number(format_info, Color::Dark, Color::Light,
                                  &FORMAT_INFO_COORDS_QR_MAIN);
-                self.draw_number(format_info, Module::Dark, Module::Light,
+                self.draw_number(format_info, Color::Dark, Color::Light,
                                  &FORMAT_INFO_COORDS_QR_SIDE);
-                self.put(8, -8, Module::Dark); // Dark module.
+                self.put(8, -8, Color::Dark); // Dark module.
             }
         }
     }
@@ -667,9 +663,9 @@ impl Canvas {
             Version::Micro(_) | Version::Normal(1...6) => { return; }
             Version::Normal(a) => {
                 let version_info = VERSION_INFOS[(a - 7) as usize] << 14;
-                self.draw_number(version_info, Module::Dark, Module::Light,
+                self.draw_number(version_info, Color::Dark, Color::Light,
                                  &VERSION_INFO_COORDS_BL);
-                self.draw_number(version_info, Module::Dark, Module::Light,
+                self.draw_number(version_info, Color::Dark, Color::Light,
                                  &VERSION_INFO_COORDS_TR);
             }
         }
@@ -678,13 +674,13 @@ impl Canvas {
 
 #[cfg(test)]
 mod draw_version_info_tests {
-    use canvas::{Canvas, Module};
-    use types::{Version, EcLevel};
+    use canvas::Canvas;
+    use types::{Version, EcLevel, Color};
 
     #[test]
     fn test_draw_number() {
         let mut c = Canvas::new(Version::Micro(1), EcLevel::L);
-        c.draw_number(0b10101101u8, Module::Dark, Module::Light,
+        c.draw_number(0b10101101u8, Color::Dark, Color::Light,
                       &[(0,0), (0,-1), (-2,-2), (-2,0)]);
         assert_eq!(&*c.to_debug_str(), "\n\
                     #????????.?\n\
@@ -1284,14 +1280,14 @@ impl Canvas {
         'outside:
             for j in range_inclusive(bits_end, 7).rev() {
                 let color = if (*b & (1 << j)) != 0 {
-                    Module::DarkUnmasked
+                    Color::Dark
                 } else {
-                    Module::LightUnmasked
+                    Color::Light
                 };
                 while let Some((x, y)) = coords.next() {
                     let r = self.get_mut(x, y);
                     if *r == Module::Empty {
-                        *r = color;
+                        *r = Module::Unmasked(color);
                         continue 'outside;
                     }
                 }
@@ -1648,35 +1644,28 @@ impl Canvas {
     /// Every pattern that looks like `#.###.#....` in any orientation will add
     /// 40 points.
     fn compute_finder_penalty_score(&self, is_horizontal: bool) -> u16 {
-        static PATTERN: [Module; 7] = [
-            Module::Dark, Module::Light, Module::Dark, Module::Dark,
-            Module::Dark, Module::Light, Module::Dark,
+        static PATTERN: [Color; 7] = [
+            Color::Dark, Color::Light, Color::Dark, Color::Dark,
+            Color::Dark, Color::Light, Color::Dark,
         ];
-
-        // TODO remove this after `equals()` is stable.
-        fn equals<T, U>(left: T, right: U) -> bool
-            where T: Iterator, U: Iterator, T::Item: PartialEq<U::Item>
-        {
-            left.zip(right).all(|(p, q)| p == q)
-        }
 
         let mut total_score = 0;
 
         for i in 0 .. self.width {
             for j in 0 .. self.width-6 {
                 // TODO a ref to a closure should be enough?
-                let get: Box<Fn(i16) -> Module> = if is_horizontal {
-                    Box::new(|k: i16| self.get(k, i))
+                let get: Box<Fn(i16) -> Color> = if is_horizontal {
+                    Box::new(|k| self.get(k, i).into())
                 } else {
-                    Box::new(|k: i16| self.get(i, k))
+                    Box::new(|k| self.get(i, k).into())
                 };
 
-                if !equals((j .. j+7).map(|k| get(k)), PATTERN.iter().map(|m| *m)) {
+                if (j .. j+7).map(&*get).ne(PATTERN.iter().cloned()) {
                     continue;
                 }
 
-                let check = |k| { 0 <= k && k < self.width && get(k).is_dark() };
-                if !(j-4 .. j).any(|k| check(k)) || !(j+7 .. j+11).any(|k| check(k)) {
+                let check = |k| 0 <= k && k < self.width && get(k) != Color::Light;
+                if !(j-4 .. j).any(&check) || !(j+7 .. j+11).any(&check) {
                     total_score += 40;
                 }
             }
@@ -1721,7 +1710,6 @@ impl Canvas {
     /// Compute the total penalty scores. A QR code having higher points is less
     /// desirable.
     fn compute_total_penalty_scores(&self) -> u16 {
-
         match self.version {
             Version::Normal(_) => {
                 let s1a = self.compute_adjacent_penalty_score(true);
@@ -1739,8 +1727,8 @@ impl Canvas {
 
 #[cfg(test)]
 mod penalty_tests {
-    use canvas::{Canvas, MaskPattern, Module};
-    use types::{Version, EcLevel};
+    use canvas::{Canvas, MaskPattern};
+    use types::{Version, EcLevel, Color};
 
     fn create_test_canvas() -> Canvas {
         let mut c = Canvas::new(Version::Normal(1), EcLevel::Q);
@@ -1806,19 +1794,19 @@ mod penalty_tests {
 
     #[test]
     fn test_penalty_score_light_sides() {
-        static HORIZONTAL_SIDE: [Module; 17] = [
-            Module::Dark, Module::Light, Module::Light, Module::Dark,
-            Module::Dark, Module::Dark, Module::Light, Module::Light,
-            Module::Dark, Module::Light, Module::Dark, Module::Light,
-            Module::Light, Module::Dark, Module::Light, Module::Light,
-            Module::Light,
+        static HORIZONTAL_SIDE: [Color; 17] = [
+            Color::Dark, Color::Light, Color::Light, Color::Dark,
+            Color::Dark, Color::Dark, Color::Light, Color::Light,
+            Color::Dark, Color::Light, Color::Dark, Color::Light,
+            Color::Light, Color::Dark, Color::Light, Color::Light,
+            Color::Light,
         ];
-        static VERTICAL_SIDE: [Module; 17] = [
-            Module::Dark, Module::Dark, Module::Dark, Module::Light,
-            Module::Light, Module::Dark, Module::Dark, Module::Light,
-            Module::Dark, Module::Light, Module::Dark, Module::Light,
-            Module::Dark, Module::Light, Module::Light, Module::Dark,
-            Module::Light,
+        static VERTICAL_SIDE: [Color; 17] = [
+            Color::Dark, Color::Dark, Color::Dark, Color::Light,
+            Color::Light, Color::Dark, Color::Dark, Color::Light,
+            Color::Dark, Color::Light, Color::Dark, Color::Light,
+            Color::Dark, Color::Light, Color::Light, Color::Dark,
+            Color::Light,
         ];
 
         let mut c = Canvas::new(Version::Micro(4), EcLevel::Q);
@@ -1876,8 +1864,14 @@ impl Canvas {
     }
 
     /// Convert the modules into a vector of booleans.
+    #[deprecated(since="0.4.0", note="use `into_colors()` instead")]
     pub fn to_bools(&self) -> Vec<bool> {
         self.modules.iter().map(|m| m.is_dark()).collect()
+    }
+
+    /// Convert the modules into a vector of colors.
+    pub fn into_colors(self) -> Vec<Color> {
+        self.modules.into_iter().map(Color::from).collect()
     }
 }
 

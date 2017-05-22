@@ -40,14 +40,14 @@ pub mod ec;
 pub mod canvas;
 pub mod render;
 
-pub use types::{QrResult, EcLevel, Version};
+pub use types::{QrResult, Color, EcLevel, Version};
 
 #[cfg(feature="image")] use render::{BlankAndWhitePixel, Renderer};
 
 /// The encoded QR code symbol.
 #[derive(Clone)]
 pub struct QrCode {
-    content: Vec<bool>,
+    content: Vec<Color>,
     version: Version,
     ec_level: EcLevel,
     width: usize,
@@ -132,7 +132,7 @@ impl QrCode {
         canvas.draw_data(&*encoded_data, &*ec_data);
         let canvas = canvas.apply_best_mask();
         Ok(QrCode {
-            content: canvas.to_bools(),
+            content: canvas.into_colors(),
             version: version,
             ec_level: ec_level,
             width: version.width() as usize,
@@ -178,7 +178,7 @@ impl QrCode {
         for _ in 0 .. width {
             res.push('\n');
             for _ in 0 .. width {
-                res.push(if self.content[k] { on_char } else { off_char });
+                res.push(self.content[k].select(on_char, off_char));
                 k += 1;
             }
         }
@@ -187,13 +187,25 @@ impl QrCode {
 
     /// Converts the QR code to a vector of booleans. Each entry represents the
     /// color of the module, with "true" means dark and "false" means light.
+    #[deprecated(since="0.4.0", note="use `to_colors()` instead")]
     pub fn to_vec(&self) -> Vec<bool> {
-        self.content.clone()
+        self.content.iter().map(|c| *c != Color::Light).collect()
     }
 
     /// Converts the QR code to a vector of booleans. Each entry represents the
     /// color of the module, with "true" means dark and "false" means light.
+    #[deprecated(since="0.4.0", note="use `into_colors()` instead")]
     pub fn into_vec(self) -> Vec<bool> {
+        self.content.into_iter().map(|c| c != Color::Light).collect()
+    }
+
+    /// Converts the QR code to a vector of colors.
+    pub fn to_colors(&self) -> Vec<Color> {
+        self.content.clone()
+    }
+
+    /// Converts the QR code to a vector of colors.
+    pub fn into_colors(self) -> Vec<Color> {
         self.content
     }
 
@@ -231,9 +243,9 @@ impl QrCode {
 }
 
 impl Index<(usize, usize)> for QrCode {
-    type Output = bool;
+    type Output = Color;
 
-    fn index(&self, (x, y): (usize, usize)) -> &bool {
+    fn index(&self, (x, y): (usize, usize)) -> &Color {
         let index = y * self.width + x;
         &self.content[index]
     }
