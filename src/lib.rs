@@ -2,33 +2,36 @@
 //!
 //! This crate provides a QR code and Micro QR code encoder for binary data.
 //!
-//! ```
+#![cfg_attr(feature="image", doc=" ```rust")]
+#![cfg_attr(not(feature="image"), doc="```ignore")]
 //! extern crate qrcode;
-//! # #[cfg(feature="image")]
 //! extern crate image;
 //!
 //! use qrcode::QrCode;
-//! # #[cfg(feature="image")]
-//! use image::GrayImage;
+//! use image::Luma;
 //!
 //! fn main() {
 //!     // Encode some data into bits.
 //!     let code = QrCode::new(b"01234567").unwrap();
 //!
 //!     // Render the bits into an image.
-//! #   #[cfg(feature="image")]
-//!     let image: GrayImage = code.render().to_image();
+//!     let image = code.render::<Luma<u8>>().build();
 //!
 //!     // Save the image.
-//! #   #[cfg(feature="image")]
 //!     image.save("/tmp/qrcode.png").unwrap();
+//!
+//!     // You can also render it into a string.
+//!     let string = code.render()
+//!         .light_color(' ')
+//!         .dark_color('#')
+//!         .build();
+//!     println!("{}", string);
 //! }
 //! ```
 
 #![cfg_attr(feature="bench", feature(test))] // Unstable libraries
 
 #[cfg(feature="bench")] extern crate test;
-extern crate num_traits;
 #[cfg(feature="image")] extern crate image;
 
 use std::ops::Index;
@@ -40,14 +43,14 @@ pub mod ec;
 pub mod canvas;
 pub mod render;
 
-pub use types::{QrResult, EcLevel, Version};
+pub use types::{QrResult, Color, EcLevel, Version};
 
-#[cfg(feature="image")] use render::{BlankAndWhitePixel, Renderer};
+use render::{Pixel, Renderer};
 
 /// The encoded QR code symbol.
 #[derive(Clone)]
 pub struct QrCode {
-    content: Vec<bool>,
+    content: Vec<Color>,
     version: Version,
     ec_level: EcLevel,
     width: usize,
@@ -132,7 +135,7 @@ impl QrCode {
         canvas.draw_data(&*encoded_data, &*ec_data);
         let canvas = canvas.apply_best_mask();
         Ok(QrCode {
-            content: canvas.to_bools(),
+            content: canvas.into_colors(),
             version: version,
             ec_level: ec_level,
             width: version.width() as usize,
@@ -172,28 +175,34 @@ impl QrCode {
     /// Converts the QR code into a human-readable string. This is mainly for
     /// debugging only.
     pub fn to_debug_str(&self, on_char: char, off_char: char) -> String {
-        let width = self.width;
-        let mut k = 0;
-        let mut res = String::with_capacity(width * (width + 1));
-        for _ in 0 .. width {
-            res.push('\n');
-            for _ in 0 .. width {
-                res.push(if self.content[k] { on_char } else { off_char });
-                k += 1;
-            }
-        }
-        res
+        self.render()
+            .quiet_zone(false)
+            .dark_color(on_char)
+            .light_color(off_char)
+            .build()
     }
 
     /// Converts the QR code to a vector of booleans. Each entry represents the
     /// color of the module, with "true" means dark and "false" means light.
+    #[deprecated(since="0.4.0", note="use `to_colors()` instead")]
     pub fn to_vec(&self) -> Vec<bool> {
+        self.content.iter().map(|c| *c != Color::Light).collect()
+    }
+
+    /// Converts the QR code to a vector of booleans. Each entry represents the
+    /// color of the module, with "true" means dark and "false" means light.
+    #[deprecated(since="0.4.0", note="use `into_colors()` instead")]
+    pub fn into_vec(self) -> Vec<bool> {
+        self.content.into_iter().map(|c| c != Color::Light).collect()
+    }
+
+    /// Converts the QR code to a vector of colors.
+    pub fn to_colors(&self) -> Vec<Color> {
         self.content.clone()
     }
 
-    /// Converts the QR code to a vector of booleans. Each entry represents the
-    /// color of the module, with "true" means dark and "false" means light.
-    pub fn into_vec(self) -> Vec<bool> {
+    /// Converts the QR code to a vector of colors.
+    pub fn into_colors(self) -> Vec<Color> {
         self.content
     }
 
@@ -203,7 +212,8 @@ impl QrCode {
     ///
     /// # Examples
     ///
-    /// ```
+    #[cfg_attr(feature="image", doc=" ```rust")]
+    #[cfg_attr(not(feature="image"), doc=" ```ignore")]
     /// # extern crate image;
     /// # extern crate qrcode;
     /// # use qrcode::QrCode;
@@ -214,26 +224,25 @@ impl QrCode {
     ///                     .render()
     ///                     .dark_color(Rgb { data: [0, 0, 128] })
     ///                     .light_color(Rgb { data: [224, 224, 224] }) // adjust colors
-    ///                     .quiet_zone(false)      // disable quiet zone (white border)
-    ///                     .min_width(300)         // sets minimum image size
-    ///                     .to_image();
+    ///                     .quiet_zone(false)          // disable quiet zone (white border)
+    ///                     .min_dimensions(300, 300)   // sets minimum image size
+    ///                     .build();
     ///
     /// # }
     /// ```
     ///
     /// Note: the `image` crate itself also provides method to rotate the image,
     /// or overlay a logo on top of the QR code.
-    #[cfg(feature="image")]
-    pub fn render<P: BlankAndWhitePixel + 'static>(&self) -> Renderer<P> {
+    pub fn render<P: Pixel>(&self) -> Renderer<P> {
         let quiet_zone = if self.version.is_micro() { 2 } else { 4 };
         Renderer::new(&self.content, self.width, quiet_zone)
     }
 }
 
 impl Index<(usize, usize)> for QrCode {
-    type Output = bool;
+    type Output = Color;
 
-    fn index(&self, (x, y): (usize, usize)) -> &bool {
+    fn index(&self, (x, y): (usize, usize)) -> &Color {
         let index = y * self.width + x;
         &self.content[index]
     }
@@ -247,7 +256,7 @@ mod tests {
     fn test_annex_i_qr() {
         // This uses the ISO Annex I as test vector.
         let code = QrCode::with_version(b"01234567", Version::Normal(1), EcLevel::M).unwrap();
-        assert_eq!(&*code.to_debug_str('#', '.'), "\n\
+        assert_eq!(&*code.to_debug_str('#', '.'), "\
                     #######..#.##.#######\n\
                     #.....#..####.#.....#\n\
                     #.###.#.#.....#.###.#\n\
@@ -274,7 +283,7 @@ mod tests {
     #[test]
     fn test_annex_i_micro_qr() {
         let code = QrCode::with_version(b"01234567", Version::Micro(2), EcLevel::L).unwrap();
-        assert_eq!(&*code.to_debug_str('#', '.'), "\n\
+        assert_eq!(&*code.to_debug_str('#', '.'), "\
                     #######.#.#.#\n\
                     #.....#.###.#\n\
                     #.###.#..##.#\n\
@@ -293,13 +302,13 @@ mod tests {
 
 #[cfg(all(test, feature="image"))]
 mod image_tests {
-    use image::{GrayImage, Rgb, load_from_memory};
+    use image::{Luma, Rgb, load_from_memory};
     use {QrCode, Version, EcLevel};
 
     #[test]
     fn test_annex_i_qr_as_image() {
         let code = QrCode::new(b"01234567").unwrap();
-        let image: GrayImage = code.render().to_image();
+        let image = code.render::<Luma<u8>>().build();
         let expected = load_from_memory(include_bytes!("test_annex_i_qr_as_image.png")).unwrap().to_luma();
         assert_eq!(image.dimensions(), expected.dimensions());
         assert_eq!(image.into_raw(), expected.into_raw());
@@ -308,13 +317,40 @@ mod image_tests {
     #[test]
     fn test_annex_i_micro_qr_as_image() {
         let code = QrCode::with_version(b"01234567", Version::Micro(2), EcLevel::L).unwrap();
-        let image = code.render().min_width(200)
-                                 .dark_color(Rgb { data: [128, 0, 0] })
-                                 .light_color(Rgb { data: [255, 255, 128] })
-                                 .to_image();
+        let image = code.render()
+            .min_dimensions(200, 200)
+            .dark_color(Rgb { data: [128, 0, 0] })
+            .light_color(Rgb { data: [255, 255, 128] })
+            .build();
         let expected = load_from_memory(include_bytes!("test_annex_i_micro_qr_as_image.png")).unwrap().to_rgb();
         assert_eq!(image.dimensions(), expected.dimensions());
         assert_eq!(image.into_raw(), expected.into_raw());
+    }
+}
+
+#[cfg(all(test, feature="svg"))]
+mod svg_tests {
+    use render::svg::Color as SvgColor;
+    use {QrCode, Version, EcLevel};
+
+    #[test]
+    fn test_annex_i_qr_as_svg() {
+        let code = QrCode::new(b"01234567").unwrap();
+        let image = code.render::<SvgColor>().build();
+        let expected = include_str!("test_annex_i_qr_as_svg.svg");
+        assert_eq!(&image, expected);
+    }
+
+    #[test]
+    fn test_annex_i_micro_qr_as_svg() {
+        let code = QrCode::with_version(b"01234567", Version::Micro(2), EcLevel::L).unwrap();
+        let image = code.render()
+            .min_dimensions(200, 200)
+            .dark_color(SvgColor("#800000"))
+            .light_color(SvgColor("#ffff80"))
+            .build();
+        let expected = include_str!("test_annex_i_micro_qr_as_svg.svg");
+        assert_eq!(&image, expected);
     }
 }
 
