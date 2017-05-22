@@ -328,3 +328,29 @@ mod image_tests {
     }
 }
 
+#[cfg(all(test, feature="svg"))]
+mod svg_tests {
+    use render::svg::Color as SvgColor;
+    use {QrCode, Version, EcLevel};
+
+    #[test]
+    fn test_annex_i_qr_as_svg() {
+        let code = QrCode::new(b"01234567").unwrap();
+        let image = code.render::<SvgColor>().build();
+        let expected = include_str!("test_annex_i_qr_as_svg.svg");
+        assert_eq!(&image, expected);
+    }
+
+    #[test]
+    fn test_annex_i_micro_qr_as_svg() {
+        let code = QrCode::with_version(b"01234567", Version::Micro(2), EcLevel::L).unwrap();
+        let image = code.render()
+            .min_dimensions(200, 200)
+            .dark_color(SvgColor("#800000"))
+            .light_color(SvgColor("#ffff80"))
+            .build();
+        let expected = include_str!("test_annex_i_micro_qr_as_svg.svg");
+        assert_eq!(&image, expected);
+    }
+}
+

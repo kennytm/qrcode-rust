@@ -5,6 +5,7 @@ use types::Color;
 
 pub mod image;
 pub mod string;
+pub mod svg;
 
 //------------------------------------------------------------------------------
 //{{{ Pixel trait

@@ -19,8 +19,9 @@ travis-ci = { repository = "kennytm/qrcode-rust" }
 image = { version = "0.13", optional = true }
 
 [features]
-default = ["image"]
+default = ["image", "svg"]
 bench = []
+svg = []
 
 [[bin]]
 name = "qrencode"
