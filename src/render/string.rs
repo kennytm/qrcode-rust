@@ -11,7 +11,7 @@ pub trait Element: Copy {
 
 impl Element for char {
     fn default_color(color: Color) -> Self {
-        color.select('#', ' ')
+        color.select('█', ' ')
     }
 
     fn strlen(self) -> usize {
@@ -25,7 +25,7 @@ impl Element for char {
 
 impl<'a> Element for &'a str {
     fn default_color(color: Color) -> Self {
-        color.select("#", " ")
+        color.select("█", " ")
     }
 
     fn strlen(self) -> usize {
@@ -106,7 +106,7 @@ fn test_render_to_string() {
         Color::Light, Color::Dark,
     ];
     let image: String = Renderer::<char>::new(colors, 2, 1).build();
-    assert_eq!(&image, "    \n #  \n  # \n    ");
+    assert_eq!(&image, "    \n █  \n  █ \n    ");
 
     let image2 = Renderer::new(colors, 2, 1)
         .light_color("A")
