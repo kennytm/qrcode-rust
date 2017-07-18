@@ -11,7 +11,7 @@ pub trait Element: Copy {
 
 impl Element for char {
     fn default_color(color: Color) -> Self {
-        color.select('#', ' ')
+        color.select('█', ' ')
     }
 
     fn strlen(self) -> usize {
@@ -25,7 +25,7 @@ impl Element for char {
 
 impl<'a> Element for &'a str {
     fn default_color(color: Color) -> Self {
-        color.select("#", " ")
+        color.select("█", " ")
     }
 
     fn strlen(self) -> usize {
