@@ -2,7 +2,7 @@
 name = "qrcode"
 description = "QR code encoder in Rust"
 license = "MIT / Apache-2.0"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["kennytm <kennytm@gmail.com>"]
 keywords = ["qrcode"]
 repository = "https://github.com/kennytm/qrcode-rust"
@@ -14,9 +14,13 @@ exclude = [
 
 [badges]
 travis-ci = { repository = "kennytm/qrcode-rust" }
+coveralls = { repository = "kennytm/qrcode-rust" }
+is-it-maintained-issue-resolution = { repository = "kennytm/qrcode-rust" }
+is-it-maintained-open-issues = { repository = "kennytm/qrcode-rust" }
+maintenance = { status = "passively-maintained" }
 
 [dependencies]
-image = { version = "0.13", optional = true }
+image = { version = "0.17", optional = true }
 
 [features]
 default = ["image", "svg"]

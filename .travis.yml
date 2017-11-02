@@ -12,14 +12,18 @@ addons:
             - libiberty-dev
             - gcc-multilib
 
-os:
-    - linux
-    - osx
-
-rust:
-    - 1.17.0
-    - beta
-    - nightly
+matrix:
+    include:
+        - os: linux
+          rust: 1.17.0
+        - os: linux
+          rust: 1.21.0
+        - os: osx
+          rust: 1.21.0
+        - os: linux
+          rust: beta
+        - os: linux
+          rust: nightly
 
 matrix:
     allow_failures:
