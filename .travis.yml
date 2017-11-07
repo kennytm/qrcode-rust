@@ -15,19 +15,15 @@ addons:
 matrix:
     include:
         - os: linux
-          rust: 1.17.0
+          rust: 1.20.0
         - os: linux
-          rust: 1.21.0
+          rust: stable
         - os: osx
-          rust: 1.21.0
+          rust: stable
         - os: linux
           rust: beta
         - os: linux
           rust: nightly
-
-matrix:
-    allow_failures:
-        - rust: beta
 
 install:
     - if [ "$TRAVIS_OS_NAME" = 'linux' ]; then OS=unknown-linux-gnu; else OS=apple-darwin; fi

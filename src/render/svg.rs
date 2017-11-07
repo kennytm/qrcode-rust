@@ -19,7 +19,7 @@
 use std::fmt::Write;
 use std::marker::PhantomData;
 
-use render::{Pixel, Canvas as RenderCanvas};
+use render::{Canvas as RenderCanvas, Pixel};
 use types::Color as ModuleColor;
 
 /// An SVG color.
@@ -48,8 +48,17 @@ impl<'a> RenderCanvas for Canvas<'a> {
     fn new(width: u32, height: u32, dark_pixel: Color<'a>, light_pixel: Color<'a>) -> Self {
         Canvas {
             svg: format!(
-                r#"<?xml version="1.0" standalone="yes"?><svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="{w}" height="{h}" shape-rendering="crispEdges"><rect x="0" y="0" width="{w}" height="{h}" fill="{bg}"/><path fill="{fg}" d=""#,
-                w=width, h=height, fg=dark_pixel.0, bg=light_pixel.0
+                concat!(
+                    r#"<?xml version="1.0" standalone="yes"?>"#,
+                    r#"<svg xmlns="http://www.w3.org/2000/svg""#,
+                    r#" version="1.1" width="{w}" height="{h}" shape-rendering="crispEdges">"#,
+                    r#"<rect x="0" y="0" width="{w}" height="{h}" fill="{bg}"/>"#,
+                    r#"<path fill="{fg}" d=""#,
+                ),
+                w = width,
+                h = height,
+                fg = dark_pixel.0,
+                bg = light_pixel.0
             ),
             marker: PhantomData,
         }
@@ -60,10 +69,12 @@ impl<'a> RenderCanvas for Canvas<'a> {
     }
 
     fn draw_dark_rect(&mut self, left: u32, top: u32, width: u32, height: u32) {
-        write!(self.svg, "M{l} {t}h{w}v{h}H{l}V{t}", l=left, t=top, w=width, h=height).unwrap();
+        write!(self.svg, "M{l} {t}h{w}v{h}H{l}V{t}", l = left, t = top, w = width, h = height)
+            .unwrap();
     }
 
-    fn into_image(self) -> String {
-        self.svg + r#""/></svg>"#
+    fn into_image(mut self) -> String {
+        self.svg.push_str(r#""/></svg>"#);
+        self.svg
     }
 }

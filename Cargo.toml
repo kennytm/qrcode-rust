@@ -21,6 +21,7 @@ maintenance = { status = "passively-maintained" }
 
 [dependencies]
 image = { version = "0.17", optional = true }
+checked_int_cast = "1"
 
 [features]
 default = ["image", "svg"]

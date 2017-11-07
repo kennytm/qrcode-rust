@@ -1,9 +1,9 @@
 #![cfg(feature="image")]
 
-use render::{Pixel, Canvas};
+use render::{Canvas, Pixel};
 use types::Color;
 
-use image::{Pixel as ImagePixel, Rgb, Rgba, Luma, LumaA, Primitive, ImageBuffer};
+use image::{ImageBuffer, Luma, LumaA, Pixel as ImagePixel, Primitive, Rgb, Rgba};
 
 macro_rules! impl_pixel_for_image_pixel {
     ($p:ident<$s:ident>: $c:pat => $d:expr) => {
@@ -50,12 +50,26 @@ mod render_tests {
 
     #[test]
     fn test_render_luma8_unsized() {
-        let image = Renderer::<Luma<u8>>::new(&[
-            Color::Light, Color::Dark, Color::Dark,
-            Color::Dark, Color::Light, Color::Light,
-            Color::Light, Color::Dark, Color::Light,
-        ], 3, 1).module_dimensions(1, 1).build();
+        let image = Renderer::<Luma<u8>>::new(
+            &[
+                Color::Light,
+                Color::Dark,
+                Color::Dark,
+                //
+                Color::Dark,
+                Color::Light,
+                Color::Light,
+                //
+                Color::Light,
+                Color::Dark,
+                Color::Light,
+            ],
+            3,
+            1,
+        ).module_dimensions(1, 1)
+            .build();
 
+        #[cfg_attr(rustfmt, rustfmt_skip)]
         let expected = [
             255, 255, 255, 255, 255,
             255, 255,   0,   0, 255,
@@ -68,11 +82,12 @@ mod render_tests {
 
     #[test]
     fn test_render_rgba_unsized() {
-        let image = Renderer::<Rgba<u8>>::new(&[
-            Color::Light, Color::Dark,
-            Color::Dark, Color::Dark,
-        ], 2, 1).module_dimensions(1, 1).build();
+        let image =
+            Renderer::<Rgba<u8>>::new(&[Color::Light, Color::Dark, Color::Dark, Color::Dark], 2, 1)
+                .module_dimensions(1, 1)
+                .build();
 
+        #[cfg_attr(rustfmt, rustfmt_skip)]
         let expected: &[u8] = &[
             255,255,255,255, 255,255,255,255, 255,255,255,255, 255,255,255,255,
             255,255,255,255, 255,255,255,255,   0,  0,  0,255, 255,255,255,255,
@@ -85,11 +100,14 @@ mod render_tests {
 
     #[test]
     fn test_render_resized_min() {
-        let image = Renderer::<Luma<u8>>::new(&[
-            Color::Dark, Color::Light,
-            Color::Light, Color::Dark,
-        ], 2, 1).min_dimensions(10, 10).build();
+        let image = Renderer::<Luma<u8>>::new(
+            &[Color::Dark, Color::Light, Color::Light, Color::Dark],
+            2,
+            1,
+        ).min_dimensions(10, 10)
+            .build();
 
+        #[cfg_attr(rustfmt, rustfmt_skip)]
         let expected: &[u8] = &[
             255,255,255, 255,255,255, 255,255,255, 255,255,255,
             255,255,255, 255,255,255, 255,255,255, 255,255,255,
@@ -114,11 +132,14 @@ mod render_tests {
 
     #[test]
     fn test_render_resized_max() {
-        let image = Renderer::<Luma<u8>>::new(&[
-            Color::Dark, Color::Light,
-            Color::Light, Color::Dark,
-        ], 2, 1).max_dimensions(10, 5).build();
+        let image = Renderer::<Luma<u8>>::new(
+            &[Color::Dark, Color::Light, Color::Light, Color::Dark],
+            2,
+            1,
+        ).max_dimensions(10, 5)
+            .build();
 
+        #[cfg_attr(rustfmt, rustfmt_skip)]
         let expected: &[u8] = &[
             255,255, 255,255, 255,255, 255,255,
 

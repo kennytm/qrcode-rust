@@ -2,8 +2,8 @@
 //!
 //! This crate provides a QR code and Micro QR code encoder for binary data.
 //!
-#![cfg_attr(feature="image", doc=" ```rust")]
-#![cfg_attr(not(feature="image"), doc="```ignore")]
+#![cfg_attr(feature = "image", doc = " ```rust")]
+#![cfg_attr(not(feature = "image"), doc = "```ignore")]
 //! extern crate qrcode;
 //! extern crate image;
 //!
@@ -29,10 +29,17 @@
 //! }
 //! ```
 
-#![cfg_attr(feature="bench", feature(test))] // Unstable libraries
+#![cfg_attr(feature = "bench", feature(test))] // Unstable libraries
+#![cfg_attr(feature = "cargo-clippy", deny(warnings, clippy_pedantic))]
+#![cfg_attr(feature = "cargo-clippy",
+            allow(unreadable_literal, missing_docs_in_private_items, shadow_reuse,
+                  range_plus_one))]
 
-#[cfg(feature="bench")] extern crate test;
-#[cfg(feature="image")] extern crate image;
+extern crate checked_int_cast;
+#[cfg(feature = "image")]
+extern crate image;
+#[cfg(feature = "bench")]
+extern crate test;
 
 use std::ops::Index;
 
@@ -42,10 +49,13 @@ pub mod optimize;
 pub mod ec;
 pub mod canvas;
 pub mod render;
+mod cast;
 
-pub use types::{QrResult, Color, EcLevel, Version};
+pub use types::{Color, EcLevel, QrResult, Version};
 
 use render::{Pixel, Renderer};
+use checked_int_cast::CheckedIntCast;
+use cast::As;
 
 /// The encoded QR code symbol.
 #[derive(Clone)]
@@ -66,8 +76,8 @@ impl QrCode {
     ///
     ///     let code = QrCode::new(b"Some data").unwrap();
     ///
-    pub fn new<D: AsRef<[u8]>>(data: D) -> QrResult<QrCode> {
-        QrCode::with_error_correction_level(data, EcLevel::M)
+    pub fn new<D: AsRef<[u8]>>(data: D) -> QrResult<Self> {
+        Self::with_error_correction_level(data, EcLevel::M)
     }
 
     /// Constructs a new QR code which automatically encodes the given data at a
@@ -79,9 +89,12 @@ impl QrCode {
     ///
     ///     let code = QrCode::with_error_correction_level(b"Some data", EcLevel::H).unwrap();
     ///
-    pub fn with_error_correction_level<D: AsRef<[u8]>>(data: D, ec_level: EcLevel) -> QrResult<QrCode> {
-        let bits = try!(bits::encode_auto(data.as_ref(), ec_level));
-        QrCode::with_bits(bits, ec_level)
+    pub fn with_error_correction_level<D: AsRef<[u8]>>(
+        data: D,
+        ec_level: EcLevel,
+    ) -> QrResult<Self> {
+        let bits = bits::encode_auto(data.as_ref(), ec_level)?;
+        Self::with_bits(bits, ec_level)
     }
 
     /// Constructs a new QR code for the given version and error correction
@@ -97,11 +110,15 @@ impl QrCode {
     ///
     ///     let micro_code = QrCode::with_version(b"123", Version::Micro(1), EcLevel::L).unwrap();
     ///
-    pub fn with_version<D: AsRef<[u8]>>(data: D, version: Version, ec_level: EcLevel) -> QrResult<QrCode> {
+    pub fn with_version<D: AsRef<[u8]>>(
+        data: D,
+        version: Version,
+        ec_level: EcLevel,
+    ) -> QrResult<Self> {
         let mut bits = bits::Bits::new(version);
-        try!(bits.push_optimal_data(data.as_ref()));
-        try!(bits.push_terminator(ec_level));
-        QrCode::with_bits(bits, ec_level)
+        bits.push_optimal_data(data.as_ref())?;
+        bits.push_terminator(ec_level)?;
+        Self::with_bits(bits, ec_level)
     }
 
     /// Constructs a new QR code with encoded bits.
@@ -126,19 +143,19 @@ impl QrCode {
     ///     bits.push_terminator(EcLevel::L);
     ///     let qrcode = QrCode::with_bits(bits, EcLevel::L);
     ///
-    pub fn with_bits(bits: bits::Bits, ec_level: EcLevel) -> QrResult<QrCode> {
+    pub fn with_bits(bits: bits::Bits, ec_level: EcLevel) -> QrResult<Self> {
         let version = bits.version();
         let data = bits.into_bytes();
-        let (encoded_data, ec_data) = try!(ec::construct_codewords(&*data, version, ec_level));
+        let (encoded_data, ec_data) = ec::construct_codewords(&*data, version, ec_level)?;
         let mut canvas = canvas::Canvas::new(version, ec_level);
         canvas.draw_all_functional_patterns();
         canvas.draw_data(&*encoded_data, &*ec_data);
         let canvas = canvas.apply_best_mask();
-        Ok(QrCode {
+        Ok(Self {
             content: canvas.into_colors(),
             version: version,
             ec_level: ec_level,
-            width: version.width() as usize,
+            width: version.width().as_usize(),
         })
     }
 
@@ -163,13 +180,17 @@ impl QrCode {
     /// before the data becomes corrupted. Note that errors should not be
     /// introduced to functional modules.
     pub fn max_allowed_errors(&self) -> usize {
-        ec::max_allowed_errors(self.version, self.ec_level).unwrap()
+        ec::max_allowed_errors(self.version, self.ec_level).expect("invalid version or ec_level")
     }
 
     /// Checks whether a module at coordinate (x, y) is a functional module or
     /// not.
     pub fn is_functional(&self, x: usize, y: usize) -> bool {
-        canvas::is_functional(self.version, self.version.width(), x as i16, y as i16)
+        let x = x.as_i16_checked()
+            .expect("coordinate is too large for QR code");
+        let y = y.as_i16_checked()
+            .expect("coordinate is too large for QR code");
+        canvas::is_functional(self.version, self.version.width(), x, y)
     }
 
     /// Converts the QR code into a human-readable string. This is mainly for
@@ -184,16 +205,19 @@ impl QrCode {
 
     /// Converts the QR code to a vector of booleans. Each entry represents the
     /// color of the module, with "true" means dark and "false" means light.
-    #[deprecated(since="0.4.0", note="use `to_colors()` instead")]
+    #[deprecated(since = "0.4.0", note = "use `to_colors()` instead")]
     pub fn to_vec(&self) -> Vec<bool> {
         self.content.iter().map(|c| *c != Color::Light).collect()
     }
 
     /// Converts the QR code to a vector of booleans. Each entry represents the
     /// color of the module, with "true" means dark and "false" means light.
-    #[deprecated(since="0.4.0", note="use `into_colors()` instead")]
+    #[deprecated(since = "0.4.0", note = "use `into_colors()` instead")]
     pub fn into_vec(self) -> Vec<bool> {
-        self.content.into_iter().map(|c| c != Color::Light).collect()
+        self.content
+            .into_iter()
+            .map(|c| c != Color::Light)
+            .collect()
     }
 
     /// Converts the QR code to a vector of colors.
@@ -212,8 +236,8 @@ impl QrCode {
     ///
     /// # Examples
     ///
-    #[cfg_attr(feature="image", doc=" ```rust")]
-    #[cfg_attr(not(feature="image"), doc=" ```ignore")]
+    #[cfg_attr(feature = "image", doc = " ```rust")]
+    #[cfg_attr(not(feature = "image"), doc = " ```ignore")]
     /// # extern crate image;
     /// # extern crate qrcode;
     /// # use qrcode::QrCode;
@@ -250,66 +274,74 @@ impl Index<(usize, usize)> for QrCode {
 
 #[cfg(test)]
 mod tests {
-    use {QrCode, Version, EcLevel};
+    use {EcLevel, QrCode, Version};
 
     #[test]
     fn test_annex_i_qr() {
         // This uses the ISO Annex I as test vector.
         let code = QrCode::with_version(b"01234567", Version::Normal(1), EcLevel::M).unwrap();
-        assert_eq!(&*code.to_debug_str('#', '.'), "\
-                    #######..#.##.#######\n\
-                    #.....#..####.#.....#\n\
-                    #.###.#.#.....#.###.#\n\
-                    #.###.#.##....#.###.#\n\
-                    #.###.#.#.###.#.###.#\n\
-                    #.....#.#...#.#.....#\n\
-                    #######.#.#.#.#######\n\
-                    ........#..##........\n\
-                    #.#####..#..#.#####..\n\
-                    ...#.#.##.#.#..#.##..\n\
-                    ..#...##.#.#.#..#####\n\
-                    ....#....#.....####..\n\
-                    ...######..#.#..#....\n\
-                    ........#.#####..##..\n\
-                    #######..##.#.##.....\n\
-                    #.....#.#.#####...#.#\n\
-                    #.###.#.#...#..#.##..\n\
-                    #.###.#.##..#..#.....\n\
-                    #.###.#.#.##.#..#.#..\n\
-                    #.....#........##.##.\n\
-                    #######.####.#..#.#..");
+        assert_eq!(
+            &*code.to_debug_str('#', '.'),
+            "\
+             #######..#.##.#######\n\
+             #.....#..####.#.....#\n\
+             #.###.#.#.....#.###.#\n\
+             #.###.#.##....#.###.#\n\
+             #.###.#.#.###.#.###.#\n\
+             #.....#.#...#.#.....#\n\
+             #######.#.#.#.#######\n\
+             ........#..##........\n\
+             #.#####..#..#.#####..\n\
+             ...#.#.##.#.#..#.##..\n\
+             ..#...##.#.#.#..#####\n\
+             ....#....#.....####..\n\
+             ...######..#.#..#....\n\
+             ........#.#####..##..\n\
+             #######..##.#.##.....\n\
+             #.....#.#.#####...#.#\n\
+             #.###.#.#...#..#.##..\n\
+             #.###.#.##..#..#.....\n\
+             #.###.#.#.##.#..#.#..\n\
+             #.....#........##.##.\n\
+             #######.####.#..#.#.."
+        );
     }
 
     #[test]
     fn test_annex_i_micro_qr() {
         let code = QrCode::with_version(b"01234567", Version::Micro(2), EcLevel::L).unwrap();
-        assert_eq!(&*code.to_debug_str('#', '.'), "\
-                    #######.#.#.#\n\
-                    #.....#.###.#\n\
-                    #.###.#..##.#\n\
-                    #.###.#..####\n\
-                    #.###.#.###..\n\
-                    #.....#.#...#\n\
-                    #######..####\n\
-                    .........##..\n\
-                    ##.#....#...#\n\
-                    .##.#.#.#.#.#\n\
-                    ###..#######.\n\
-                    ...#.#....##.\n\
-                    ###.#..##.###");
+        assert_eq!(
+            &*code.to_debug_str('#', '.'),
+            "\
+             #######.#.#.#\n\
+             #.....#.###.#\n\
+             #.###.#..##.#\n\
+             #.###.#..####\n\
+             #.###.#.###..\n\
+             #.....#.#...#\n\
+             #######..####\n\
+             .........##..\n\
+             ##.#....#...#\n\
+             .##.#.#.#.#.#\n\
+             ###..#######.\n\
+             ...#.#....##.\n\
+             ###.#..##.###"
+        );
     }
 }
 
-#[cfg(all(test, feature="image"))]
+#[cfg(all(test, feature = "image"))]
 mod image_tests {
-    use image::{Luma, Rgb, load_from_memory};
-    use {QrCode, Version, EcLevel};
+    use image::{load_from_memory, Luma, Rgb};
+    use {EcLevel, QrCode, Version};
 
     #[test]
     fn test_annex_i_qr_as_image() {
         let code = QrCode::new(b"01234567").unwrap();
         let image = code.render::<Luma<u8>>().build();
-        let expected = load_from_memory(include_bytes!("test_annex_i_qr_as_image.png")).unwrap().to_luma();
+        let expected = load_from_memory(include_bytes!("test_annex_i_qr_as_image.png"))
+            .unwrap()
+            .to_luma();
         assert_eq!(image.dimensions(), expected.dimensions());
         assert_eq!(image.into_raw(), expected.into_raw());
     }
@@ -322,16 +354,18 @@ mod image_tests {
             .dark_color(Rgb { data: [128, 0, 0] })
             .light_color(Rgb { data: [255, 255, 128] })
             .build();
-        let expected = load_from_memory(include_bytes!("test_annex_i_micro_qr_as_image.png")).unwrap().to_rgb();
+        let expected = load_from_memory(include_bytes!("test_annex_i_micro_qr_as_image.png"))
+            .unwrap()
+            .to_rgb();
         assert_eq!(image.dimensions(), expected.dimensions());
         assert_eq!(image.into_raw(), expected.into_raw());
     }
 }
 
-#[cfg(all(test, feature="svg"))]
+#[cfg(all(test, feature = "svg"))]
 mod svg_tests {
     use render::svg::Color as SvgColor;
-    use {QrCode, Version, EcLevel};
+    use {EcLevel, QrCode, Version};
 
     #[test]
     fn test_annex_i_qr_as_svg() {
@@ -353,4 +387,3 @@ mod svg_tests {
         assert_eq!(&image, expected);
     }
 }
-

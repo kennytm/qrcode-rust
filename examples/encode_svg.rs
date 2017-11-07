@@ -1,6 +1,6 @@
 extern crate qrcode;
 
-use qrcode::{QrCode, Version, EcLevel};
+use qrcode::{EcLevel, QrCode, Version};
 use qrcode::render::svg;
 
 fn main() {

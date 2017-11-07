@@ -1,5 +1,5 @@
-extern crate qrcode;
 extern crate image;
+extern crate qrcode;
 
 use qrcode::QrCode;
 use image::Luma;
