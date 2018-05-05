@@ -108,7 +108,7 @@ fn main() {
         .dark_color(svg::Color("#800000"))
         .light_color(svg::Color("#ffff80"))
         .build();
-    println!("{}", string);
+    println!("{}", image);
 }
 ```
 

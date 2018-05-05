@@ -29,11 +29,14 @@
 //! }
 //! ```
 
-#![cfg_attr(feature = "bench", feature(test))] // Unstable libraries
+#![cfg_attr(feature = "bench", feature(test, external_doc))] // Unstable libraries
 #![cfg_attr(feature = "cargo-clippy", deny(warnings, clippy_pedantic))]
 #![cfg_attr(feature = "cargo-clippy",
             allow(unreadable_literal, missing_docs_in_private_items, shadow_reuse,
                   range_plus_one))]
+
+#![cfg_attr(feature = "bench", doc(include = "../README.md"))]
+// ^ make sure we can test our README.md.
 
 extern crate checked_int_cast;
 #[cfg(feature = "image")]
