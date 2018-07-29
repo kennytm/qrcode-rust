@@ -10,15 +10,9 @@
 //!     let bools = c.to_bools();
 
 use std::cmp::max;
-use std::ops::Range;
 
 use types::{Color, EcLevel, Version};
 use cast::As;
-
-// TODO remove this after `p..=q` becomes stable. See rust-lang/rust#28237.
-fn range_inclusive(from: i16, to: i16) -> Range<i16> {
-    from..(to + 1)
-}
 
 //------------------------------------------------------------------------------
 //{{{ Modules
@@ -177,8 +171,8 @@ mod basic_canvas_tests {
     fn test_debug_str() {
         let mut c = Canvas::new(Version::Normal(1), EcLevel::L);
 
-        for i in 3i16..20 {
-            for j in 3i16..20 {
+        for i in 3_i16..20 {
+            for j in 3_i16..20 {
                 *c.get_mut(i, j) = match ((i * 3) ^ j) % 5 {
                     0 => Module::Empty,
                     1 => Module::Masked(Color::Light),
@@ -227,8 +221,8 @@ impl Canvas {
     fn draw_finder_pattern_at(&mut self, x: i16, y: i16) {
         let (dx_left, dx_right) = if x >= 0 { (-3, 4) } else { (-4, 3) };
         let (dy_top, dy_bottom) = if y >= 0 { (-3, 4) } else { (-4, 3) };
-        for j in range_inclusive(dy_top, dy_bottom) {
-            for i in range_inclusive(dx_left, dx_right) {
+        for j in dy_top..=dy_bottom {
+            for i in dx_left..=dx_right {
                 self.put(
                     x + i,
                     y + j,
@@ -330,8 +324,8 @@ impl Canvas {
         if self.get(x, y) != Module::Empty {
             return;
         }
-        for j in range_inclusive(-2, 2) {
-            for i in range_inclusive(-2, 2) {
+        for j in -2..=2 {
+            for i in -2..=2 {
                 self.put(
                     x + i,
                     y + j,
@@ -567,12 +561,12 @@ impl Canvas {
 
         if y1 == y2 {
             // Horizontal line.
-            for x in range_inclusive(x1, x2) {
+            for x in x1..=x2 {
                 self.put(x, y1, if x % 2 == 0 { color_even } else { color_odd });
             }
         } else {
             // Vertical line.
-            for y in range_inclusive(y1, y2) {
+            for y in y1..=y2 {
                 self.put(x1, y, if y % 2 == 0 { color_even } else { color_odd });
             }
         }
@@ -1472,7 +1466,7 @@ impl Canvas {
         };
         for (i, b) in codewords.iter().enumerate() {
             let bits_end = if i == last_word { 4 } else { 0 };
-            'outside: for j in range_inclusive(bits_end, 7).rev() {
+            'outside: for j in (bits_end..=7).rev() {
                 let color = if (*b & (1 << j)) == 0 {
                     Color::Light
                 } else {
@@ -2134,7 +2128,7 @@ mod penalty_tests {
         ];
 
         let mut c = Canvas::new(Version::Micro(4), EcLevel::Q);
-        for i in 0i16..17 {
+        for i in 0_i16..17 {
             c.put(i, -1, HORIZONTAL_SIDE[i as usize]);
             c.put(-1, i, VERTICAL_SIDE[i as usize]);
         }
