@@ -15,11 +15,11 @@ addons:
 matrix:
     include:
         - os: linux
-          rust: 1.26.0
+          rust: 1.26.2
         - os: linux
-          rust: 1.27.0
+          rust: stable
         - os: osx
-          rust: 1.27.0
+          rust: stable
         - os: linux
           rust: beta
         - os: linux
