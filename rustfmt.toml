@@ -1,8 +1,2 @@
-array_width = 100
-chain_width = 100
-fn_call_width = 100
-# single_line_if_else_max_width = 100
-struct_lit_width = 100
-struct_variant_width = 100
-error_on_line_overflow = false
-
+max_width = 120
+use_small_heuristics = "Max"

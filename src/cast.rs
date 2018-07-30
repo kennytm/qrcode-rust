@@ -81,7 +81,7 @@ macro_rules! impl_as {
                 self as isize
             }
         }
-    }
+    };
 }
 
 impl_as!(i16);

@@ -99,13 +99,8 @@ fn test_interleave() {
 
 /// Constructs data and error correction codewords ready to be put in the QR
 /// code matrix.
-pub fn construct_codewords(
-    rawbits: &[u8],
-    version: Version,
-    ec_level: EcLevel,
-) -> QrResult<(Vec<u8>, Vec<u8>)> {
-    let (block_1_size, block_1_count, block_2_size, block_2_count) =
-        version.fetch(ec_level, &DATA_BYTES_PER_BLOCK)?;
+pub fn construct_codewords(rawbits: &[u8], version: Version, ec_level: EcLevel) -> QrResult<(Vec<u8>, Vec<u8>)> {
+    let (block_1_size, block_1_count, block_2_size, block_2_count) = version.fetch(ec_level, &DATA_BYTES_PER_BLOCK)?;
 
     let blocks_count = block_1_count + block_2_count;
     let block_1_end = block_1_size * block_1_count;
@@ -122,10 +117,7 @@ pub fn construct_codewords(
 
     // Generate EC codes.
     let ec_bytes = version.fetch(ec_level, &EC_BYTES_PER_BLOCK)?;
-    let ec_codes = blocks
-        .iter()
-        .map(|block| create_error_correction_code(*block, ec_bytes))
-        .collect::<Vec<Vec<u8>>>();
+    let ec_codes = blocks.iter().map(|block| create_error_correction_code(*block, ec_bytes)).collect::<Vec<Vec<u8>>>();
 
     let blocks_vec = interleave(&blocks);
     let ec_vec = interleave(&ec_codes);
@@ -141,8 +133,7 @@ mod construct_codewords_test {
     #[test]
     fn test_add_ec_simple() {
         let msg = b" [\x0bx\xd1r\xdcMC@\xec\x11\xec\x11\xec\x11";
-        let (blocks_vec, ec_vec) =
-            construct_codewords(msg, Version::Normal(1), EcLevel::M).unwrap();
+        let (blocks_vec, ec_vec) = construct_codewords(msg, Version::Normal(1), EcLevel::M).unwrap();
         assert_eq!(&*blocks_vec, msg);
         assert_eq!(&*ec_vec, b"\xc4#'w\xeb\xd7\xe7\xe2]\x17");
     }
@@ -160,8 +151,7 @@ mod construct_codewords_test {
                             \xe6\xac\x9a\xd1\xbdRo\x11\n\x02V\xa3l\x83\xa1\xa3\xf0 ox\xc0\xb2'\x85\
                             \x8d\xec";
 
-        let (blocks_vec, ec_vec) =
-            construct_codewords(msg, Version::Normal(5), EcLevel::Q).unwrap();
+        let (blocks_vec, ec_vec) = construct_codewords(msg, Version::Normal(5), EcLevel::Q).unwrap();
         assert_eq!(&*blocks_vec, &expected_blocks[..]);
         assert_eq!(&*ec_vec, &expected_ec[..]);
     }
@@ -174,8 +164,8 @@ mod construct_codewords_test {
 /// Computes the maximum allowed number of erratic modules can be introduced to
 /// the QR code, before the data becomes truly corrupted.
 pub fn max_allowed_errors(version: Version, ec_level: EcLevel) -> QrResult<usize> {
-    use Version::{Micro, Normal};
     use EcLevel::{L, M};
+    use Version::{Micro, Normal};
 
     let p = match (version, ec_level) {
         (Micro(2), L) | (Normal(1), L) => 3,

@@ -1,8 +1,8 @@
 extern crate image;
 extern crate qrcode;
 
-use qrcode::QrCode;
 use image::Luma;
+use qrcode::QrCode;
 
 fn main() {
     // Encode some data into bits.

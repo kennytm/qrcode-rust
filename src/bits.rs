@@ -5,9 +5,9 @@ use std::cmp::min;
 #[cfg(feature = "bench")]
 use test::Bencher;
 
-use types::{EcLevel, Mode, QrError, QrResult, Version};
-use optimize::{total_encoded_len, Optimizer, Parser, Segment};
 use cast::{As, Truncate};
+use optimize::{total_encoded_len, Optimizer, Parser, Segment};
+use types::{EcLevel, Mode, QrError, QrResult, Version};
 
 //------------------------------------------------------------------------------
 //{{{ Bits
@@ -31,12 +31,7 @@ impl Bits {
     /// `n` bit in size. Otherwise the excess bits may stomp on the existing
     /// ones.
     fn push_number(&mut self, n: usize, number: u16) {
-        debug_assert!(
-            n == 16 || n < 16 && number < (1 << n),
-            "{} is too big as a {}-bit number",
-            number,
-            n
-        );
+        debug_assert!(n == 16 || n < 16 && number < (1 << n), "{} is too big as a {}-bit number", number, n);
 
         let b = self.bit_offset + n;
         let last_index = self.data.len().wrapping_sub(1);
@@ -205,8 +200,7 @@ impl Bits {
             (_, ExtendedMode::StructuredAppend) => 0b0011,
         };
         let bits = self.version.mode_bits_count();
-        self.push_number_checked(bits, number)
-            .or(Err(QrError::UnsupportedCharacterSet))
+        self.push_number_checked(bits, number).or(Err(QrError::UnsupportedCharacterSet))
     }
 }
 
@@ -330,10 +324,7 @@ impl Bits {
     pub fn push_numeric_data(&mut self, data: &[u8]) -> QrResult<()> {
         self.push_header(Mode::Numeric, data.len())?;
         for chunk in data.chunks(3) {
-            let number = chunk
-                .iter()
-                .map(|b| u16::from(*b - b'0'))
-                .fold(0, |a, b| a * 10 + b);
+            let number = chunk.iter().map(|b| u16::from(*b - b'0')).fold(0, |a, b| a * 10 + b);
             let length = chunk.len() * 3 + 1;
             self.push_number(length, number);
         }
@@ -437,10 +428,7 @@ impl Bits {
     pub fn push_alphanumeric_data(&mut self, data: &[u8]) -> QrResult<()> {
         self.push_header(Mode::Alphanumeric, data.len())?;
         for chunk in data.chunks(2) {
-            let number = chunk
-                .iter()
-                .map(|b| alphanumeric_digit(*b))
-                .fold(0, |a, b| a * 45 + b);
+            let number = chunk.iter().map(|b| alphanumeric_digit(*b)).fold(0, |a, b| a * 45 + b);
             let length = chunk.len() * 5 + 1;
             self.push_number(length, number);
         }
@@ -543,11 +531,7 @@ impl Bits {
                 return Err(QrError::InvalidCharacter);
             }
             let cp = u16::from(kanji[0]) * 256 + u16::from(kanji[1]);
-            let bytes = if cp < 0xe040 {
-                cp - 0x8140
-            } else {
-                cp - 0xc140
-            };
+            let bytes = if cp < 0xe040 { cp - 0x8140 } else { cp - 0xc140 };
             let number = (bytes >> 8) * 0xc0 + (bytes & 0xff);
             self.push_number(13, number);
         }
@@ -564,10 +548,7 @@ mod kanji_tests {
     fn test_iso_18004_example() {
         let mut bits = Bits::new(Version::Normal(1));
         assert_eq!(bits.push_kanji_data(b"\x93\x5f\xe4\xaa"), Ok(()));
-        assert_eq!(
-            bits.into_bytes(),
-            vec![0b1000_0000, 0b0010_0110, 0b11001111, 0b1_1101010, 0b101010__00]
-        );
+        assert_eq!(bits.into_bytes(), vec![0b1000_0000, 0b0010_0110, 0b11001111, 0b1_1101010, 0b101010__00]);
     }
 
     #[test]
@@ -579,10 +560,7 @@ mod kanji_tests {
     #[test]
     fn test_data_too_long() {
         let mut bits = Bits::new(Version::Micro(3));
-        assert_eq!(
-            bits.push_kanji_data(b"\x93_\x93_\x93_\x93_\x93_\x93_\x93_\x93_"),
-            Err(QrError::DataTooLong)
-        );
+        assert_eq!(bits.push_kanji_data(b"\x93_\x93_\x93_\x93_\x93_\x93_\x93_\x93_"), Err(QrError::DataTooLong));
     }
 }
 
@@ -715,11 +693,7 @@ impl Bits {
             self.bit_offset = 0;
             let data_bytes_length = data_length / 8;
             let padding_bytes_count = data_bytes_length - self.data.len();
-            let padding = PADDING_BYTES
-                .iter()
-                .cloned()
-                .cycle()
-                .take(padding_bytes_count);
+            let padding = PADDING_BYTES.iter().cloned().cycle().take(padding_bytes_count);
             self.data.extend(padding);
         }
 
@@ -744,19 +718,8 @@ mod finish_tests {
         assert_eq!(
             bits.into_bytes(),
             vec![
-                0b00100000,
-                0b01011011,
-                0b00001011,
-                0b01111000,
-                0b11010001,
-                0b01110010,
-                0b11011100,
-                0b01001101,
-                0b01000011,
-                0b01000000,
-                0b11101100,
-                0b00010001,
-                0b11101100,
+                0b00100000, 0b01011011, 0b00001011, 0b01111000, 0b11010001, 0b01110010, 0b11011100, 0b01001101,
+                0b01000011, 0b01000000, 0b11101100, 0b00010001, 0b11101100,
             ]
         );
     }
@@ -848,19 +811,8 @@ mod encode_tests {
         assert_eq!(
             res,
             Ok(vec![
-                0b00100000,
-                0b01011011,
-                0b00001011,
-                0b01111000,
-                0b11010001,
-                0b01110010,
-                0b11011100,
-                0b01001101,
-                0b01000011,
-                0b01000000,
-                0b11101100,
-                0b00010001,
-                0b11101100,
+                0b00100000, 0b01011011, 0b00001011, 0b01111000, 0b11010001, 0b01110010, 0b11011100, 0b01001101,
+                0b01000011, 0b01000000, 0b11101100, 0b00010001, 0b11101100,
             ])
         );
     }
@@ -868,10 +820,7 @@ mod encode_tests {
     #[test]
     fn test_auto_mode_switch() {
         let res = encode(b"123A", Version::Micro(2), EcLevel::L);
-        assert_eq!(
-            res,
-            Ok(vec![0b0_0011_000, 0b1111011_1, 0b001_00101, 0b0_00000__00, 0b11101100])
-        );
+        assert_eq!(res, Ok(vec![0b0_0011_000, 0b1111011_1, 0b001_00101, 0b0_00000__00, 0b11101100]));
     }
 
     #[test]
@@ -894,9 +843,7 @@ pub fn encode_auto(data: &[u8], ec_level: EcLevel) -> QrResult<Bits> {
     for version in &[Version::Normal(9), Version::Normal(26), Version::Normal(40)] {
         let opt_segments = Optimizer::new(segments.iter().cloned(), *version).collect::<Vec<_>>();
         let total_len = total_encoded_len(&*opt_segments, *version);
-        let data_capacity = version
-            .fetch(ec_level, &DATA_LENGTHS)
-            .expect("invalid DATA_LENGTHS");
+        let data_capacity = version.fetch(ec_level, &DATA_LENGTHS).expect("invalid DATA_LENGTHS");
         if total_len <= data_capacity {
             let min_version = find_min_version(total_len, ec_level);
             let mut bits = Bits::new(min_version);
@@ -940,7 +887,6 @@ mod encode_auto_tests {
         assert_eq!(find_min_version(641, EcLevel::L), Version::Normal(5));
         assert_eq!(find_min_version(999999, EcLevel::H), Version::Normal(40));
     }
-
 
     #[test]
     fn test_alpha_q() {

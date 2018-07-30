@@ -26,11 +26,7 @@ impl Segment {
     /// length bits) when this segment is encoded.
     pub fn encoded_len(&self, version: Version) -> usize {
         let byte_size = self.end - self.begin;
-        let chars_count = if self.mode == Mode::Kanji {
-            byte_size / 2
-        } else {
-            byte_size
-        };
+        let chars_count = if self.mode == Mode::Kanji { byte_size / 2 } else { byte_size };
 
         let mode_bits_count = version.mode_bits_count();
         let length_bits_count = self.mode.length_bits_count(version);
@@ -144,9 +140,7 @@ impl<'a> Iterator for Parser<'a> {
                     } else {
                         self.pending_single_byte = true;
                         self.begin = next_begin;
-                        return Some(
-                            Segment { mode: Mode::Kanji, begin: old_begin, end: next_begin },
-                        );
+                        return Some(Segment { mode: Mode::Kanji, begin: old_begin, end: next_begin });
                     }
                 }
             };
@@ -217,10 +211,7 @@ mod parse_tests {
         let segs = parse(b"\x81\x30");
         assert_eq!(
             segs,
-            vec![
-                Segment { mode: Mode::Byte, begin: 0, end: 1 },
-                Segment { mode: Mode::Numeric, begin: 1, end: 2 },
-            ]
+            vec![Segment { mode: Mode::Byte, begin: 0, end: 1 }, Segment { mode: Mode::Numeric, begin: 1, end: 2 },]
         );
     }
 
@@ -231,10 +222,7 @@ mod parse_tests {
         let segs = parse(b"\xeb\xc0");
         assert_eq!(
             segs,
-            vec![
-                Segment { mode: Mode::Byte, begin: 0, end: 1 },
-                Segment { mode: Mode::Byte, begin: 1, end: 2 },
-            ]
+            vec![Segment { mode: Mode::Byte, begin: 0, end: 1 }, Segment { mode: Mode::Byte, begin: 1, end: 2 },]
         );
     }
 
@@ -243,10 +231,7 @@ mod parse_tests {
         let segs = parse(b"\x81\x7f");
         assert_eq!(
             segs,
-            vec![
-                Segment { mode: Mode::Byte, begin: 0, end: 1 },
-                Segment { mode: Mode::Byte, begin: 1, end: 2 },
-            ]
+            vec![Segment { mode: Mode::Byte, begin: 0, end: 1 }, Segment { mode: Mode::Byte, begin: 1, end: 2 },]
         );
     }
 
@@ -255,10 +240,7 @@ mod parse_tests {
         let segs = parse(b"\x81\x40\x81");
         assert_eq!(
             segs,
-            vec![
-                Segment { mode: Mode::Kanji, begin: 0, end: 2 },
-                Segment { mode: Mode::Byte, begin: 2, end: 3 },
-            ]
+            vec![Segment { mode: Mode::Kanji, begin: 0, end: 2 }, Segment { mode: Mode::Byte, begin: 2, end: 3 },]
         );
     }
 }
@@ -351,9 +333,7 @@ impl<I: Iterator<Item = Segment>> Iterator for Optimizer<I> {
 /// Computes the total encoded length of all segments.
 pub fn total_encoded_len(segments: &[Segment], version: Version) -> usize {
     // TODO revert to `.map().sum()` after `sum()` is stable.
-    segments
-        .iter()
-        .fold(0, |acc, seg| acc + seg.encoded_len(version))
+    segments.iter().fold(0, |acc, seg| acc + seg.encoded_len(version))
 }
 
 #[cfg(test)]
@@ -428,14 +408,8 @@ mod optimize_tests {
     #[test]
     fn test_example_4() {
         test_optimization_result(
-            vec![
-                Segment { mode: Mode::Kanji, begin: 0, end: 10 },
-                Segment { mode: Mode::Byte, begin: 10, end: 11 },
-            ],
-            vec![
-                Segment { mode: Mode::Kanji, begin: 0, end: 10 },
-                Segment { mode: Mode::Byte, begin: 10, end: 11 },
-            ],
+            vec![Segment { mode: Mode::Kanji, begin: 0, end: 10 }, Segment { mode: Mode::Byte, begin: 10, end: 11 }],
+            vec![Segment { mode: Mode::Kanji, begin: 0, end: 10 }, Segment { mode: Mode::Byte, begin: 10, end: 11 }],
             Version::Normal(1),
         );
     }
@@ -506,7 +480,6 @@ fn bench_optimize(bencher: &mut Bencher) {
                  \x82\xc9\x95\x81\x8by\x82\xb5\x82\xc4\x82\xa2\x82\xe9\x81B";
     bencher.iter(|| Parser::new(data).optimize(Version::Normal(15)));
 }
-
 
 //}}}
 //------------------------------------------------------------------------------

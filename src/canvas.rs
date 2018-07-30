@@ -11,8 +11,8 @@
 
 use std::cmp::max;
 
-use types::{Color, EcLevel, Version};
 use cast::As;
+use types::{Color, EcLevel, Version};
 
 //------------------------------------------------------------------------------
 //{{{ Modules
@@ -492,7 +492,6 @@ mod alignment_pattern_tests {
     }
 }
 
-
 /// `ALIGNMENT_PATTERN_POSITIONS` describes the x- and y-coordinates of the
 /// center of the alignment patterns. Since the QR code is symmetric, only one
 /// coordinate is needed.
@@ -548,15 +547,7 @@ impl Canvas {
     /// `color_odd` will be plotted instead. Thus the timing pattern can be
     /// drawn using this method.
     ///
-    fn draw_line(
-        &mut self,
-        x1: i16,
-        y1: i16,
-        x2: i16,
-        y2: i16,
-        color_even: Color,
-        color_odd: Color,
-    ) {
+    fn draw_line(&mut self, x1: i16, y1: i16, x2: i16, y2: i16, color_even: Color, color_odd: Color) {
         debug_assert!(x1 == x2 || y1 == y2);
 
         if y1 == y2 {
@@ -657,21 +648,10 @@ impl Canvas {
     /// `off_color`. The coordinates will be extracted from the `coords`
     /// iterator. It will start from the most significant bits first, so
     /// *trailing* zeros will be ignored.
-    fn draw_number(
-        &mut self,
-        number: u32,
-        bits: u32,
-        on_color: Color,
-        off_color: Color,
-        coords: &[(i16, i16)],
-    ) {
+    fn draw_number(&mut self, number: u32, bits: u32, on_color: Color, off_color: Color, coords: &[(i16, i16)]) {
         let mut mask = 1 << (bits - 1);
         for &(x, y) in coords {
-            let color = if (mask & number) == 0 {
-                off_color
-            } else {
-                on_color
-            };
+            let color = if (mask & number) == 0 { off_color } else { on_color };
             self.put(x, y, color);
             mask >>= 1;
         }
@@ -682,29 +662,11 @@ impl Canvas {
         let format_info = u32::from(format_info);
         match self.version {
             Version::Micro(_) => {
-                self.draw_number(
-                    format_info,
-                    15,
-                    Color::Dark,
-                    Color::Light,
-                    &FORMAT_INFO_COORDS_MICRO_QR,
-                );
+                self.draw_number(format_info, 15, Color::Dark, Color::Light, &FORMAT_INFO_COORDS_MICRO_QR);
             }
             Version::Normal(_) => {
-                self.draw_number(
-                    format_info,
-                    15,
-                    Color::Dark,
-                    Color::Light,
-                    &FORMAT_INFO_COORDS_QR_MAIN,
-                );
-                self.draw_number(
-                    format_info,
-                    15,
-                    Color::Dark,
-                    Color::Light,
-                    &FORMAT_INFO_COORDS_QR_SIDE,
-                );
+                self.draw_number(format_info, 15, Color::Dark, Color::Light, &FORMAT_INFO_COORDS_QR_MAIN);
+                self.draw_number(format_info, 15, Color::Dark, Color::Light, &FORMAT_INFO_COORDS_QR_SIDE);
                 self.put(8, -8, Color::Dark); // Dark module.
             }
         }
@@ -723,20 +685,8 @@ impl Canvas {
             }
             Version::Normal(a) => {
                 let version_info = VERSION_INFOS[(a - 7).as_usize()];
-                self.draw_number(
-                    version_info,
-                    18,
-                    Color::Dark,
-                    Color::Light,
-                    &VERSION_INFO_COORDS_BL,
-                );
-                self.draw_number(
-                    version_info,
-                    18,
-                    Color::Dark,
-                    Color::Light,
-                    &VERSION_INFO_COORDS_TR,
-                );
+                self.draw_number(version_info, 18, Color::Dark, Color::Light, &VERSION_INFO_COORDS_BL);
+                self.draw_number(version_info, 18, Color::Dark, Color::Light, &VERSION_INFO_COORDS_TR);
             }
         }
     }
@@ -750,13 +700,7 @@ mod draw_version_info_tests {
     #[test]
     fn test_draw_number() {
         let mut c = Canvas::new(Version::Micro(1), EcLevel::L);
-        c.draw_number(
-            0b10101101,
-            8,
-            Color::Dark,
-            Color::Light,
-            &[(0, 0), (0, -1), (-2, -2), (-2, 0)],
-        );
+        c.draw_number(0b10101101, 8, Color::Dark, Color::Light, &[(0, 0), (0, -1), (-2, -2), (-2, 0)]);
         assert_eq!(
             &*c.to_debug_str(),
             "\n\
@@ -1011,40 +955,9 @@ static FORMAT_INFO_COORDS_MICRO_QR: [(i16, i16); 15] = [
 ];
 
 static VERSION_INFOS: [u32; 34] = [
-    0x07c94,
-    0x085bc,
-    0x09a99,
-    0x0a4d3,
-    0x0bbf6,
-    0x0c762,
-    0x0d847,
-    0x0e60d,
-    0x0f928,
-    0x10b78,
-    0x1145d,
-    0x12a17,
-    0x13532,
-    0x149a6,
-    0x15683,
-    0x168c9,
-    0x177ec,
-    0x18ec4,
-    0x191e1,
-    0x1afab,
-    0x1b08e,
-    0x1cc1a,
-    0x1d33f,
-    0x1ed75,
-    0x1f250,
-    0x209d5,
-    0x216f0,
-    0x228ba,
-    0x2379f,
-    0x24b0b,
-    0x2542e,
-    0x26a64,
-    0x27541,
-    0x28c69,
+    0x07c94, 0x085bc, 0x09a99, 0x0a4d3, 0x0bbf6, 0x0c762, 0x0d847, 0x0e60d, 0x0f928, 0x10b78, 0x1145d, 0x12a17,
+    0x13532, 0x149a6, 0x15683, 0x168c9, 0x177ec, 0x18ec4, 0x191e1, 0x1afab, 0x1b08e, 0x1cc1a, 0x1d33f, 0x1ed75,
+    0x1f250, 0x209d5, 0x216f0, 0x228ba, 0x2379f, 0x24b0b, 0x2542e, 0x26a64, 0x27541, 0x28c69,
 ];
 
 //}}}
@@ -1217,7 +1130,6 @@ mod all_functional_patterns_tests {
         assert!(!is_functional(version, version.width(), 1, 9));
     }
 
-
 }
 
 //}}}
@@ -1250,11 +1162,7 @@ impl Iterator for DataModuleIter {
     type Item = (i16, i16);
 
     fn next(&mut self) -> Option<(i16, i16)> {
-        let adjusted_ref_col = if self.x <= self.timing_pattern_column {
-            self.x + 1
-        } else {
-            self.x
-        };
+        let adjusted_ref_col = if self.x <= self.timing_pattern_column { self.x + 1 } else { self.x };
         if adjusted_ref_col <= 0 {
             return None;
         }
@@ -1459,19 +1367,11 @@ impl Canvas {
         I: Iterator<Item = (i16, i16)>,
     {
         let length = codewords.len();
-        let last_word = if is_half_codeword_at_end {
-            length - 1
-        } else {
-            length
-        };
+        let last_word = if is_half_codeword_at_end { length - 1 } else { length };
         for (i, b) in codewords.iter().enumerate() {
             let bits_end = if i == last_word { 4 } else { 0 };
             'outside: for j in (bits_end..=7).rev() {
-                let color = if (*b & (1 << j)) == 0 {
-                    Color::Light
-                } else {
-                    Color::Dark
-                };
+                let color = if (*b & (1 << j)) == 0 { Color::Light } else { Color::Dark };
                 while let Some((x, y)) = coords.next() {
                     let r = self.get_mut(x, y);
                     if *r == Module::Empty {
@@ -1784,73 +1684,15 @@ mod mask_tests {
 }
 
 static FORMAT_INFOS_QR: [u16; 32] = [
-    0x5412,
-    0x5125,
-    0x5e7c,
-    0x5b4b,
-    0x45f9,
-    0x40ce,
-    0x4f97,
-    0x4aa0,
-    0x77c4,
-    0x72f3,
-    0x7daa,
-    0x789d,
-    0x662f,
-    0x6318,
-    0x6c41,
-    0x6976,
-    0x1689,
-    0x13be,
-    0x1ce7,
-    0x19d0,
-    0x0762,
-    0x0255,
-    0x0d0c,
-    0x083b,
-    0x355f,
-    0x3068,
-    0x3f31,
-    0x3a06,
-    0x24b4,
-    0x2183,
-    0x2eda,
-    0x2bed,
+    0x5412, 0x5125, 0x5e7c, 0x5b4b, 0x45f9, 0x40ce, 0x4f97, 0x4aa0, 0x77c4, 0x72f3, 0x7daa, 0x789d, 0x662f, 0x6318,
+    0x6c41, 0x6976, 0x1689, 0x13be, 0x1ce7, 0x19d0, 0x0762, 0x0255, 0x0d0c, 0x083b, 0x355f, 0x3068, 0x3f31, 0x3a06,
+    0x24b4, 0x2183, 0x2eda, 0x2bed,
 ];
 
 static FORMAT_INFOS_MICRO_QR: [u16; 32] = [
-    0x4445,
-    0x4172,
-    0x4e2b,
-    0x4b1c,
-    0x55ae,
-    0x5099,
-    0x5fc0,
-    0x5af7,
-    0x6793,
-    0x62a4,
-    0x6dfd,
-    0x68ca,
-    0x7678,
-    0x734f,
-    0x7c16,
-    0x7921,
-    0x06de,
-    0x03e9,
-    0x0cb0,
-    0x0987,
-    0x1735,
-    0x1202,
-    0x1d5b,
-    0x186c,
-    0x2508,
-    0x203f,
-    0x2f66,
-    0x2a51,
-    0x34e3,
-    0x31d4,
-    0x3e8d,
-    0x3bba,
+    0x4445, 0x4172, 0x4e2b, 0x4b1c, 0x55ae, 0x5099, 0x5fc0, 0x5af7, 0x6793, 0x62a4, 0x6dfd, 0x68ca, 0x7678, 0x734f,
+    0x7c16, 0x7921, 0x06de, 0x03e9, 0x0cb0, 0x0987, 0x1735, 0x1202, 0x1d5b, 0x186c, 0x2508, 0x203f, 0x2f66, 0x2a51,
+    0x34e3, 0x31d4, 0x3e8d, 0x3bba,
 ];
 
 //}}}
@@ -1867,15 +1709,9 @@ impl Canvas {
         let mut total_score = 0;
 
         for i in 0..self.width {
-            let map_fn = |j| if is_horizontal {
-                self.get(j, i)
-            } else {
-                self.get(i, j)
-            };
+            let map_fn = |j| if is_horizontal { self.get(j, i) } else { self.get(i, j) };
 
-            let colors = (0..self.width)
-                .map(map_fn)
-                .chain(Some(Module::Empty).into_iter());
+            let colors = (0..self.width).map(map_fn).chain(Some(Module::Empty).into_iter());
             let mut last_color = Module::Empty;
             let mut consecutive_len = 1_u16;
 
@@ -1924,15 +1760,8 @@ impl Canvas {
     /// Every pattern that looks like `#.###.#....` in any orientation will add
     /// 40 points.
     fn compute_finder_penalty_score(&self, is_horizontal: bool) -> u16 {
-        static PATTERN: [Color; 7] = [
-            Color::Dark,
-            Color::Light,
-            Color::Dark,
-            Color::Dark,
-            Color::Dark,
-            Color::Light,
-            Color::Dark,
-        ];
+        static PATTERN: [Color; 7] =
+            [Color::Dark, Color::Light, Color::Dark, Color::Dark, Color::Dark, Color::Light, Color::Dark];
 
         let mut total_score = 0;
 
@@ -1971,11 +1800,7 @@ impl Canvas {
         let dark_modules = self.modules.iter().filter(|m| m.is_dark()).count();
         let total_modules = self.modules.len();
         let ratio = dark_modules * 200 / total_modules;
-        if ratio >= 100 {
-            ratio - 100
-        } else {
-            100 - ratio
-        }.as_u16()
+        if ratio >= 100 { ratio - 100 } else { 100 - ratio }.as_u16()
     }
 
     /// Compute the penalty score for having too many light modules on the sides.
@@ -1986,12 +1811,8 @@ impl Canvas {
     /// has the inverse meaning of this method, but it is very easy to convert
     /// between the two (this score is (16×width − standard-score)).
     fn compute_light_side_penalty_score(&self) -> u16 {
-        let h = (1..self.width)
-            .filter(|j| !self.get(*j, -1).is_dark())
-            .count();
-        let v = (1..self.width)
-            .filter(|j| !self.get(-1, *j).is_dark())
-            .count();
+        let h = (1..self.width).filter(|j| !self.get(*j, -1).is_dark()).count();
+        let v = (1..self.width).filter(|j| !self.get(-1, *j).is_dark()).count();
 
         (h + v + 15 * max(h, v)).as_u16()
     }
@@ -2001,13 +1822,13 @@ impl Canvas {
     fn compute_total_penalty_scores(&self) -> u16 {
         match self.version {
             Version::Normal(_) => {
-                let s1a = self.compute_adjacent_penalty_score(true);
-                let s1b = self.compute_adjacent_penalty_score(false);
+                let s1_a = self.compute_adjacent_penalty_score(true);
+                let s1_b = self.compute_adjacent_penalty_score(false);
                 let s2 = self.compute_block_penalty_score();
-                let s3a = self.compute_finder_penalty_score(true);
-                let s3b = self.compute_finder_penalty_score(false);
+                let s3_a = self.compute_finder_penalty_score(true);
+                let s3_b = self.compute_finder_penalty_score(false);
                 let s4 = self.compute_balance_penalty_score();
-                s1a + s1b + s2 + s3a + s3b + s4
+                s1_a + s1_b + s2 + s3_a + s3_b + s4
             }
             Version::Micro(_) => self.compute_light_side_penalty_score(),
         }
@@ -2152,12 +1973,8 @@ static ALL_PATTERNS_QR: [MaskPattern; 8] = [
     MaskPattern::Meadow,
 ];
 
-static ALL_PATTERNS_MICRO_QR: [MaskPattern; 4] = [
-    MaskPattern::HorizontalLines,
-    MaskPattern::LargeCheckerboard,
-    MaskPattern::Diamonds,
-    MaskPattern::Meadow,
-];
+static ALL_PATTERNS_MICRO_QR: [MaskPattern; 4] =
+    [MaskPattern::HorizontalLines, MaskPattern::LargeCheckerboard, MaskPattern::Diamonds, MaskPattern::Meadow];
 
 impl Canvas {
     /// Construct a new canvas and apply the best masking that gives the lowest
@@ -2170,9 +1987,8 @@ impl Canvas {
             let mut c = self.clone();
             c.apply_mask(*ptn);
             c
-        })
-            .min_by_key(Self::compute_total_penalty_scores)
-            .expect("at least one pattern")
+        }).min_by_key(Self::compute_total_penalty_scores)
+        .expect("at least one pattern")
     }
 
     /// Convert the modules into a vector of booleans.

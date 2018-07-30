@@ -1,8 +1,8 @@
 //! Render a QR code into image.
 
+use cast::As;
 use std::cmp::max;
 use types::Color;
-use cast::As;
 
 pub mod image;
 pub mod string;
@@ -156,8 +156,7 @@ impl<'a, P: Pixel> Renderer<'a, P> {
     }
 
     /// Renders the QR code into an image.
-    #[deprecated(since = "0.4.0",
-                 note = "renamed to `.build()` to de-emphasize the image connection")]
+    #[deprecated(since = "0.4.0", note = "renamed to `.build()` to de-emphasize the image connection")]
     pub fn to_image(&self) -> P::Image {
         self.build()
     }
@@ -165,11 +164,7 @@ impl<'a, P: Pixel> Renderer<'a, P> {
     /// Renders the QR code into an image.
     pub fn build(&self) -> P::Image {
         let w = self.modules_count;
-        let qz = if self.has_quiet_zone {
-            self.quiet_zone
-        } else {
-            0
-        };
+        let qz = if self.has_quiet_zone { self.quiet_zone } else { 0 };
         let width = w + 2 * qz;
 
         let (mw, mh) = self.module_size;

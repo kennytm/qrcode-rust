@@ -13,11 +13,11 @@ macro_rules! impl_pixel_for_image_pixel {
 
             fn default_color(color: Color) -> Self {
                 match color.select($s::zero(), $s::max_value()) {
-                    $c => $p { data: $d }
+                    $c => $p { data: $d },
                 }
             }
         }
-    }
+    };
 }
 
 impl_pixel_for_image_pixel!{ Luma<S>: p => [p] }
@@ -44,8 +44,8 @@ impl<P: ImagePixel + 'static> Canvas for (P, ImageBuffer<P, Vec<P::Subpixel>>) {
 
 #[cfg(test)]
 mod render_tests {
-    use render::Renderer;
     use image::{Luma, Rgba};
+    use render::Renderer;
     use types::Color;
 
     #[test]
@@ -67,7 +67,7 @@ mod render_tests {
             3,
             1,
         ).module_dimensions(1, 1)
-            .build();
+        .build();
 
         #[cfg_attr(rustfmt, rustfmt_skip)]
         let expected = [
@@ -82,10 +82,9 @@ mod render_tests {
 
     #[test]
     fn test_render_rgba_unsized() {
-        let image =
-            Renderer::<Rgba<u8>>::new(&[Color::Light, Color::Dark, Color::Dark, Color::Dark], 2, 1)
-                .module_dimensions(1, 1)
-                .build();
+        let image = Renderer::<Rgba<u8>>::new(&[Color::Light, Color::Dark, Color::Dark, Color::Dark], 2, 1)
+            .module_dimensions(1, 1)
+            .build();
 
         #[cfg_attr(rustfmt, rustfmt_skip)]
         let expected: &[u8] = &[
@@ -100,11 +99,8 @@ mod render_tests {
 
     #[test]
     fn test_render_resized_min() {
-        let image = Renderer::<Luma<u8>>::new(
-            &[Color::Dark, Color::Light, Color::Light, Color::Dark],
-            2,
-            1,
-        ).min_dimensions(10, 10)
+        let image = Renderer::<Luma<u8>>::new(&[Color::Dark, Color::Light, Color::Light, Color::Dark], 2, 1)
+            .min_dimensions(10, 10)
             .build();
 
         #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -132,11 +128,8 @@ mod render_tests {
 
     #[test]
     fn test_render_resized_max() {
-        let image = Renderer::<Luma<u8>>::new(
-            &[Color::Dark, Color::Light, Color::Light, Color::Dark],
-            2,
-            1,
-        ).max_dimensions(10, 5)
+        let image = Renderer::<Luma<u8>>::new(&[Color::Dark, Color::Light, Color::Light, Color::Dark], 2, 1)
+            .max_dimensions(10, 5)
             .build();
 
         #[cfg_attr(rustfmt, rustfmt_skip)]
