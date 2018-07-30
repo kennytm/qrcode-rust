@@ -93,12 +93,7 @@ impl Canvas {
     /// Constructs a new canvas big enough for a QR code of the given version.
     pub fn new(version: Version, ec_level: EcLevel) -> Self {
         let width = version.width();
-        Self {
-            width: width,
-            version: version,
-            ec_level: ec_level,
-            modules: vec![Module::Empty; (width * width).as_usize()],
-        }
+        Self { width, version, ec_level, modules: vec![Module::Empty; (width * width).as_usize()] }
     }
 
     /// Converts the canvas into a human-readable string.
@@ -1149,7 +1144,7 @@ impl DataModuleIter {
         Self {
             x: width - 1,
             y: width - 1,
-            width: width,
+            width,
             timing_pattern_column: match version {
                 Version::Micro(_) => 0,
                 Version::Normal(_) => 6,

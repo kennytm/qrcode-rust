@@ -22,7 +22,7 @@ pub struct Bits {
 impl Bits {
     /// Constructs a new, empty bits structure.
     pub fn new(version: Version) -> Self {
-        Self { data: Vec::new(), bit_offset: 0, version: version }
+        Self { data: Vec::new(), bit_offset: 0, version }
     }
 
     /// Pushes an N-bit big-endian integer to the end of the bits.
@@ -255,7 +255,7 @@ impl Bits {
                 self.push_number(2, 0b10);
                 self.push_number(14, eci_designator.as_u16());
             }
-            16384...999999 => {
+            16384...999_999 => {
                 self.push_number(3, 0b110);
                 self.push_number(5, (eci_designator >> 16).as_u16());
                 self.push_number(16, (eci_designator & 0xffff).as_u16());
@@ -688,7 +688,7 @@ impl Bits {
         }
 
         if self.len() < data_length {
-            const PADDING_BYTES: &'static [u8] = &[0b11101100, 0b00010001];
+            const PADDING_BYTES: &[u8] = &[0b1110_1100, 0b0001_0001];
 
             self.bit_offset = 0;
             let data_bytes_length = data_length / 8;

@@ -271,14 +271,14 @@ impl<I: Iterator<Item = Segment>> Optimizer<I> {
                 parser: segments,
                 last_segment: Segment { mode: Mode::Numeric, begin: 0, end: 0 },
                 last_segment_size: 0,
-                version: version,
+                version,
                 ended: true,
             },
             Some(segment) => Self {
                 parser: segments,
                 last_segment: segment,
                 last_segment_size: segment.encoded_len(version),
-                version: version,
+                version,
                 ended: false,
             },
         }

@@ -31,12 +31,16 @@
 
 #![cfg_attr(feature = "bench", feature(test, external_doc))] // Unstable libraries
 #![cfg_attr(feature = "cargo-clippy", deny(warnings, clippy_pedantic))]
-#![cfg_attr(feature = "cargo-clippy",
-            allow(unreadable_literal, missing_docs_in_private_items, shadow_reuse,
-                  range_plus_one))]
-
+#![cfg_attr(
+    feature = "cargo-clippy",
+    allow(
+        indexing_slicing,
+        write_literal, // see https://github.com/rust-lang-nursery/rust-clippy/issues/2976
+    )
+)]
 #![cfg_attr(feature = "bench", doc(include = "../README.md"))]
 // ^ make sure we can test our README.md.
+#![cfg_attr(feature = "cargo-clippy", allow())]
 
 extern crate checked_int_cast;
 #[cfg(feature = "image")]
@@ -147,12 +151,7 @@ impl QrCode {
         canvas.draw_all_functional_patterns();
         canvas.draw_data(&*encoded_data, &*ec_data);
         let canvas = canvas.apply_best_mask();
-        Ok(Self {
-            content: canvas.into_colors(),
-            version: version,
-            ec_level: ec_level,
-            width: version.width().as_usize(),
-        })
+        Ok(Self { content: canvas.into_colors(), version, ec_level, width: version.width().as_usize() })
     }
 
     /// Gets the version of this QR code.

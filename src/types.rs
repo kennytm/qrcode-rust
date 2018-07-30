@@ -129,8 +129,8 @@ pub enum Version {
 impl Version {
     /// Get the number of "modules" on each size of the QR code, i.e. the width
     /// and height of the code.
-    pub fn width(&self) -> i16 {
-        match *self {
+    pub fn width(self) -> i16 {
+        match self {
             Version::Normal(v) => v * 4 + 17,
             Version::Micro(v) => v * 2 + 9,
         }
@@ -146,11 +146,11 @@ impl Version {
     ///
     /// If the entry compares equal to the default value of T, this method
     /// returns `Err(QrError::InvalidVersion)`.
-    pub fn fetch<T>(&self, ec_level: EcLevel, table: &[[T; 4]]) -> QrResult<T>
+    pub fn fetch<T>(self, ec_level: EcLevel, table: &[[T; 4]]) -> QrResult<T>
     where
         T: PartialEq + Default + Copy,
     {
-        match *self {
+        match self {
             Version::Normal(v @ 1...40) => {
                 return Ok(table[(v - 1).as_usize()][ec_level as usize]);
             }
@@ -166,16 +166,16 @@ impl Version {
     }
 
     /// The number of bits needed to encode the mode indicator.
-    pub fn mode_bits_count(&self) -> usize {
-        match *self {
+    pub fn mode_bits_count(self) -> usize {
+        match self {
             Version::Micro(a) => (a - 1).as_usize(),
             _ => 4,
         }
     }
 
     /// Checks whether is version refers to a Micro QR code.
-    pub fn is_micro(&self) -> bool {
-        match *self {
+    pub fn is_micro(self) -> bool {
+        match self {
             Version::Normal(_) => false,
             Version::Micro(_) => true,
         }
@@ -212,28 +212,28 @@ impl Mode {
     ///
     /// This method will return `Err(QrError::UnsupportedCharacterSet)` if the
     /// mode is not supported in the given version.
-    pub fn length_bits_count(&self, version: Version) -> usize {
+    pub fn length_bits_count(self, version: Version) -> usize {
         match version {
             Version::Micro(a) => {
                 let a = a.as_usize();
-                match *self {
+                match self {
                     Mode::Numeric => 2 + a,
                     Mode::Alphanumeric | Mode::Byte => 1 + a,
                     Mode::Kanji => a,
                 }
             }
-            Version::Normal(1...9) => match *self {
+            Version::Normal(1...9) => match self {
                 Mode::Numeric => 10,
                 Mode::Alphanumeric => 9,
                 Mode::Byte | Mode::Kanji => 8,
             },
-            Version::Normal(10...26) => match *self {
+            Version::Normal(10...26) => match self {
                 Mode::Numeric => 12,
                 Mode::Alphanumeric => 11,
                 Mode::Byte => 16,
                 Mode::Kanji => 10,
             },
-            Version::Normal(_) => match *self {
+            Version::Normal(_) => match self {
                 Mode::Numeric => 14,
                 Mode::Alphanumeric => 13,
                 Mode::Byte => 16,
@@ -250,8 +250,8 @@ impl Mode {
     ///
     /// Note that in Kanji mode, the `raw_data_len` is the number of Kanjis,
     /// i.e. half the total size of bytes.
-    pub fn data_bits_count(&self, raw_data_len: usize) -> usize {
-        match *self {
+    pub fn data_bits_count(self, raw_data_len: usize) -> usize {
+        match self {
             Mode::Numeric => (raw_data_len * 10 + 2) / 3,
             Mode::Alphanumeric => (raw_data_len * 11 + 1) / 2,
             Mode::Byte => raw_data_len * 8,
@@ -269,10 +269,10 @@ impl Mode {
     ///     assert!(a <= c);
     ///     assert!(b <= c);
     ///
-    pub fn max(&self, other: Self) -> Self {
+    pub fn max(self, other: Self) -> Self {
         match self.partial_cmp(&other) {
             Some(Ordering::Less) | Some(Ordering::Equal) => other,
-            Some(Ordering::Greater) => *self,
+            Some(Ordering::Greater) => self,
             None => Mode::Byte,
         }
     }
