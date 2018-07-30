@@ -13,14 +13,14 @@ Cargo.toml
 
 ```toml
 [dependencies]
-qrcode = "0.5"
+qrcode = "0.8"
 ```
 
 The default settings will depend on the `image` crate. If you don't need image generation capability, disable the `default-features`:
 
 ```toml
 [dependencies]
-qrcode = { version = "0.5", default-features = false }
+qrcode = { version = "0.8", default-features = false }
 ```
 
 Example
