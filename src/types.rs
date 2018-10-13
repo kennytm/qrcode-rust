@@ -41,6 +41,12 @@ impl Display for QrError {
     }
 }
 
+impl ::std::error::Error for QrError {
+    fn description(&self) -> &'static str {
+        "QrError"
+    }
+}
+
 /// `QrResult` is a convenient alias for a QR code generation result.
 pub type QrResult<T> = Result<T, QrError>;
 
