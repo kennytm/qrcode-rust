@@ -23,6 +23,9 @@ maintenance = { status = "passively-maintained" }
 image = { version = "0.20", default-features = false, optional = true }
 checked_int_cast = "1"
 
+[dev-dependencies]
+image = "0.20"
+
 [features]
 default = ["image", "svg"]
 bench = []
