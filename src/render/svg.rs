@@ -51,7 +51,7 @@ impl<'a> RenderCanvas for Canvas<'a> {
                 concat!(
                     r#"<?xml version="1.0" standalone="yes"?>"#,
                     r#"<svg xmlns="http://www.w3.org/2000/svg""#,
-                    r#" version="1.1" width="{w}" height="{h}" shape-rendering="crispEdges">"#,
+                    r#" version="1.1" viewBox="0 0 {w} {h}" shape-rendering="crispEdges">"#,
                     r#"<rect x="0" y="0" width="{w}" height="{h}" fill="{bg}"/>"#,
                     r#"<path fill="{fg}" d=""#,
                 ),
