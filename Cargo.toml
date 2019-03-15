@@ -20,11 +20,11 @@ is-it-maintained-open-issues = { repository = "kennytm/qrcode-rust" }
 maintenance = { status = "passively-maintained" }
 
 [dependencies]
-image = { version = "0.20", default-features = false, optional = true }
+image = { version = "0.21", default-features = false, optional = true }
 checked_int_cast = "1"
 
 [dev-dependencies]
-image = "0.20"
+image = "0.21"
 
 [features]
 default = ["image", "svg"]
