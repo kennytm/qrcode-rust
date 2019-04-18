@@ -36,7 +36,10 @@ script:
     - cargo test --target i686-$OS
 
 after_success:
-    - cargo install cargo-kcov
-    - cargo kcov --print-install-kcov-sh | bash
-    - cargo kcov --coveralls
+    - >
+        if [ "$TRAVIS_OS_NAME" = 'linux' ]; then 
+            cargo install cargo-kcov &&
+            ( cargo kcov --print-install-kcov-sh | bash ) &&
+            cargo kcov --coveralls
+        fi
 
