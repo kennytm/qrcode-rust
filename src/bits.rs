@@ -3,7 +3,7 @@
 use std::cmp::min;
 
 #[cfg(feature = "bench")]
-use test::Bencher;
+use test::{black_box, Bencher};
 
 use cast::{As, Truncate};
 use optimize::{total_encoded_len, Optimizer, Parser, Segment};
@@ -859,17 +859,20 @@ pub fn encode_auto(data: &[u8], ec_level: EcLevel) -> QrResult<Bits> {
 /// Finds the smallest version (QR code only) that can store N bits of data
 /// in the given error correction level.
 fn find_min_version(length: usize, ec_level: EcLevel) -> Version {
-    let mut min = 0;
-    let mut max = 39;
-    while min < max {
-        let half = (min + max) / 2;
-        if DATA_LENGTHS[half][ec_level as usize] < length {
-            min = half + 1;
-        } else {
-            max = half;
-        }
+    let mut base = 0usize;
+    let mut size = 39;
+    while size > 1 {
+        let half = size / 2;
+        let mid = base + half;
+        // mid is always in [0, size).
+        // mid >= 0: by definition
+        // mid < size: mid = size / 2 + size / 4 + size / 8 ...
+        base = if DATA_LENGTHS[mid][ec_level as usize] > length { base } else { mid };
+        size -= half;
     }
-    Version::Normal((min + 1).as_i16())
+    // base is always in [0, mid) because base <= mid.
+    base = if DATA_LENGTHS[base][ec_level as usize] >= length { base } else { base + 1 };
+    Version::Normal((base + 1).as_i16())
 }
 
 #[cfg(test)]
@@ -905,6 +908,20 @@ mod encode_auto_tests {
         let bits = encode_auto(b"This is a mixed data test. 1234567890", EcLevel::H).unwrap();
         assert_eq!(bits.version(), Version::Normal(4));
     }
+}
+
+#[cfg(feature = "bench")]
+#[bench]
+fn bench_find_min_version(bencher: &mut Bencher) {
+    bencher.iter(|| {
+        black_box(find_min_version(60, EcLevel::L));
+        black_box(find_min_version(200, EcLevel::L));
+        black_box(find_min_version(200, EcLevel::H));
+        black_box(find_min_version(20000, EcLevel::L));
+        black_box(find_min_version(640, EcLevel::L));
+        black_box(find_min_version(641, EcLevel::L));
+        black_box(find_min_version(999999, EcLevel::H));
+    })
 }
 
 //}}}
