@@ -13,7 +13,7 @@ macro_rules! impl_pixel_for_image_pixel {
 
             fn default_color(color: Color) -> Self {
                 match color.select($s::zero(), $s::max_value()) {
-                    $c => $p { data: $d },
+                    $c => $p($d),
                 }
             }
         }
