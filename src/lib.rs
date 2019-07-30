@@ -2,7 +2,7 @@
 //!
 //! This crate provides a QR code and Micro QR code encoder for binary data.
 //!
-#![cfg_attr(feature = "image", doc = " ```rust")]
+#![cfg_attr(feature = "image", doc = "```rust")]
 #![cfg_attr(not(feature = "image"), doc = "```ignore")]
 //! extern crate qrcode;
 //! extern crate image;
