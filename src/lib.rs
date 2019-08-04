@@ -232,8 +232,8 @@ impl QrCode {
     ///
     /// let image = QrCode::new(b"hello").unwrap()
     ///                     .render()
-    ///                     .dark_color(Rgb { data: [0, 0, 128] })
-    ///                     .light_color(Rgb { data: [224, 224, 224] }) // adjust colors
+    ///                     .dark_color(Rgb([0, 0, 128]))
+    ///                     .light_color(Rgb([224, 224, 224])) // adjust colors
     ///                     .quiet_zone(false)          // disable quiet zone (white border)
     ///                     .min_dimensions(300, 300)   // sets minimum image size
     ///                     .build();
@@ -336,8 +336,8 @@ mod image_tests {
         let image = code
             .render()
             .min_dimensions(200, 200)
-            .dark_color(Rgb { data: [128, 0, 0] })
-            .light_color(Rgb { data: [255, 255, 128] })
+            .dark_color(Rgb([128, 0, 0]))
+            .light_color(Rgb([255, 255, 128]))
             .build();
         let expected = load_from_memory(include_bytes!("test_annex_i_micro_qr_as_image.png")).unwrap().to_rgb();
         assert_eq!(image.dimensions(), expected.dimensions());
