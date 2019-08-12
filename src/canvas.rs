@@ -1124,7 +1124,6 @@ mod all_functional_patterns_tests {
         assert!(is_functional(version, version.width(), 0, 9));
         assert!(!is_functional(version, version.width(), 1, 9));
     }
-
 }
 
 //}}}
@@ -1978,11 +1977,13 @@ impl Canvas {
         match self.version {
             Version::Normal(_) => ALL_PATTERNS_QR.iter(),
             Version::Micro(_) => ALL_PATTERNS_MICRO_QR.iter(),
-        }.map(|ptn| {
+        }
+        .map(|ptn| {
             let mut c = self.clone();
             c.apply_mask(*ptn);
             c
-        }).min_by_key(Self::compute_total_penalty_scores)
+        })
+        .min_by_key(Self::compute_total_penalty_scores)
         .expect("at least one pattern")
     }
 

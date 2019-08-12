@@ -332,9 +332,7 @@ impl<I: Iterator<Item = Segment>> Iterator for Optimizer<I> {
 
 /// Computes the total encoded length of all segments.
 pub fn total_encoded_len(segments: &[Segment], version: Version) -> usize {
-    segments.iter()
-        .map(|seg| seg.encoded_len(version))
-        .sum()
+    segments.iter().map(|seg| seg.encoded_len(version)).sum()
 }
 
 #[cfg(test)]
@@ -453,7 +451,6 @@ mod optimize_tests {
             Version::Micro(3),
         );
     }
-
 }
 
 #[cfg(feature = "bench")]
