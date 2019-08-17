@@ -20,10 +20,10 @@ macro_rules! impl_pixel_for_image_pixel {
     };
 }
 
-impl_pixel_for_image_pixel!{ Luma<S>: p => [p] }
-impl_pixel_for_image_pixel!{ LumaA<S>: p => [p, S::max_value()] }
-impl_pixel_for_image_pixel!{ Rgb<S>: p => [p, p, p] }
-impl_pixel_for_image_pixel!{ Rgba<S>: p => [p, p, p, S::max_value()] }
+impl_pixel_for_image_pixel! { Luma<S>: p => [p] }
+impl_pixel_for_image_pixel! { LumaA<S>: p => [p, S::max_value()] }
+impl_pixel_for_image_pixel! { Rgb<S>: p => [p, p, p] }
+impl_pixel_for_image_pixel! { Rgba<S>: p => [p, p, p, S::max_value()] }
 
 impl<P: ImagePixel + 'static> Canvas for (P, ImageBuffer<P, Vec<P::Subpixel>>) {
     type Pixel = P;
@@ -66,7 +66,8 @@ mod render_tests {
             ],
             3,
             1,
-        ).module_dimensions(1, 1)
+        )
+        .module_dimensions(1, 1)
         .build();
 
         #[cfg_attr(rustfmt, rustfmt_skip)]
