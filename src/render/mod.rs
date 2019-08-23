@@ -103,6 +103,14 @@ impl<'a, P: Pixel> Renderer<'a, P> {
         self
     }
 
+    /// Set the quiet zone's size explicitly. A quiet zone of 1 would
+    /// provide a quiet zone around the generated image of 1 module size.
+    pub fn set_quiet_zone(&mut self, quiet_zone: u32) -> &mut Self {
+        self.has_quiet_zone = quiet_zone > 0;
+        self.quiet_zone = quiet_zone;
+        self
+    }
+
     /// Sets the size of each module in pixels. Default is 8px.
     #[deprecated(since = "0.4.0", note = "use `.module_dimensions(width, width)` instead")]
     pub fn module_size(&mut self, width: u32) -> &mut Self {
