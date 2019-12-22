@@ -1,6 +1,3 @@
-extern crate image;
-extern crate qrcode;
-
 use image::Luma;
 use qrcode::QrCode;
 

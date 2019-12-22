@@ -4,49 +4,34 @@
 //!
 #![cfg_attr(feature = "image", doc = "```rust")]
 #![cfg_attr(not(feature = "image"), doc = "```ignore")]
-//! extern crate qrcode;
-//! extern crate image;
-//!
 //! use qrcode::QrCode;
 //! use image::Luma;
 //!
-//! fn main() {
-//!     // Encode some data into bits.
-//!     let code = QrCode::new(b"01234567").unwrap();
+//! // Encode some data into bits.
+//! let code = QrCode::new(b"01234567").unwrap();
 //!
-//!     // Render the bits into an image.
-//!     let image = code.render::<Luma<u8>>().build();
+//! // Render the bits into an image.
+//! let image = code.render::<Luma<u8>>().build();
 //!
-//!     // Save the image.
-//!     image.save("/tmp/qrcode.png").unwrap();
+//! // Save the image.
+//! image.save("/tmp/qrcode.png").unwrap();
 //!
-//!     // You can also render it into a string.
-//!     let string = code.render()
-//!         .light_color(' ')
-//!         .dark_color('#')
-//!         .build();
-//!     println!("{}", string);
-//! }
+//! // You can also render it into a string.
+//! let string = code.render()
+//!     .light_color(' ')
+//!     .dark_color('#')
+//!     .build();
+//! println!("{}", string);
 //! ```
 
 #![cfg_attr(feature = "bench", feature(test, external_doc))] // Unstable libraries
-#![cfg_attr(feature = "cargo-clippy", deny(warnings, clippy_pedantic))]
-#![cfg_attr(
-    feature = "cargo-clippy",
-    allow(
-        indexing_slicing,
-        write_literal, // see https://github.com/rust-lang-nursery/rust-clippy/issues/2976
-    )
+#![deny(warnings, clippy::pedantic)]
+#![allow(
+    clippy::must_use_candidate, // This is just annoying.
+    clippy::use_self, // Rust 1.33 doesn't support Self::EnumVariant, let's try again in 1.37.
 )]
 #![cfg_attr(feature = "bench", doc(include = "../README.md"))]
 // ^ make sure we can test our README.md.
-#![cfg_attr(feature = "cargo-clippy", allow())]
-
-extern crate checked_int_cast;
-#[cfg(feature = "image")]
-extern crate image;
-#[cfg(feature = "bench")]
-extern crate test;
 
 use std::ops::Index;
 
@@ -58,11 +43,11 @@ pub mod optimize;
 pub mod render;
 pub mod types;
 
-pub use types::{Color, EcLevel, QrResult, Version};
+pub use crate::types::{Color, EcLevel, QrResult, Version};
 
-use cast::As;
+use crate::cast::As;
+use crate::render::{Pixel, Renderer};
 use checked_int_cast::CheckedIntCast;
-use render::{Pixel, Renderer};
 
 /// The encoded QR code symbol.
 #[derive(Clone)]
@@ -224,11 +209,8 @@ impl QrCode {
     ///
     #[cfg_attr(feature = "image", doc = " ```rust")]
     #[cfg_attr(not(feature = "image"), doc = " ```ignore")]
-    /// # extern crate image;
-    /// # extern crate qrcode;
     /// # use qrcode::QrCode;
     /// # use image::Rgb;
-    /// # fn main() {
     ///
     /// let image = QrCode::new(b"hello").unwrap()
     ///                     .render()
@@ -237,8 +219,6 @@ impl QrCode {
     ///                     .quiet_zone(false)          // disable quiet zone (white border)
     ///                     .min_dimensions(300, 300)   // sets minimum image size
     ///                     .build();
-    ///
-    /// # }
     /// ```
     ///
     /// Note: the `image` crate itself also provides method to rotate the image,
@@ -260,7 +240,7 @@ impl Index<(usize, usize)> for QrCode {
 
 #[cfg(test)]
 mod tests {
-    use {EcLevel, QrCode, Version};
+    use crate::{EcLevel, QrCode, Version};
 
     #[test]
     fn test_annex_i_qr() {
@@ -318,8 +298,8 @@ mod tests {
 
 #[cfg(all(test, feature = "image"))]
 mod image_tests {
+    use crate::{EcLevel, QrCode, Version};
     use image::{load_from_memory, Luma, Rgb};
-    use {EcLevel, QrCode, Version};
 
     #[test]
     fn test_annex_i_qr_as_image() {
@@ -347,8 +327,8 @@ mod image_tests {
 
 #[cfg(all(test, feature = "svg"))]
 mod svg_tests {
-    use render::svg::Color as SvgColor;
-    use {EcLevel, QrCode, Version};
+    use crate::render::svg::Color as SvgColor;
+    use crate::{EcLevel, QrCode, Version};
 
     #[test]
     fn test_annex_i_qr_as_svg() {

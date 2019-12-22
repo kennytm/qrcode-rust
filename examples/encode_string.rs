@@ -1,4 +1,3 @@
-extern crate qrcode;
 use qrcode::QrCode;
 
 fn main() {

@@ -3,11 +3,11 @@
 use std::cmp::min;
 
 #[cfg(feature = "bench")]
-use test::{black_box, Bencher};
+extern crate test;
 
-use cast::{As, Truncate};
-use optimize::{total_encoded_len, Optimizer, Parser, Segment};
-use types::{EcLevel, Mode, QrError, QrResult, Version};
+use crate::cast::{As, Truncate};
+use crate::optimize::{total_encoded_len, Optimizer, Parser, Segment};
+use crate::types::{EcLevel, Mode, QrError, QrResult, Version};
 
 //------------------------------------------------------------------------------
 //{{{ Bits
@@ -36,17 +36,17 @@ impl Bits {
         let b = self.bit_offset + n;
         let last_index = self.data.len().wrapping_sub(1);
         match (self.bit_offset, b) {
-            (0, 0...8) => {
+            (0, 0..=8) => {
                 self.data.push((number << (8 - b)).truncate_as_u8());
             }
             (0, _) => {
                 self.data.push((number >> (b - 8)).truncate_as_u8());
                 self.data.push((number << (16 - b)).truncate_as_u8());
             }
-            (_, 0...8) => {
+            (_, 0..=8) => {
                 self.data[last_index] |= (number << (8 - b)).truncate_as_u8();
             }
-            (_, 9...16) => {
+            (_, 9..=16) => {
                 self.data[last_index] |= (number >> (b - 8)).truncate_as_u8();
                 self.data.push((number << (16 - b)).truncate_as_u8());
             }
@@ -141,7 +141,7 @@ fn test_push_number() {
 
 #[cfg(feature = "bench")]
 #[bench]
-fn bench_push_splitted_bytes(bencher: &mut Bencher) {
+fn bench_push_splitted_bytes(bencher: &mut test::Bencher) {
     bencher.iter(|| {
         let mut bits = Bits::new(Version::Normal(40));
         bits.push_number(4, 0b0101);
@@ -182,7 +182,7 @@ impl Bits {
     /// If the mode is not supported in the provided version, this method
     /// returns `Err(QrError::UnsupportedCharacterSet)`.
     pub fn push_mode_indicator(&mut self, mode: ExtendedMode) -> QrResult<()> {
-        #[cfg_attr(feature = "cargo-clippy", allow(match_same_arms))]
+        #[allow(clippy::match_same_arms)]
         let number = match (self.version, mode) {
             (Version::Micro(1), ExtendedMode::Data(Mode::Numeric)) => return Ok(()),
             (Version::Micro(_), ExtendedMode::Data(Mode::Numeric)) => 0,
@@ -226,7 +226,7 @@ impl Bits {
     ///
     ///
     /// The full list of ECI designator values can be found from
-    /// http://strokescribe.com/en/ECI.html. Some example values are:
+    /// <http://strokescribe.com/en/ECI.html>. Some example values are:
     ///
     /// ECI # | Character set
     /// ------|-------------------------------------
@@ -248,14 +248,14 @@ impl Bits {
         self.reserve(12); // assume the common case that eci_designator <= 127.
         self.push_mode_indicator(ExtendedMode::Eci)?;
         match eci_designator {
-            0...127 => {
+            0..=127 => {
                 self.push_number(8, eci_designator.as_u16());
             }
-            128...16383 => {
+            128..=16383 => {
                 self.push_number(2, 0b10);
                 self.push_number(14, eci_designator.as_u16());
             }
-            16384...999_999 => {
+            16384..=999_999 => {
                 self.push_number(3, 0b110);
                 self.push_number(5, (eci_designator >> 16).as_u16());
                 self.push_number(16, (eci_designator & 0xffff).as_u16());
@@ -268,8 +268,8 @@ impl Bits {
 
 #[cfg(test)]
 mod eci_tests {
-    use bits::Bits;
-    use types::{QrError, Version};
+    use crate::bits::Bits;
+    use crate::types::{QrError, Version};
 
     #[test]
     fn test_9() {
@@ -334,8 +334,8 @@ impl Bits {
 
 #[cfg(test)]
 mod numeric_tests {
-    use bits::Bits;
-    use types::{QrError, Version};
+    use crate::bits::Bits;
+    use crate::types::{QrError, Version};
 
     #[test]
     fn test_iso_18004_2006_example_1() {
@@ -405,8 +405,8 @@ mod numeric_tests {
 #[inline]
 fn alphanumeric_digit(character: u8) -> u16 {
     match character {
-        b'0'...b'9' => u16::from(character - b'0'),
-        b'A'...b'Z' => u16::from(character - b'A') + 10,
+        b'0'..=b'9' => u16::from(character - b'0'),
+        b'A'..=b'Z' => u16::from(character - b'A') + 10,
         b' ' => 36,
         b'$' => 37,
         b'%' => 38,
@@ -438,8 +438,8 @@ impl Bits {
 
 #[cfg(test)]
 mod alphanumeric_tests {
-    use bits::Bits;
-    use types::{QrError, Version};
+    use crate::bits::Bits;
+    use crate::types::{QrError, Version};
 
     #[test]
     fn test_iso_18004_2006_example() {
@@ -481,8 +481,8 @@ impl Bits {
 
 #[cfg(test)]
 mod byte_tests {
-    use bits::Bits;
-    use types::{QrError, Version};
+    use crate::bits::Bits;
+    use crate::types::{QrError, Version};
 
     #[test]
     fn test() {
@@ -541,8 +541,8 @@ impl Bits {
 
 #[cfg(test)]
 mod kanji_tests {
-    use bits::Bits;
-    use types::{QrError, Version};
+    use crate::bits::Bits;
+    use crate::types::{QrError, Version};
 
     #[test]
     fn test_iso_18004_example() {
@@ -707,8 +707,8 @@ impl Bits {
 
 #[cfg(test)]
 mod finish_tests {
-    use bits::Bits;
-    use types::{EcLevel, QrError, Version};
+    use crate::bits::Bits;
+    use crate::types::{EcLevel, QrError, Version};
 
     #[test]
     fn test_hello_world() {
@@ -795,8 +795,8 @@ impl Bits {
 
 #[cfg(test)]
 mod encode_tests {
-    use bits::Bits;
-    use types::{EcLevel, QrError, QrResult, Version};
+    use crate::bits::Bits;
+    use crate::types::{EcLevel, QrError, QrResult, Version};
 
     fn encode(data: &[u8], version: Version, ec_level: EcLevel) -> QrResult<Vec<u8>> {
         let mut bits = Bits::new(version);
@@ -859,7 +859,7 @@ pub fn encode_auto(data: &[u8], ec_level: EcLevel) -> QrResult<Bits> {
 /// Finds the smallest version (QR code only) that can store N bits of data
 /// in the given error correction level.
 fn find_min_version(length: usize, ec_level: EcLevel) -> Version {
-    let mut base = 0usize;
+    let mut base = 0_usize;
     let mut size = 39;
     while size > 1 {
         let half = size / 2;
@@ -877,8 +877,8 @@ fn find_min_version(length: usize, ec_level: EcLevel) -> Version {
 
 #[cfg(test)]
 mod encode_auto_tests {
-    use bits::{encode_auto, find_min_version};
-    use types::{EcLevel, Version};
+    use crate::bits::{encode_auto, find_min_version};
+    use crate::types::{EcLevel, Version};
 
     #[test]
     fn test_find_min_version() {
@@ -912,7 +912,9 @@ mod encode_auto_tests {
 
 #[cfg(feature = "bench")]
 #[bench]
-fn bench_find_min_version(bencher: &mut Bencher) {
+fn bench_find_min_version(bencher: &mut test::Bencher) {
+    use test::black_box;
+
     bencher.iter(|| {
         black_box(find_min_version(60, EcLevel::L));
         black_box(find_min_version(200, EcLevel::L));

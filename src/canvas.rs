@@ -11,8 +11,8 @@
 
 use std::cmp::max;
 
-use cast::As;
-use types::{Color, EcLevel, Version};
+use crate::cast::As;
+use crate::types::{Color, EcLevel, Version};
 
 //------------------------------------------------------------------------------
 //{{{ Modules
@@ -144,8 +144,8 @@ impl Canvas {
 
 #[cfg(test)]
 mod basic_canvas_tests {
-    use canvas::{Canvas, Module};
-    use types::{Color, EcLevel, Version};
+    use crate::canvas::{Canvas, Module};
+    use crate::types::{Color, EcLevel, Version};
 
     #[test]
     fn test_index() {
@@ -221,7 +221,7 @@ impl Canvas {
                 self.put(
                     x + i,
                     y + j,
-                    #[cfg_attr(feature = "cargo-clippy", allow(match_same_arms))]
+                    #[allow(clippy::match_same_arms)]
                     match (i, j) {
                         (4, _) | (_, 4) | (-4, _) | (_, -4) => Color::Light,
                         (3, _) | (_, 3) | (-3, _) | (_, -3) => Color::Dark,
@@ -253,8 +253,8 @@ impl Canvas {
 
 #[cfg(test)]
 mod finder_pattern_tests {
-    use canvas::Canvas;
-    use types::{EcLevel, Version};
+    use crate::canvas::Canvas;
+    use crate::types::{EcLevel, Version};
 
     #[test]
     fn test_qr() {
@@ -340,7 +340,7 @@ impl Canvas {
     fn draw_alignment_patterns(&mut self) {
         match self.version {
             Version::Micro(_) | Version::Normal(1) => {}
-            Version::Normal(2...6) => self.draw_alignment_pattern_at(-7, -7),
+            Version::Normal(2..=6) => self.draw_alignment_pattern_at(-7, -7),
             Version::Normal(a) => {
                 let positions = ALIGNMENT_PATTERN_POSITIONS[(a - 7).as_usize()];
                 for x in positions.iter() {
@@ -355,8 +355,8 @@ impl Canvas {
 
 #[cfg(test)]
 mod alignment_pattern_tests {
-    use canvas::Canvas;
-    use types::{EcLevel, Version};
+    use crate::canvas::Canvas;
+    use crate::types::{EcLevel, Version};
 
     #[test]
     fn test_draw_alignment_patterns_1() {
@@ -490,7 +490,7 @@ mod alignment_pattern_tests {
 /// `ALIGNMENT_PATTERN_POSITIONS` describes the x- and y-coordinates of the
 /// center of the alignment patterns. Since the QR code is symmetric, only one
 /// coordinate is needed.
-static ALIGNMENT_PATTERN_POSITIONS: [&'static [i16]; 34] = [
+static ALIGNMENT_PATTERN_POSITIONS: [&[i16]; 34] = [
     &[6, 22, 38],
     &[6, 24, 42],
     &[6, 26, 46],
@@ -576,8 +576,8 @@ impl Canvas {
 
 #[cfg(test)]
 mod timing_pattern_tests {
-    use canvas::Canvas;
-    use types::{EcLevel, Version};
+    use crate::canvas::Canvas;
+    use crate::types::{EcLevel, Version};
 
     #[test]
     fn test_draw_timing_patterns_qr() {
@@ -675,9 +675,7 @@ impl Canvas {
     /// Draws the version information patterns.
     fn draw_version_info_patterns(&mut self) {
         match self.version {
-            Version::Micro(_) | Version::Normal(1...6) => {
-                return;
-            }
+            Version::Micro(_) | Version::Normal(1..=6) => {}
             Version::Normal(a) => {
                 let version_info = VERSION_INFOS[(a - 7).as_usize()];
                 self.draw_number(version_info, 18, Color::Dark, Color::Light, &VERSION_INFO_COORDS_BL);
@@ -689,8 +687,8 @@ impl Canvas {
 
 #[cfg(test)]
 mod draw_version_info_tests {
-    use canvas::Canvas;
-    use types::{Color, EcLevel, Version};
+    use crate::canvas::Canvas;
+    use crate::types::{Color, EcLevel, Version};
 
     #[test]
     fn test_draw_number() {
@@ -1017,8 +1015,8 @@ pub fn is_functional(version: Version, width: i16, x: i16, y: i16) -> bool {
 
 #[cfg(test)]
 mod all_functional_patterns_tests {
-    use canvas::{is_functional, Canvas};
-    use types::{EcLevel, Version};
+    use crate::canvas::{is_functional, Canvas};
+    use crate::types::{EcLevel, Version};
 
     #[test]
     fn test_all_functional_patterns_qr() {
@@ -1186,10 +1184,10 @@ impl Iterator for DataModuleIter {
 }
 
 #[cfg(test)]
-#[cfg_attr(rustfmt, rustfmt_skip)] // skip to prevent file becoming too long.
+#[rustfmt::skip] // skip to prevent file becoming too long.
 mod data_iter_tests {
-    use canvas::DataModuleIter;
-    use types::Version;
+    use crate::canvas::DataModuleIter;
+    use crate::types::Version;
 
     #[test]
     fn test_qr() {
@@ -1393,8 +1391,8 @@ impl Canvas {
 
 #[cfg(test)]
 mod draw_codewords_test {
-    use canvas::Canvas;
-    use types::{EcLevel, Version};
+    use crate::canvas::Canvas;
+    use crate::types::{EcLevel, Version};
 
     #[test]
     fn test_micro_qr_1() {
@@ -1586,8 +1584,8 @@ impl Canvas {
 
 #[cfg(test)]
 mod mask_tests {
-    use canvas::{Canvas, MaskPattern};
-    use types::{EcLevel, Version};
+    use crate::canvas::{Canvas, MaskPattern};
+    use crate::types::{EcLevel, Version};
 
     #[test]
     fn test_apply_mask_qr() {
@@ -1762,7 +1760,7 @@ impl Canvas {
         for i in 0..self.width {
             for j in 0..self.width - 6 {
                 // TODO a ref to a closure should be enough?
-                let get: Box<Fn(i16) -> Color> = if is_horizontal {
+                let get: Box<dyn Fn(i16) -> Color> = if is_horizontal {
                     Box::new(|k| self.get(k, i).into())
                 } else {
                     Box::new(|k| self.get(i, k).into())
@@ -1831,8 +1829,8 @@ impl Canvas {
 
 #[cfg(test)]
 mod penalty_tests {
-    use canvas::{Canvas, MaskPattern};
-    use types::{Color, EcLevel, Version};
+    use crate::canvas::{Canvas, MaskPattern};
+    use crate::types::{Color, EcLevel, Version};
 
     fn create_test_canvas() -> Canvas {
         let mut c = Canvas::new(Version::Normal(1), EcLevel::Q);

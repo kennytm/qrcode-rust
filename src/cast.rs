@@ -8,7 +8,7 @@ pub trait Truncate {
 }
 
 impl Truncate for u16 {
-    #[cfg_attr(feature = "cargo-clippy", allow(cast_possible_truncation))]
+    #[allow(clippy::cast_possible_truncation)]
     fn truncate_as_u8(self) -> u8 {
         (self & 0xff) as u8
     }
@@ -63,7 +63,6 @@ macro_rules! impl_as {
         }
 
         #[cfg(not(debug_assertions))]
-        #[cfg_attr(feature = "cargo-clippy", allow(cast_possible_truncation))]
         impl As for $ty {
             fn as_u16(self) -> u16 {
                 self as u16

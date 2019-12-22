@@ -1,8 +1,8 @@
 //! String rendering support.
 
-use cast::As;
-use render::{Canvas as RenderCanvas, Pixel};
-use types::Color;
+use crate::cast::As;
+use crate::render::{Canvas as RenderCanvas, Pixel};
+use crate::types::Color;
 
 pub trait Element: Copy {
     fn default_color(color: Color) -> Self;
@@ -99,7 +99,7 @@ impl<P: Element> RenderCanvas for Canvas<P> {
 
 #[test]
 fn test_render_to_string() {
-    use render::Renderer;
+    use crate::render::Renderer;
 
     let colors = &[Color::Dark, Color::Light, Color::Light, Color::Dark];
     let image: String = Renderer::<char>::new(colors, 2, 1).build();

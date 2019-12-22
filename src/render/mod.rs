@@ -1,8 +1,8 @@
 //! Render a QR code into image.
 
-use cast::As;
+use crate::cast::As;
+use crate::types::Color;
 use std::cmp::max;
-use types::Color;
 
 pub mod image;
 pub mod string;
@@ -58,7 +58,6 @@ pub trait Canvas: Sized {
 
 /// A QR code renderer. This is a builder type which converts a bool-vector into
 /// an image.
-#[cfg_attr(feature = "cargo-clippy", allow(stutter))] // rust-lang-nursery/rust-clippy#2212 ಠ_ಠ
 pub struct Renderer<'a, P: Pixel> {
     content: &'a [Color],
     modules_count: u32, // <- we call it `modules_count` here to avoid ambiguity of `width`.

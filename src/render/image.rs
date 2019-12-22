@@ -1,7 +1,7 @@
 #![cfg(feature="image")]
 
-use render::{Canvas, Pixel};
-use types::Color;
+use crate::render::{Canvas, Pixel};
+use crate::types::Color;
 
 use image::{ImageBuffer, Luma, LumaA, Pixel as ImagePixel, Primitive, Rgb, Rgba};
 
@@ -44,9 +44,9 @@ impl<P: ImagePixel + 'static> Canvas for (P, ImageBuffer<P, Vec<P::Subpixel>>) {
 
 #[cfg(test)]
 mod render_tests {
+    use crate::render::Renderer;
+    use crate::types::Color;
     use image::{Luma, Rgba};
-    use render::Renderer;
-    use types::Color;
 
     #[test]
     fn test_render_luma8_unsized() {
@@ -70,7 +70,7 @@ mod render_tests {
         .module_dimensions(1, 1)
         .build();
 
-        #[cfg_attr(rustfmt, rustfmt_skip)]
+        #[rustfmt::skip]
         let expected = [
             255, 255, 255, 255, 255,
             255, 255,   0,   0, 255,
@@ -87,7 +87,7 @@ mod render_tests {
             .module_dimensions(1, 1)
             .build();
 
-        #[cfg_attr(rustfmt, rustfmt_skip)]
+        #[rustfmt::skip]
         let expected: &[u8] = &[
             255,255,255,255, 255,255,255,255, 255,255,255,255, 255,255,255,255,
             255,255,255,255, 255,255,255,255,   0,  0,  0,255, 255,255,255,255,
@@ -104,7 +104,7 @@ mod render_tests {
             .min_dimensions(10, 10)
             .build();
 
-        #[cfg_attr(rustfmt, rustfmt_skip)]
+        #[rustfmt::skip]
         let expected: &[u8] = &[
             255,255,255, 255,255,255, 255,255,255, 255,255,255,
             255,255,255, 255,255,255, 255,255,255, 255,255,255,
@@ -133,7 +133,7 @@ mod render_tests {
             .max_dimensions(10, 5)
             .build();
 
-        #[cfg_attr(rustfmt, rustfmt_skip)]
+        #[rustfmt::skip]
         let expected: &[u8] = &[
             255,255, 255,255, 255,255, 255,255,
 
