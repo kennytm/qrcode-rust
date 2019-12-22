@@ -3,24 +3,20 @@
 //! # Example
 //!
 //! ```
-//! extern crate qrcode;
-//!
 //! use qrcode::QrCode;
 //! use qrcode::render::svg;
 //!
-//! fn main() {
-//!     let code = QrCode::new(b"Hello").unwrap();
-//!     let svg_xml = code.render::<svg::Color>().build();
-//!     println!("{}", svg_xml);
-//! }
+//! let code = QrCode::new(b"Hello").unwrap();
+//! let svg_xml = code.render::<svg::Color>().build();
+//! println!("{}", svg_xml);
 
 #![cfg(feature="svg")]
 
 use std::fmt::Write;
 use std::marker::PhantomData;
 
-use render::{Canvas as RenderCanvas, Pixel};
-use types::Color as ModuleColor;
+use crate::render::{Canvas as RenderCanvas, Pixel};
+use crate::types::Color as ModuleColor;
 
 /// An SVG color.
 #[derive(Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]

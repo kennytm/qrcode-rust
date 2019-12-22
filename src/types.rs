@@ -1,4 +1,4 @@
-use cast::As;
+use crate::cast::As;
 use std::cmp::{Ordering, PartialOrd};
 use std::default::Default;
 use std::fmt::{Display, Error, Formatter};
@@ -41,11 +41,7 @@ impl Display for QrError {
     }
 }
 
-impl ::std::error::Error for QrError {
-    fn description(&self) -> &'static str {
-        "QrError"
-    }
-}
+impl ::std::error::Error for QrError {}
 
 /// `QrResult` is a convenient alias for a QR code generation result.
 pub type QrResult<T> = Result<T, QrError>;
@@ -157,10 +153,10 @@ impl Version {
         T: PartialEq + Default + Copy,
     {
         match self {
-            Version::Normal(v @ 1...40) => {
+            Version::Normal(v @ 1..=40) => {
                 return Ok(table[(v - 1).as_usize()][ec_level as usize]);
             }
-            Version::Micro(v @ 1...4) => {
+            Version::Micro(v @ 1..=4) => {
                 let obj = table[(v + 39).as_usize()][ec_level as usize];
                 if obj != T::default() {
                     return Ok(obj);
@@ -228,12 +224,12 @@ impl Mode {
                     Mode::Kanji => a,
                 }
             }
-            Version::Normal(1...9) => match self {
+            Version::Normal(1..=9) => match self {
                 Mode::Numeric => 10,
                 Mode::Alphanumeric => 9,
                 Mode::Byte | Mode::Kanji => 8,
             },
-            Version::Normal(10...26) => match self {
+            Version::Normal(10..=26) => match self {
                 Mode::Numeric => 12,
                 Mode::Alphanumeric => 11,
                 Mode::Byte => 16,
@@ -305,7 +301,7 @@ impl PartialOrd for Mode {
 
 #[cfg(test)]
 mod mode_tests {
-    use types::Mode::{Alphanumeric, Byte, Kanji, Numeric};
+    use crate::types::Mode::{Alphanumeric, Byte, Kanji, Numeric};
 
     #[test]
     fn test_mode_order() {

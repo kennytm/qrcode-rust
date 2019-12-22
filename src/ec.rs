@@ -2,7 +2,7 @@
 
 use std::ops::Deref;
 
-use types::{EcLevel, QrResult, Version};
+use crate::types::{EcLevel, QrResult, Version};
 
 //------------------------------------------------------------------------------
 //{{{ Error correction primitive
@@ -24,7 +24,6 @@ pub fn create_error_correction_code(data: &[u8], ec_code_size: usize) -> Vec<u8>
     res.resize(ec_code_size + data_len, 0);
 
     // rust-lang-nursery/rust-clippy#2213
-    #[cfg_attr(feature = "cargo-clippy", allow(needless_range_loop))]
     for i in 0..data_len {
         let lead_coeff = res[i] as usize;
         if lead_coeff == 0 {
@@ -42,7 +41,7 @@ pub fn create_error_correction_code(data: &[u8], ec_code_size: usize) -> Vec<u8>
 
 #[cfg(test)]
 mod ec_tests {
-    use ec::create_error_correction_code;
+    use crate::ec::create_error_correction_code;
 
     #[test]
     fn test_poly_mod_1() {
@@ -127,8 +126,8 @@ pub fn construct_codewords(rawbits: &[u8], version: Version, ec_level: EcLevel) 
 
 #[cfg(test)]
 mod construct_codewords_test {
-    use ec::construct_codewords;
-    use types::{EcLevel, Version};
+    use crate::ec::construct_codewords;
+    use crate::types::{EcLevel, Version};
 
     #[test]
     fn test_add_ec_simple() {
@@ -164,8 +163,8 @@ mod construct_codewords_test {
 /// Computes the maximum allowed number of erratic modules can be introduced to
 /// the QR code, before the data becomes truly corrupted.
 pub fn max_allowed_errors(version: Version, ec_level: EcLevel) -> QrResult<usize> {
-    use EcLevel::{L, M};
-    use Version::{Micro, Normal};
+    use crate::EcLevel::{L, M};
+    use crate::Version::{Micro, Normal};
 
     let p = match (version, ec_level) {
         (Micro(2), L) | (Normal(1), L) => 3,
@@ -183,8 +182,8 @@ pub fn max_allowed_errors(version: Version, ec_level: EcLevel) -> QrResult<usize
 
 #[cfg(test)]
 mod max_allowed_errors_test {
-    use ec::max_allowed_errors;
-    use types::{EcLevel, Version};
+    use crate::ec::max_allowed_errors;
+    use crate::types::{EcLevel, Version};
 
     #[test]
     fn test_low_versions() {
@@ -235,7 +234,7 @@ mod max_allowed_errors_test {
 //{{{ Precomputed tables for GF(256).
 
 /// `EXP_TABLE` encodes the value of 2<sup>n</sup> in the Galois Field GF(256).
-static EXP_TABLE: &'static [u8] = b"\
+static EXP_TABLE: &[u8] = b"\
 \x01\x02\x04\x08\x10\x20\x40\x80\x1d\x3a\x74\xe8\xcd\x87\x13\x26\
 \x4c\x98\x2d\x5a\xb4\x75\xea\xc9\x8f\x03\x06\x0c\x18\x30\x60\xc0\
 \x9d\x27\x4e\x9c\x25\x4a\x94\x35\x6a\xd4\xb5\x77\xee\xc1\x9f\x23\
@@ -254,7 +253,7 @@ static EXP_TABLE: &'static [u8] = b"\
 \x2c\x58\xb0\x7d\xfa\xe9\xcf\x83\x1b\x36\x6c\xd8\xad\x47\x8e\x01";
 
 /// `LOG_TABLE` is the inverse function of `EXP_TABLE`.
-static LOG_TABLE: &'static [u8] = b"\
+static LOG_TABLE: &[u8] = b"\
 \xff\x00\x01\x19\x02\x32\x1a\xc6\x03\xdf\x33\xee\x1b\x68\xc7\x4b\
 \x04\x64\xe0\x0e\x34\x8d\xef\x81\x1c\xc1\x69\xf8\xc8\x08\x4c\x71\
 \x05\x8a\x65\x2f\xe1\x24\x0f\x21\x35\x93\x8e\xda\xf0\x12\x82\x45\
@@ -281,9 +280,9 @@ static LOG_TABLE: &'static [u8] = b"\
 /// is the Reed-Solomon error correction code.
 ///
 /// A partial list can be found from ISO/IEC 18004:2006 Annex A.
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 // ^ this attribute is currently useless, see rust-lang-nursery/rustfmt#1080 and 1298
-static GENERATOR_POLYNOMIALS: [&'static [u8]; 70] = [
+static GENERATOR_POLYNOMIALS: [&[u8]; 70] = [
     b"",
     b"\x00",
     b"\x19\x01",

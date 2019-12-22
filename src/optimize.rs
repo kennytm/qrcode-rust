@@ -1,9 +1,9 @@
 //! Find the optimal data mode sequence to encode a piece of data.
+use crate::types::{Mode, Version};
 use std::slice::Iter;
-use types::{Mode, Version};
 
 #[cfg(feature = "bench")]
-use test::Bencher;
+extern crate test;
 
 //------------------------------------------------------------------------------
 //{{{ Segment
@@ -153,8 +153,8 @@ impl<'a> Iterator for Parser<'a> {
 
 #[cfg(test)]
 mod parse_tests {
-    use optimize::{Parser, Segment};
-    use types::Mode;
+    use crate::optimize::{Parser, Segment};
+    use crate::types::Mode;
 
     fn parse(data: &[u8]) -> Vec<Segment> {
         Parser::new(data).collect()
@@ -249,7 +249,6 @@ mod parse_tests {
 //------------------------------------------------------------------------------
 //{{{ Optimizer
 
-#[cfg_attr(feature = "cargo-clippy", allow(stutter))] // rust-lang-nursery/rust-clippy#2212 ಠ_ಠ
 pub struct Optimizer<I> {
     parser: I,
     last_segment: Segment,
@@ -337,8 +336,8 @@ pub fn total_encoded_len(segments: &[Segment], version: Version) -> usize {
 
 #[cfg(test)]
 mod optimize_tests {
-    use optimize::{total_encoded_len, Optimizer, Segment};
-    use types::{Mode, Version};
+    use crate::optimize::{total_encoded_len, Optimizer, Segment};
+    use crate::types::{Mode, Version};
 
     fn test_optimization_result(given: Vec<Segment>, expected: Vec<Segment>, version: Version) {
         let prev_len = total_encoded_len(&*given, version);
@@ -455,8 +454,8 @@ mod optimize_tests {
 
 #[cfg(feature = "bench")]
 #[bench]
-fn bench_optimize(bencher: &mut Bencher) {
-    use types::Version;
+fn bench_optimize(bencher: &mut test::Bencher) {
+    use crate::types::Version;
 
     let data = b"QR\x83R\x81[\x83h\x81i\x83L\x83\x85\x81[\x83A\x81[\x83\x8b\x83R\x81[\x83h\x81j\
                  \x82\xc6\x82\xcd\x81A1994\x94N\x82\xc9\x83f\x83\x93\x83\\\x81[\x82\xcc\x8aJ\
@@ -532,14 +531,14 @@ impl ExclCharSet {
     /// Determines which character set a byte is in.
     fn from_u8(c: u8) -> Self {
         match c {
-            0x20 | 0x24 | 0x25 | 0x2a | 0x2b | 0x2d...0x2f | 0x3a => ExclCharSet::Symbol,
-            0x30...0x39 => ExclCharSet::Numeric,
-            0x41...0x5a => ExclCharSet::Alpha,
-            0x81...0x9f => ExclCharSet::KanjiHi1,
-            0xe0...0xea => ExclCharSet::KanjiHi2,
+            0x20 | 0x24 | 0x25 | 0x2a | 0x2b | 0x2d..=0x2f | 0x3a => ExclCharSet::Symbol,
+            0x30..=0x39 => ExclCharSet::Numeric,
+            0x41..=0x5a => ExclCharSet::Alpha,
+            0x81..=0x9f => ExclCharSet::KanjiHi1,
+            0xe0..=0xea => ExclCharSet::KanjiHi2,
             0xeb => ExclCharSet::KanjiHi3,
-            0x40 | 0x5b...0x7e | 0x80 | 0xa0...0xbf => ExclCharSet::KanjiLo1,
-            0xc0...0xdf | 0xec...0xfc => ExclCharSet::KanjiLo2,
+            0x40 | 0x5b..=0x7e | 0x80 | 0xa0..=0xbf => ExclCharSet::KanjiLo1,
+            0xc0..=0xdf | 0xec..=0xfc => ExclCharSet::KanjiLo2,
             _ => ExclCharSet::Byte,
         }
     }
