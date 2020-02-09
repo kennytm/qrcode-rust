@@ -114,12 +114,13 @@ Generates this SVG:
 
 ```rust
 use qrcode::QrCode;
+use qrcode::render::utf8;
 
 fn main() {
     let code = QrCode::new("mow mow").unwrap();
-    let image = code.render::<u8>()
-        .dark_color(0)
-        .light_color(1)
+    let image = code.render::<utf8::Unicode1x2>()
+        .dark_color(utf8::Unicode1x2::Light)
+        .light_color(utf8::Unicode1x2::Dark)
         .build();
     println!("{}", image);
 }
