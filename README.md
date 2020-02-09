@@ -109,3 +109,38 @@ fn main() {
 Generates this SVG:
 
 [![Output](src/test_annex_i_micro_qr_as_svg.svg)](src/test_annex_i_micro_qr_as_svg.svg)
+
+## Unicode string generation
+
+```rust
+use qrcode::QrCode;
+
+fn main() {
+    let code = QrCode::new("mow mow").unwrap();
+    let image = code.render::<u8>()
+        .dark_color(0)
+        .light_color(1)
+        .build();
+    println!("{}", image);
+}
+```
+
+Generates this output:
+
+```
+█████████████████████████████
+█████████████████████████████
+████ ▄▄▄▄▄ █ ▀▀▀▄█ ▄▄▄▄▄ ████
+████ █   █ █▀ ▀ ▀█ █   █ ████
+████ █▄▄▄█ ██▄  ▀█ █▄▄▄█ ████
+████▄▄▄▄▄▄▄█ ▀▄▀ █▄▄▄▄▄▄▄████
+████▄▀ ▄▀ ▄ █▄█  ▀ ▀█ █▄ ████
+████▄██▄▄▀▄▄▀█▄ ██▀▀█▀▄▄▄████
+█████▄▄▄█▄▄█  ▀▀▄█▀▀▀▄█▄▄████
+████ ▄▄▄▄▄ █   ▄▄██▄ ▄ ▀▀████
+████ █   █ █▀▄▄▀▄▄ ▄▄▄▄ ▄████
+████ █▄▄▄█ █▄  █▄▀▄▀██▄█▀████
+████▄▄▄▄▄▄▄█▄████▄█▄██▄██████
+█████████████████████████████
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+```
