@@ -69,7 +69,8 @@ impl RenderCanvas for Canvas {
                     } else {
                         rows[0].iter().map(|top| (top * 2)).collect::<Vec<u8>>()
                     }
-                }.iter()
+                }
+                .iter()
                 // Mapping those 2-bit numbers to corresponding pixels.
                 .map(Unicode1x2::parse_2_bits)
                 .collect::<Vec<&str>>()
