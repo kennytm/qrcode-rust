@@ -47,7 +47,7 @@ impl RenderCanvas for Canvas {
                     if rows.len() == 2 {
                         rows[0].iter().zip(rows[1]).map(|(top,bot)| (top * 2 + bot)).collect::<Vec<u8>>()
                     } else {
-                        rows[0].iter().map(|a| (a * 2)).collect::<Vec<u8>>()
+                        rows[0].iter().map(|top| (top * 2)).collect::<Vec<u8>>()
                     }
                 }.iter()
                 // Mapping those 2-bit numbers to corresponding pixels.
