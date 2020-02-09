@@ -93,3 +93,18 @@ fn test_render_to_utf8_string() {
 
     assert_eq!(&image2, "        \n  ██    \n    ██  \n        ");
 }
+
+#[test]
+fn integration_render_utf8_1x2() {
+    use crate::{QrCode, Version, EcLevel};
+    use crate::render::utf8::Unicode1x2;
+
+    let code = QrCode::with_version(b"12345678", Version::Micro(2), EcLevel::L).unwrap();
+    let image = code.render::<Unicode1x2>()
+        .dark_color(Unicode1x2::Light)
+        .light_color(Unicode1x2::Dark)
+        .module_dimensions(1, 1)
+        .build();
+    assert_eq!("█████████████████\n██ ▄▄▄▄▄ █▄▀▄█▄██\n██ █   █ █   █ ██\n██ █▄▄▄█ █▄▄██▀██\n██▄▄▄▄▄▄▄█▄▄▄▀ ██\n██▄ ▀ ▀ ▀▄▄  ████\n██▄▄▀▄█ ▀▀▀ ▀▄▄██\n██▄▄▄█▄▄█▄██▄█▄██\n▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀", image);
+
+}
