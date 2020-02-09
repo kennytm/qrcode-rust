@@ -2,6 +2,7 @@
 
 use crate::render::{Canvas as RenderCanvas, Pixel, Color};
 
+const CODEPAGE: [&str; 4] = [" ","\u{2584}","\u{2580}","\u{2588}"];
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum Unicode1x2 {
@@ -21,6 +22,10 @@ impl Unicode1x2 {
             Unicode1x2::Dark => {1}
             Unicode1x2::Light => {0}
         }
+    }
+    #[doc(hidden)]
+    fn parse_2_bits(sym: &u8) -> &'static str {
+        CODEPAGE[*sym as usize]
     }
 }
 
@@ -66,7 +71,7 @@ impl RenderCanvas for Canvas {
                     }
                 }.iter()
                 // Mapping those 2-bit numbers to corresponding pixels.
-                .map(|sym| [" ","\u{2584}","\u{2580}","\u{2588}"][*sym as usize])
+                .map(Unicode1x2::parse_2_bits)
                 .collect::<Vec<&str>>()
                 .concat()
             )
