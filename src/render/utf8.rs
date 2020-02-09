@@ -2,11 +2,26 @@
 
 use crate::render::{Canvas as RenderCanvas, Pixel, Color};
 
-impl Pixel for u8 {
+
+#[derive(Copy, Clone, PartialEq)]
+pub enum Unicode1x2 {
+    Dark, Light
+}
+
+impl Pixel for Unicode1x2 {
     type Image = String;
     type Canvas = Canvas;
-    fn default_color(color: Color) -> u8 {if color == Color::Dark {1} else {0}}
+    fn default_color(color: Color) -> Unicode1x2 { color.select(Unicode1x2::Dark, Unicode1x2::Light) }
     fn default_unit_size() -> (u32, u32) { (1, 1) }
+}
+
+impl Unicode1x2 {
+    fn value(&self) -> u8 {
+        match self {
+            Unicode1x2::Dark => {1}
+            Unicode1x2::Light => {0}
+        }
+    }
 }
 
 pub struct Canvas {
@@ -17,16 +32,16 @@ pub struct Canvas {
 
 impl RenderCanvas for Canvas {
 
-    type Pixel = u8;
+    type Pixel = Unicode1x2;
     type Image = String;
 
     
-    fn new(width: u32, height: u32, dark_pixel: u8, light_pixel: u8) -> Self { 
-        let a = vec![light_pixel; (width * height) as usize];
+    fn new(width: u32, height: u32, dark_pixel: Unicode1x2, light_pixel: Unicode1x2) -> Self { 
+        let a = vec![light_pixel.value(); (width * height) as usize];
         Canvas {
             width: width,
             canvas: a,
-            dark_pixel: dark_pixel
+            dark_pixel: dark_pixel.value()
         }
     }
 
@@ -64,11 +79,11 @@ impl RenderCanvas for Canvas {
 fn test_render_to_utf8_string() {
     use crate::render::Renderer;
     let colors = &[Color::Dark, Color::Light, Color::Light, Color::Dark];
-    let image: String = Renderer::<u8>::new(colors, 2, 1).build();
+    let image: String = Renderer::<Unicode1x2>::new(colors, 2, 1).build();
     
     assert_eq!(&image, " ▄  \n  ▀ ");
 
-    let image2 = Renderer::<u8>::new(colors, 2, 1).module_dimensions(2, 2).build();
+    let image2 = Renderer::<Unicode1x2>::new(colors, 2, 1).module_dimensions(2, 2).build();
 
     assert_eq!(&image2, "        \n  ██    \n    ██  \n        ");
 }
