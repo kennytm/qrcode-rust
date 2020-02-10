@@ -23,7 +23,6 @@ impl Unicode1x2 {
             Unicode1x2::Light => {0}
         }
     }
-    #[doc(hidden)]
     fn parse_2_bits(sym: &u8) -> &'static str {
         CODEPAGE[*sym as usize]
     }
