@@ -98,6 +98,28 @@ fn integration_render_utf8_1x2() {
     use crate::{QrCode, Version, EcLevel};
     use crate::render::unicode::Dense1x2;
 
+    let code = QrCode::with_version(b"09876542", Version::Micro(2), EcLevel::L).unwrap();
+    let image = code.render::<Dense1x2>()
+        .module_dimensions(1, 1)
+        .build();
+    assert_eq!(image,
+        "                 \n".to_owned() +
+        "  █▀▀▀▀▀█ ▀ █ ▀  \n" +
+        "  █ ███ █  ▀ █   \n" +
+        "  █ ▀▀▀ █  ▀█ █  \n" +
+        "  ▀▀▀▀▀▀▀ ▄▀▀ █  \n" +
+        "  ▀█ ▀▀▀▀▀██▀▀▄  \n" +
+        "  ▀███▄ ▀▀ █ ██  \n" +
+        "  ▀▀▀ ▀ ▀▀ ▀  ▀  \n" +
+        "                 ")
+
+}
+
+#[test]
+fn integration_render_utf8_1x2_inverted() {
+    use crate::{QrCode, Version, EcLevel};
+    use crate::render::unicode::Dense1x2;
+
     let code = QrCode::with_version(b"12345678", Version::Micro(2), EcLevel::L).unwrap();
     let image = code.render::<Dense1x2>()
         .dark_color(Dense1x2::Light)
