@@ -7,7 +7,7 @@ use std::cmp::max;
 pub mod image;
 pub mod string;
 pub mod svg;
-pub mod utf8;
+pub mod unicode;
 
 //------------------------------------------------------------------------------
 //{{{ Pixel trait
