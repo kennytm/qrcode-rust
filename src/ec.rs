@@ -98,6 +98,12 @@ fn test_interleave() {
 
 /// Constructs data and error correction codewords ready to be put in the QR
 /// code matrix.
+///
+/// # Errors
+///
+/// Returns `Err(QrError::InvalidVersion)` if it is not valid to use the
+///  `ec_level` for the given version (e.g. `Version::Micro(1)` with
+/// `EcLevel::H`).
 pub fn construct_codewords(rawbits: &[u8], version: Version, ec_level: EcLevel) -> QrResult<(Vec<u8>, Vec<u8>)> {
     let (block_1_size, block_1_count, block_2_size, block_2_count) = version.fetch(ec_level, &DATA_BYTES_PER_BLOCK)?;
 
@@ -162,6 +168,12 @@ mod construct_codewords_test {
 
 /// Computes the maximum allowed number of erratic modules can be introduced to
 /// the QR code, before the data becomes truly corrupted.
+///
+/// # Errors
+///
+/// Returns `Err(QrError::InvalidVersion)` if it is not valid to use the
+///  `ec_level` for the given version (e.g. `Version::Micro(1)` with
+/// `EcLevel::H`).
 pub fn max_allowed_errors(version: Version, ec_level: EcLevel) -> QrResult<usize> {
     use crate::EcLevel::{L, M};
     use crate::Version::{Micro, Normal};

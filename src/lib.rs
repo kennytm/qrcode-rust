@@ -14,7 +14,9 @@
 //! let image = code.render::<Luma<u8>>().build();
 //!
 //! // Save the image.
+//! # if cfg!(unix) {
 //! image.save("/tmp/qrcode.png").unwrap();
+//! # }
 //!
 //! // You can also render it into a string.
 //! let string = code.render()
@@ -68,6 +70,10 @@ impl QrCode {
     ///
     ///     let code = QrCode::new(b"Some data").unwrap();
     ///
+    /// # Errors
+    ///
+    /// Returns error if the QR code cannot be constructed, e.g. when the data
+    /// is too long.
     pub fn new<D: AsRef<[u8]>>(data: D) -> QrResult<Self> {
         Self::with_error_correction_level(data, EcLevel::M)
     }
@@ -81,6 +87,10 @@ impl QrCode {
     ///
     ///     let code = QrCode::with_error_correction_level(b"Some data", EcLevel::H).unwrap();
     ///
+    /// # Errors
+    ///
+    /// Returns error if the QR code cannot be constructed, e.g. when the data
+    /// is too long.
     pub fn with_error_correction_level<D: AsRef<[u8]>>(data: D, ec_level: EcLevel) -> QrResult<Self> {
         let bits = bits::encode_auto(data.as_ref(), ec_level)?;
         Self::with_bits(bits, ec_level)
@@ -99,6 +109,11 @@ impl QrCode {
     ///
     ///     let micro_code = QrCode::with_version(b"123", Version::Micro(1), EcLevel::L).unwrap();
     ///
+    /// # Errors
+    ///
+    /// Returns error if the QR code cannot be constructed, e.g. when the data
+    /// is too long, or when the version and error correction level are
+    /// incompatible.
     pub fn with_version<D: AsRef<[u8]>>(data: D, version: Version, ec_level: EcLevel) -> QrResult<Self> {
         let mut bits = bits::Bits::new(version);
         bits.push_optimal_data(data.as_ref())?;
@@ -128,6 +143,11 @@ impl QrCode {
     ///     bits.push_terminator(EcLevel::L);
     ///     let qrcode = QrCode::with_bits(bits, EcLevel::L);
     ///
+    /// # Errors
+    ///
+    /// Returns error if the QR code cannot be constructed, e.g. when the bits
+    /// are too long, or when the version and error correction level are
+    /// incompatible.
     pub fn with_bits(bits: bits::Bits, ec_level: EcLevel) -> QrResult<Self> {
         let version = bits.version();
         let data = bits.into_bytes();

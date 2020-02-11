@@ -99,6 +99,12 @@ impl Bits {
 
     /// The maximum number of bits allowed by the provided QR code version and
     /// error correction level.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(QrError::InvalidVersion)` if it is not valid to use the
+    /// `ec_level` for the given version (e.g. `Version::Micro(1)` with
+    /// `EcLevel::H`).
     pub fn max_len(&self, ec_level: EcLevel) -> QrResult<usize> {
         self.version.fetch(ec_level, &DATA_LENGTHS)
     }
@@ -179,6 +185,8 @@ pub enum ExtendedMode {
 impl Bits {
     /// Push the mode indicator to the end of the bits.
     ///
+    /// # Errors
+    ///
     /// If the mode is not supported in the provided version, this method
     /// returns `Err(QrError::UnsupportedCharacterSet)`.
     pub fn push_mode_indicator(&mut self, mode: ExtendedMode) -> QrResult<()> {
@@ -238,6 +246,8 @@ impl Bits {
     /// 28    | Big 5 (Traditional Chinese)
     /// 29    | GB-18030 (Simplified Chinese)
     /// 30    | EUC-KR (Korean)
+    ///
+    /// # Errors
     ///
     /// If the QR code version does not support ECI, this method will return
     /// `Err(QrError::UnsupportedCharacterSet)`.
@@ -321,6 +331,10 @@ impl Bits {
     /// Encodes a numeric string to the bits.
     ///
     /// The data should only contain the characters 0 to 9.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(QrError::DataTooLong)` on overflow.
     pub fn push_numeric_data(&mut self, data: &[u8]) -> QrResult<()> {
         self.push_header(Mode::Numeric, data.len())?;
         for chunk in data.chunks(3) {
@@ -425,6 +439,10 @@ impl Bits {
     ///
     /// The data should only contain the charaters A to Z (excluding lowercase),
     /// 0 to 9, space, `$`, `%`, `*`, `+`, `-`, `.`, `/` or `:`.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(QrError::DataTooLong)` on overflow.
     pub fn push_alphanumeric_data(&mut self, data: &[u8]) -> QrResult<()> {
         self.push_header(Mode::Alphanumeric, data.len())?;
         for chunk in data.chunks(2) {
@@ -470,6 +488,10 @@ mod alphanumeric_tests {
 
 impl Bits {
     /// Encodes 8-bit byte data to the bits.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(QrError::DataTooLong)` on overflow.
     pub fn push_byte_data(&mut self, data: &[u8]) -> QrResult<()> {
         self.push_header(Mode::Byte, data.len())?;
         for b in data {
@@ -524,6 +546,13 @@ mod byte_tests {
 
 impl Bits {
     /// Encodes Shift JIS double-byte data to the bits.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(QrError::DataTooLong)` on overflow.
+    ///
+    /// Returns `Err(QrError::InvalidCharacter)` if the data is not Shift JIS
+    /// double-byte data (e.g. if the length of data is not an even number).
     pub fn push_kanji_data(&mut self, data: &[u8]) -> QrResult<()> {
         self.push_header(Mode::Kanji, data.len() / 2)?;
         for kanji in data.chunks(2) {
@@ -583,6 +612,11 @@ impl Bits {
     ///     bits.push_alphanumeric_data(b"%10ABC123");
     ///
     /// In QR code, the character `%` is used as the data field separator (0x1D).
+    ///
+    /// # Errors
+    ///
+    /// If the mode is not supported in the provided version, this method
+    /// returns `Err(QrError::UnsupportedCharacterSet)`.
     pub fn push_fnc1_first_position(&mut self) -> QrResult<()> {
         self.push_mode_indicator(ExtendedMode::Fnc1First)
     }
@@ -607,6 +641,11 @@ impl Bits {
     /// ```ignore
     /// bits.push_fnc1_second_position(b'A' + 100);
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// If the mode is not supported in the provided version, this method
+    /// returns `Err(QrError::UnsupportedCharacterSet)`.
     pub fn push_fnc1_second_position(&mut self, application_indicator: u8) -> QrResult<()> {
         self.push_mode_indicator(ExtendedMode::Fnc1Second)?;
         self.push_number(8, u16::from(application_indicator));
@@ -670,6 +709,14 @@ static DATA_LENGTHS: [[usize; 4]; 44] = [
 
 impl Bits {
     /// Pushes the ending bits to indicate no more data.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(QrError::DataTooLong)` on overflow.
+    ///
+    /// Returns `Err(QrError::InvalidVersion)` if it is not valid to use the
+    /// `ec_level` for the given version (e.g. `Version::Micro(1)` with
+    /// `EcLevel::H`).
     pub fn push_terminator(&mut self, ec_level: EcLevel) -> QrResult<()> {
         let terminator_size = match self.version {
             Version::Micro(a) => a.as_usize() * 2 + 1,
@@ -770,6 +817,13 @@ mod finish_tests {
 
 impl Bits {
     /// Push a segmented data to the bits, and then terminate it.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(QrError::DataTooLong)` on overflow.
+    ///
+    /// Returns `Err(QrError::InvalidData)` if the segment refers to incorrectly
+    /// encoded byte sequence.
     pub fn push_segments<I>(&mut self, data: &[u8], segments_iter: I) -> QrResult<()>
     where
         I: Iterator<Item = Segment>,
@@ -787,6 +841,10 @@ impl Bits {
     }
 
     /// Pushes the data the bits, using the optimal encoding.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(QrError::DataTooLong)` on overflow.
     pub fn push_optimal_data(&mut self, data: &[u8]) -> QrResult<()> {
         let segments = Parser::new(data).optimize(self.version);
         self.push_segments(data, segments)
@@ -838,6 +896,11 @@ mod encode_tests {
 /// the result.
 ///
 /// This method will not consider any Micro QR code versions.
+///
+/// # Errors
+///
+/// Returns `Err(QrError::DataTooLong)` if the data is too long to fit even the
+/// highest QR code version.
 pub fn encode_auto(data: &[u8], ec_level: EcLevel) -> QrResult<Bits> {
     let segments = Parser::new(data).collect::<Vec<Segment>>();
     for version in &[Version::Normal(9), Version::Normal(26), Version::Normal(40)] {

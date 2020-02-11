@@ -146,7 +146,9 @@ impl Version {
     /// inner array represents the content in each error correction level, in
     /// the order [L, M, Q, H].
     ///
-    /// If the entry compares equal to the default value of T, this method
+    /// # Errors
+    ///
+    /// If the entry compares equal to the default value of `T`, this method
     /// returns `Err(QrError::InvalidVersion)`.
     pub fn fetch<T>(self, ec_level: EcLevel, table: &[[T; 4]]) -> QrResult<T>
     where

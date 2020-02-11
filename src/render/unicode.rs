@@ -22,14 +22,14 @@ impl Pixel for Dense1x2 {
 }
 
 impl Dense1x2 {
-    fn value(&self) -> u8 {
+    fn value(self) -> u8 {
         match self {
             Dense1x2::Dark => 1,
             Dense1x2::Light => 0,
         }
     }
-    fn parse_2_bits(sym: &u8) -> &'static str {
-        CODEPAGE[*sym as usize]
+    fn parse_2_bits(sym: u8) -> &'static str {
+        CODEPAGE[usize::from(sym)]
     }
 }
 
@@ -68,7 +68,7 @@ impl RenderCanvas for Canvas1x2 {
                         rows[0].iter().map(|top| (top * 2)).collect::<Vec<u8>>()
                     }
                 }
-                .iter()
+                .into_iter()
                 // Mapping those 2-bit numbers to corresponding pixels.
                 .map(Dense1x2::parse_2_bits)
                 .collect::<Vec<&str>>()
