@@ -15,7 +15,7 @@ addons:
 matrix:
     include:
         - os: linux
-          rust: 1.33.0
+          rust: 1.34.2
         - os: linux
           rust: stable
         - os: osx
