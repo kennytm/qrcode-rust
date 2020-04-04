@@ -63,7 +63,7 @@ impl Bits {
     /// that the number does not overflow the bits.
     ///
     /// Returns `Err(QrError::DataTooLong)` on overflow.
-    fn push_number_checked(&mut self, n: usize, number: usize) -> QrResult<()> {
+    pub fn push_number_checked(&mut self, n: usize, number: usize) -> QrResult<()> {
         if n > 16 || number >= (1 << n) {
             Err(QrError::DataTooLong)
         } else {
