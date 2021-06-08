@@ -97,6 +97,13 @@ impl<'a, P: Pixel> Renderer<'a, P> {
         self
     }
 
+    /// Sets the size of the quiet zone in the generated image.
+    /// Default: 4 for Normal QR code and 2 for Micro QR code
+    pub fn quiet_zone_size(&mut self, quiet_zone: u32) -> &mut Self {
+        self.quiet_zone = quiet_zone;
+        self
+    }
+    
     /// Whether to include the quiet zone in the generated image.
     pub fn quiet_zone(&mut self, has_quiet_zone: bool) -> &mut Self {
         self.has_quiet_zone = has_quiet_zone;
