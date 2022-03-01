@@ -1,4 +1,4 @@
-#![cfg(feature="image")]
+#![cfg(feature = "image")]
 
 use crate::render::{Canvas, Pixel};
 use crate::types::Color;
@@ -7,8 +7,12 @@ use image::{ImageBuffer, Luma, LumaA, Pixel as ImagePixel, Primitive, Rgb, Rgba}
 
 macro_rules! impl_pixel_for_image_pixel {
     ($p:ident<$s:ident>: $c:pat => $d:expr) => {
-        impl<$s: Primitive + 'static> Pixel for $p<$s> {
-            type Image = ImageBuffer<Self, Vec<S>>;
+        impl<$s> Pixel for $p<$s>
+        where
+            $s: Primitive + 'static,
+            Self: ImagePixel,
+        {
+            type Image = ImageBuffer<Self, Vec<<Self as ImagePixel>::Subpixel>>;
             type Canvas = (Self, Self::Image);
 
             fn default_color(color: Color) -> Self {

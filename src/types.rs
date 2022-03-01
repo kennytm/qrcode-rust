@@ -275,7 +275,7 @@ impl Mode {
     ///
     pub fn max(self, other: Self) -> Self {
         match self.partial_cmp(&other) {
-            Some(Ordering::Less) | Some(Ordering::Equal) => other,
+            Some(Ordering::Less | Ordering::Equal) => other,
             Some(Ordering::Greater) => self,
             None => Mode::Byte,
         }
@@ -286,15 +286,13 @@ impl PartialOrd for Mode {
     /// Defines a partial ordering between modes. If `a <= b`, then `b` contains
     /// a superset of all characters supported by `a`.
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match (*self, *other) {
-            (Mode::Numeric, Mode::Alphanumeric)
-            | (Mode::Numeric, Mode::Byte)
-            | (Mode::Alphanumeric, Mode::Byte)
-            | (Mode::Kanji, Mode::Byte) => Some(Ordering::Less),
-            (Mode::Alphanumeric, Mode::Numeric)
-            | (Mode::Byte, Mode::Numeric)
-            | (Mode::Byte, Mode::Alphanumeric)
-            | (Mode::Byte, Mode::Kanji) => Some(Ordering::Greater),
+        match (self, other) {
+            (Mode::Numeric, Mode::Alphanumeric) | (Mode::Numeric | Mode::Alphanumeric | Mode::Kanji, Mode::Byte) => {
+                Some(Ordering::Less)
+            }
+            (Mode::Alphanumeric, Mode::Numeric) | (Mode::Byte, Mode::Numeric | Mode::Alphanumeric | Mode::Kanji) => {
+                Some(Ordering::Greater)
+            }
             (a, b) if a == b => Some(Ordering::Equal),
             _ => None,
         }
@@ -309,8 +307,7 @@ mod mode_tests {
     fn test_mode_order() {
         assert!(Numeric < Alphanumeric);
         assert!(Byte > Kanji);
-        assert!(!(Numeric < Kanji));
-        assert!(!(Numeric >= Kanji));
+        assert!(Numeric.partial_cmp(&Kanji).is_none());
     }
 
     #[test]

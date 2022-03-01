@@ -1,3 +1,4 @@
+#![allow(clippy::unreadable_literal, clippy::unusual_byte_groupings)]
 //! The `bits` module encodes binary data into raw bits used in a QR code.
 
 use std::cmp::min;
@@ -133,14 +134,14 @@ fn test_push_number() {
     assert_eq!(
         bytes,
         vec![
-            0b010__110__10, // 90
-            0b1__001_1010,  // 154
-            0b1100__1011,   // 203
-            0b0110_1101,    // 109
-            0b01_1001_00,   // 100
-            0b01__111_001,  // 121
-            0b0_1110_001,   // 113
-            0b1__0000000,   // 128
+            0b010_110_10, // 90
+            0b1_001_1010, // 154
+            0b1100_1011,  // 203
+            0b0110_1101,  // 109
+            0b01_1001_00, // 100
+            0b01_111_001, // 121
+            0b0_1110_001, // 113
+            0b1_0000000,  // 128
         ]
     );
 }
@@ -285,21 +286,21 @@ mod eci_tests {
     fn test_9() {
         let mut bits = Bits::new(Version::Normal(1));
         assert_eq!(bits.push_eci_designator(9), Ok(()));
-        assert_eq!(bits.into_bytes(), vec![0b0111__0000, 0b1001__0000]);
+        assert_eq!(bits.into_bytes(), vec![0b0111_0000, 0b1001_0000]);
     }
 
     #[test]
     fn test_899() {
         let mut bits = Bits::new(Version::Normal(1));
         assert_eq!(bits.push_eci_designator(899), Ok(()));
-        assert_eq!(bits.into_bytes(), vec![0b0111__10_00, 0b00111000, 0b0011__0000]);
+        assert_eq!(bits.into_bytes(), vec![0b0111_10_00, 0b00111000, 0b0011_0000]);
     }
 
     #[test]
     fn test_999999() {
         let mut bits = Bits::new(Version::Normal(1));
         assert_eq!(bits.push_eci_designator(999999), Ok(()));
-        assert_eq!(bits.into_bytes(), vec![0b0111__110_0, 0b11110100, 0b00100011, 0b1111__0000]);
+        assert_eq!(bits.into_bytes(), vec![0b0111_110_0, 0b11110100, 0b00100011, 0b1111_0000]);
     }
 
     #[test]
@@ -355,10 +356,7 @@ mod numeric_tests {
     fn test_iso_18004_2006_example_1() {
         let mut bits = Bits::new(Version::Normal(1));
         assert_eq!(bits.push_numeric_data(b"01234567"), Ok(()));
-        assert_eq!(
-            bits.into_bytes(),
-            vec![0b0001_0000, 0b001000_00, 0b00001100, 0b01010110, 0b01_100001, 0b1__0000000]
-        );
+        assert_eq!(bits.into_bytes(), vec![0b0001_0000, 0b001000_00, 0b00001100, 0b01010110, 0b01_100001, 0b1_0000000]);
     }
 
     #[test]
@@ -376,7 +374,7 @@ mod numeric_tests {
                 0b0110_1110,
                 0b000101_00,
                 0b11101010,
-                0b0101__0000,
+                0b0101_0000,
             ]
         );
     }
@@ -387,16 +385,7 @@ mod numeric_tests {
         assert_eq!(bits.push_numeric_data(b"0123456789012345"), Ok(()));
         assert_eq!(
             bits.into_bytes(),
-            vec![
-                0b00_10000_0,
-                0b00000110,
-                0b0_0101011,
-                0b001_10101,
-                0b00110_111,
-                0b0000101_0,
-                0b01110101,
-                0b00101__000,
-            ]
+            vec![0b00_10000_0, 0b00000110, 0b0_0101011, 0b001_10101, 0b00110_111, 0b0000101_0, 0b01110101, 0b00101_000,]
         );
     }
 
@@ -463,10 +452,7 @@ mod alphanumeric_tests {
     fn test_iso_18004_2006_example() {
         let mut bits = Bits::new(Version::Normal(1));
         assert_eq!(bits.push_alphanumeric_data(b"AC-42"), Ok(()));
-        assert_eq!(
-            bits.into_bytes(),
-            vec![0b0010_0000, 0b00101_001, 0b11001110, 0b11100111, 0b001_00001, 0b0__0000000]
-        );
+        assert_eq!(bits.into_bytes(), vec![0b0010_0000, 0b00101_001, 0b11001110, 0b11100111, 0b001_00001, 0b0_0000000]);
     }
 
     #[test]
@@ -522,7 +508,7 @@ mod byte_tests {
                 0b1010_1011,
                 0b1100_1101,
                 0b1110_1111,
-                0b0000__0000,
+                0b0000_0000,
             ]
         );
     }
@@ -577,7 +563,7 @@ mod kanji_tests {
     fn test_iso_18004_example() {
         let mut bits = Bits::new(Version::Normal(1));
         assert_eq!(bits.push_kanji_data(b"\x93\x5f\xe4\xaa"), Ok(()));
-        assert_eq!(bits.into_bytes(), vec![0b1000_0000, 0b0010_0110, 0b11001111, 0b1_1101010, 0b101010__00]);
+        assert_eq!(bits.into_bytes(), vec![0b1000_0000, 0b0010_0110, 0b11001111, 0b1_1101010, 0b101010_00]);
     }
 
     #[test]
@@ -720,7 +706,7 @@ impl Bits {
     pub fn push_terminator(&mut self, ec_level: EcLevel) -> QrResult<()> {
         let terminator_size = match self.version {
             Version::Micro(a) => a.as_usize() * 2 + 1,
-            _ => 4,
+            Version::Normal(_) => 4,
         };
 
         let cur_length = self.len();
@@ -740,7 +726,7 @@ impl Bits {
             self.bit_offset = 0;
             let data_bytes_length = data_length / 8;
             let padding_bytes_count = data_bytes_length - self.data.len();
-            let padding = PADDING_BYTES.iter().cloned().cycle().take(padding_bytes_count);
+            let padding = PADDING_BYTES.iter().copied().cycle().take(padding_bytes_count);
             self.data.extend(padding);
         }
 
@@ -783,7 +769,7 @@ mod finish_tests {
         let mut bits = Bits::new(Version::Micro(1));
         assert_eq!(bits.push_numeric_data(b"99999"), Ok(()));
         assert_eq!(bits.push_terminator(EcLevel::L), Ok(()));
-        assert_eq!(bits.into_bytes(), vec![0b101_11111, 0b00111_110, 0b0011__0000]);
+        assert_eq!(bits.into_bytes(), vec![0b101_11111, 0b00111_110, 0b0011_0000]);
     }
 
     #[test]
@@ -791,7 +777,7 @@ mod finish_tests {
         let mut bits = Bits::new(Version::Micro(1));
         assert_eq!(bits.push_numeric_data(b"9999"), Ok(()));
         assert_eq!(bits.push_terminator(EcLevel::L), Ok(()));
-        assert_eq!(bits.into_bytes(), vec![0b100_11111, 0b00111_100, 0b1_000__0000]);
+        assert_eq!(bits.into_bytes(), vec![0b100_11111, 0b00111_100, 0b1_000_0000]);
     }
 
     #[test]
@@ -799,7 +785,7 @@ mod finish_tests {
         let mut bits = Bits::new(Version::Micro(1));
         assert_eq!(bits.push_numeric_data(b"999"), Ok(()));
         assert_eq!(bits.push_terminator(EcLevel::L), Ok(()));
-        assert_eq!(bits.into_bytes(), vec![0b011_11111, 0b00111_000, 0b0000__0000]);
+        assert_eq!(bits.into_bytes(), vec![0b011_11111, 0b00111_000, 0b0000_0000]);
     }
 
     #[test]
@@ -878,7 +864,7 @@ mod encode_tests {
     #[test]
     fn test_auto_mode_switch() {
         let res = encode(b"123A", Version::Micro(2), EcLevel::L);
-        assert_eq!(res, Ok(vec![0b0_0011_000, 0b1111011_1, 0b001_00101, 0b0_00000__00, 0b11101100]));
+        assert_eq!(res, Ok(vec![0b0_0011_000, 0b1111011_1, 0b001_00101, 0b0_00000_00, 0b11101100]));
     }
 
     #[test]
@@ -904,7 +890,7 @@ mod encode_tests {
 pub fn encode_auto(data: &[u8], ec_level: EcLevel) -> QrResult<Bits> {
     let segments = Parser::new(data).collect::<Vec<Segment>>();
     for version in &[Version::Normal(9), Version::Normal(26), Version::Normal(40)] {
-        let opt_segments = Optimizer::new(segments.iter().cloned(), *version).collect::<Vec<_>>();
+        let opt_segments = Optimizer::new(segments.iter().copied(), *version).collect::<Vec<_>>();
         let total_len = total_encoded_len(&*opt_segments, *version);
         let data_capacity = version.fetch(ec_level, &DATA_LENGTHS).expect("invalid DATA_LENGTHS");
         if total_len <= data_capacity {

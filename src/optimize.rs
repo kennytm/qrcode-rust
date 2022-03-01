@@ -341,7 +341,7 @@ mod optimize_tests {
 
     fn test_optimization_result(given: Vec<Segment>, expected: Vec<Segment>, version: Version) {
         let prev_len = total_encoded_len(&*given, version);
-        let opt_segs = Optimizer::new(given.iter().map(|seg| *seg), version).collect::<Vec<_>>();
+        let opt_segs = Optimizer::new(given.iter().copied(), version).collect::<Vec<_>>();
         let new_len = total_encoded_len(&*opt_segs, version);
         if given != opt_segs {
             assert!(prev_len > new_len, "{} > {}", prev_len, new_len);
