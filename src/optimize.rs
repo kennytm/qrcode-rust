@@ -1,3 +1,4 @@
+#![allow(clippy::unicode_not_nfc)]
 //! Find the optimal data mode sequence to encode a piece of data.
 use crate::types::{Mode, Version};
 use std::slice::Iter;
@@ -339,7 +340,7 @@ mod optimize_tests {
     use crate::optimize::{total_encoded_len, Optimizer, Segment};
     use crate::types::{Mode, Version};
 
-    fn test_optimization_result(given: Vec<Segment>, expected: Vec<Segment>, version: Version) {
+    fn test_optimization_result(given: &[Segment], expected: &[Segment], version: Version) {
         let prev_len = total_encoded_len(&*given, version);
         let opt_segs = Optimizer::new(given.iter().copied(), version).collect::<Vec<_>>();
         let new_len = total_encoded_len(&*opt_segs, version);
@@ -358,15 +359,12 @@ mod optimize_tests {
     #[test]
     fn test_example_1() {
         test_optimization_result(
-            vec![
+            &[
                 Segment { mode: Mode::Alphanumeric, begin: 0, end: 3 },
                 Segment { mode: Mode::Numeric, begin: 3, end: 6 },
                 Segment { mode: Mode::Byte, begin: 6, end: 10 },
             ],
-            vec![
-                Segment { mode: Mode::Alphanumeric, begin: 0, end: 6 },
-                Segment { mode: Mode::Byte, begin: 6, end: 10 },
-            ],
+            &[Segment { mode: Mode::Alphanumeric, begin: 0, end: 6 }, Segment { mode: Mode::Byte, begin: 6, end: 10 }],
             Version::Normal(1),
         );
     }
@@ -374,14 +372,14 @@ mod optimize_tests {
     #[test]
     fn test_example_2() {
         test_optimization_result(
-            vec![
+            &[
                 Segment { mode: Mode::Numeric, begin: 0, end: 29 },
                 Segment { mode: Mode::Alphanumeric, begin: 29, end: 30 },
                 Segment { mode: Mode::Numeric, begin: 30, end: 32 },
                 Segment { mode: Mode::Alphanumeric, begin: 32, end: 35 },
                 Segment { mode: Mode::Numeric, begin: 35, end: 38 },
             ],
-            vec![
+            &[
                 Segment { mode: Mode::Numeric, begin: 0, end: 29 },
                 Segment { mode: Mode::Alphanumeric, begin: 29, end: 38 },
             ],
@@ -392,13 +390,13 @@ mod optimize_tests {
     #[test]
     fn test_example_3() {
         test_optimization_result(
-            vec![
+            &[
                 Segment { mode: Mode::Kanji, begin: 0, end: 4 },
                 Segment { mode: Mode::Alphanumeric, begin: 4, end: 5 },
                 Segment { mode: Mode::Byte, begin: 5, end: 6 },
                 Segment { mode: Mode::Kanji, begin: 6, end: 8 },
             ],
-            vec![Segment { mode: Mode::Byte, begin: 0, end: 8 }],
+            &[Segment { mode: Mode::Byte, begin: 0, end: 8 }],
             Version::Normal(1),
         );
     }
@@ -406,8 +404,8 @@ mod optimize_tests {
     #[test]
     fn test_example_4() {
         test_optimization_result(
-            vec![Segment { mode: Mode::Kanji, begin: 0, end: 10 }, Segment { mode: Mode::Byte, begin: 10, end: 11 }],
-            vec![Segment { mode: Mode::Kanji, begin: 0, end: 10 }, Segment { mode: Mode::Byte, begin: 10, end: 11 }],
+            &[Segment { mode: Mode::Kanji, begin: 0, end: 10 }, Segment { mode: Mode::Byte, begin: 10, end: 11 }],
+            &[Segment { mode: Mode::Kanji, begin: 0, end: 10 }, Segment { mode: Mode::Byte, begin: 10, end: 11 }],
             Version::Normal(1),
         );
     }
@@ -415,11 +413,11 @@ mod optimize_tests {
     #[test]
     fn test_annex_j_guideline_1a() {
         test_optimization_result(
-            vec![
+            &[
                 Segment { mode: Mode::Numeric, begin: 0, end: 3 },
                 Segment { mode: Mode::Alphanumeric, begin: 3, end: 4 },
             ],
-            vec![
+            &[
                 Segment { mode: Mode::Numeric, begin: 0, end: 3 },
                 Segment { mode: Mode::Alphanumeric, begin: 3, end: 4 },
             ],
@@ -430,11 +428,11 @@ mod optimize_tests {
     #[test]
     fn test_annex_j_guideline_1b() {
         test_optimization_result(
-            vec![
+            &[
                 Segment { mode: Mode::Numeric, begin: 0, end: 2 },
                 Segment { mode: Mode::Alphanumeric, begin: 2, end: 4 },
             ],
-            vec![Segment { mode: Mode::Alphanumeric, begin: 0, end: 4 }],
+            &[Segment { mode: Mode::Alphanumeric, begin: 0, end: 4 }],
             Version::Micro(2),
         );
     }
@@ -442,11 +440,11 @@ mod optimize_tests {
     #[test]
     fn test_annex_j_guideline_1c() {
         test_optimization_result(
-            vec![
+            &[
                 Segment { mode: Mode::Numeric, begin: 0, end: 3 },
                 Segment { mode: Mode::Alphanumeric, begin: 3, end: 4 },
             ],
-            vec![Segment { mode: Mode::Alphanumeric, begin: 0, end: 4 }],
+            &[Segment { mode: Mode::Alphanumeric, begin: 0, end: 4 }],
             Version::Micro(3),
         );
     }

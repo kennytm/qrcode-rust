@@ -30,7 +30,6 @@
 #![deny(warnings, clippy::pedantic)]
 #![allow(
     clippy::must_use_candidate, // This is just annoying.
-    clippy::use_self, // Rust 1.33 doesn't support Self::EnumVariant, let's try again in 1.37.
 )]
 #![cfg_attr(feature = "bench", doc(include = "../README.md"))]
 // ^ make sure we can test our README.md.

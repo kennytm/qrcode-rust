@@ -173,7 +173,7 @@ impl Version {
     pub fn mode_bits_count(self) -> usize {
         match self {
             Version::Micro(a) => (a - 1).as_usize(),
-            _ => 4,
+            Version::Normal(_) => 4,
         }
     }
 
@@ -273,6 +273,7 @@ impl Mode {
     ///     assert!(a <= c);
     ///     assert!(b <= c);
     ///
+    #[must_use]
     pub fn max(self, other: Self) -> Self {
         match self.partial_cmp(&other) {
             Some(Ordering::Less | Ordering::Equal) => other,

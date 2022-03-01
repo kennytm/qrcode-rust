@@ -101,7 +101,7 @@ impl Canvas {
     #[cfg(test)]
     fn to_debug_str(&self) -> String {
         let width = self.width;
-        let mut res = String::with_capacity((width * (width + 1)) as usize);
+        let mut res = String::with_capacity((width * (width + 1)).as_usize());
         for y in 0..width {
             res.push('\n');
             for x in 0..width {
@@ -1765,7 +1765,7 @@ impl Canvas {
                     Box::new(|k| self.get(i, k).into())
                 };
 
-                if (j..(j + 7)).map(&*get).ne(PATTERN.iter().cloned()) {
+                if (j..(j + 7)).map(&*get).ne(PATTERN.iter().copied()) {
                     continue;
                 }
 
@@ -1829,6 +1829,7 @@ impl Canvas {
 #[cfg(test)]
 mod penalty_tests {
     use crate::canvas::{Canvas, MaskPattern};
+    use crate::cast::As;
     use crate::types::{Color, EcLevel, Version};
 
     fn create_test_canvas() -> Canvas {
@@ -1941,8 +1942,8 @@ mod penalty_tests {
 
         let mut c = Canvas::new(Version::Micro(4), EcLevel::Q);
         for i in 0_i16..17 {
-            c.put(i, -1, HORIZONTAL_SIDE[i as usize]);
-            c.put(-1, i, VERTICAL_SIDE[i as usize]);
+            c.put(i, -1, HORIZONTAL_SIDE[i.as_usize()]);
+            c.put(-1, i, VERTICAL_SIDE[i.as_usize()]);
         }
 
         assert_eq!(c.compute_light_side_penalty_score(), 168);
@@ -1970,6 +1971,7 @@ static ALL_PATTERNS_MICRO_QR: [MaskPattern; 4] =
 impl Canvas {
     /// Construct a new canvas and apply the best masking that gives the lowest
     /// penalty score.
+    #[must_use]
     pub fn apply_best_mask(&self) -> Self {
         match self.version {
             Version::Normal(_) => ALL_PATTERNS_QR.iter(),
