@@ -2,11 +2,12 @@
 
 use std::cmp::min;
 
-#[cfg(feature="bench")]
-use test::Bencher;
+#[cfg(feature = "bench")]
+extern crate test;
 
-use types::{QrResult, QrError, Mode, EcLevel, Version};
-use optimize::{Parser, Optimizer, total_encoded_len, Segment};
+use crate::cast::{As, Truncate};
+use crate::optimize::{total_encoded_len, Optimizer, Parser, Segment};
+use crate::types::{EcLevel, Mode, QrError, QrResult, Version};
 
 //------------------------------------------------------------------------------
 //{{{ Bits
@@ -20,8 +21,8 @@ pub struct Bits {
 
 impl Bits {
     /// Constructs a new, empty bits structure.
-    pub fn new(version: Version) -> Bits {
-        Bits { data: Vec::new(), bit_offset: 0, version: version }
+    pub fn new(version: Version) -> Self {
+        Self { data: Vec::new(), bit_offset: 0, version }
     }
 
     /// Pushes an N-bit big-endian integer to the end of the bits.
@@ -30,29 +31,29 @@ impl Bits {
     /// `n` bit in size. Otherwise the excess bits may stomp on the existing
     /// ones.
     fn push_number(&mut self, n: usize, number: u16) {
-        debug_assert!(n == 16 || n < 16 && number < (1 << n),
-                      "{} is too big as a {}-bit number", number, n);
+        debug_assert!(n == 16 || n < 16 && number < (1 << n), "{} is too big as a {}-bit number", number, n);
 
         let b = self.bit_offset + n;
+        let last_index = self.data.len().wrapping_sub(1);
         match (self.bit_offset, b) {
-            (0, 0...8) => {
-                self.data.push((number << (8-b)) as u8);
+            (0, 0..=8) => {
+                self.data.push((number << (8 - b)).truncate_as_u8());
             }
             (0, _) => {
-                self.data.push((number >> (b-8)) as u8);
-                self.data.push((number << (16-b)) as u8);
+                self.data.push((number >> (b - 8)).truncate_as_u8());
+                self.data.push((number << (16 - b)).truncate_as_u8());
             }
-            (_, 0...8) => {
-                *self.data.last_mut().unwrap() |= (number << (8-b)) as u8;
+            (_, 0..=8) => {
+                self.data[last_index] |= (number << (8 - b)).truncate_as_u8();
             }
-            (_, 9...16) => {
-                *self.data.last_mut().unwrap() |= (number >> (b-8)) as u8;
-                self.data.push((number << (16-b)) as u8);
+            (_, 9..=16) => {
+                self.data[last_index] |= (number >> (b - 8)).truncate_as_u8();
+                self.data.push((number << (16 - b)).truncate_as_u8());
             }
             _ => {
-                *self.data.last_mut().unwrap() |= (number >> (b-8)) as u8;
-                self.data.push((number >> (b-16)) as u8);
-                self.data.push((number << (24-b)) as u8);
+                self.data[last_index] |= (number >> (b - 8)).truncate_as_u8();
+                self.data.push((number >> (b - 16)).truncate_as_u8());
+                self.data.push((number << (24 - b)).truncate_as_u8());
             }
         }
         self.bit_offset = b & 7;
@@ -66,7 +67,7 @@ impl Bits {
         if n > 16 || number >= (1 << n) {
             Err(QrError::DataTooLong)
         } else {
-            self.push_number(n, number as u16);
+            self.push_number(n, number.as_u16());
             Ok(())
         }
     }
@@ -91,8 +92,19 @@ impl Bits {
         }
     }
 
+    /// Whether there are any bits pushed.
+    pub fn is_empty(&self) -> bool {
+        self.data.is_empty()
+    }
+
     /// The maximum number of bits allowed by the provided QR code version and
     /// error correction level.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(QrError::InvalidVersion)` if it is not valid to use the
+    /// `ec_level` for the given version (e.g. `Version::Micro(1)` with
+    /// `EcLevel::H`).
     pub fn max_len(&self, ec_level: EcLevel) -> QrResult<usize> {
         self.version.fetch(ec_level, &DATA_LENGTHS)
     }
@@ -107,34 +119,39 @@ impl Bits {
 fn test_push_number() {
     let mut bits = Bits::new(Version::Normal(1));
 
-    bits.push_number(3, 0b010);     // 0:0 .. 0:3
-    bits.push_number(3, 0b110);     // 0:3 .. 0:6
-    bits.push_number(3, 0b101);     // 0:6 .. 1:1
-    bits.push_number(7, 0b001_1010);// 1:1 .. 2:0
-    bits.push_number(4, 0b1100);    // 2:0 .. 2:4
+    bits.push_number(3, 0b010); // 0:0 .. 0:3
+    bits.push_number(3, 0b110); // 0:3 .. 0:6
+    bits.push_number(3, 0b101); // 0:6 .. 1:1
+    bits.push_number(7, 0b001_1010); // 1:1 .. 2:0
+    bits.push_number(4, 0b1100); // 2:0 .. 2:4
     bits.push_number(12, 0b1011_0110_1101); // 2:4 .. 4:0
-    bits.push_number(10, 0b01_1001_0001);   // 4:0 .. 5:2
+    bits.push_number(10, 0b01_1001_0001); // 4:0 .. 5:2
     bits.push_number(15, 0b111_0010_1110_0011); // 5:2 .. 7:1
 
     let bytes = bits.into_bytes();
 
-    assert_eq!(bytes, vec![0b010__110__10,  // 90
-                           0b1__001_1010,   // 154
-                           0b1100__1011,    // 203
-                           0b0110_1101,     // 109
-                           0b01_1001_00,    // 100
-                           0b01__111_001,   // 121
-                           0b0_1110_001,    // 113
-                           0b1__0000000]);  // 128
+    assert_eq!(
+        bytes,
+        vec![
+            0b010__110__10, // 90
+            0b1__001_1010,  // 154
+            0b1100__1011,   // 203
+            0b0110_1101,    // 109
+            0b01_1001_00,   // 100
+            0b01__111_001,  // 121
+            0b0_1110_001,   // 113
+            0b1__0000000,   // 128
+        ]
+    );
 }
 
-#[cfg(feature="bench")]
+#[cfg(feature = "bench")]
 #[bench]
-fn bench_push_splitted_bytes(bencher: &mut Bencher) {
+fn bench_push_splitted_bytes(bencher: &mut test::Bencher) {
     bencher.iter(|| {
         let mut bits = Bits::new(Version::Normal(40));
         bits.push_number(4, 0b0101);
-        for _ in 0 .. 1024 {
+        for _ in 0..1024 {
             bits.push_number(8, 0b10101010);
         }
         bits.into_bytes()
@@ -168,9 +185,12 @@ pub enum ExtendedMode {
 impl Bits {
     /// Push the mode indicator to the end of the bits.
     ///
+    /// # Errors
+    ///
     /// If the mode is not supported in the provided version, this method
     /// returns `Err(QrError::UnsupportedCharacterSet)`.
     pub fn push_mode_indicator(&mut self, mode: ExtendedMode) -> QrResult<()> {
+        #[allow(clippy::match_same_arms)]
         let number = match (self.version, mode) {
             (Version::Micro(1), ExtendedMode::Data(Mode::Numeric)) => return Ok(()),
             (Version::Micro(_), ExtendedMode::Data(Mode::Numeric)) => 0,
@@ -214,7 +234,7 @@ impl Bits {
     ///
     ///
     /// The full list of ECI designator values can be found from
-    /// http://strokescribe.com/en/ECI.html. Some example values are:
+    /// <http://strokescribe.com/en/ECI.html>. Some example values are:
     ///
     /// ECI # | Character set
     /// ------|-------------------------------------
@@ -227,6 +247,8 @@ impl Bits {
     /// 29    | GB-18030 (Simplified Chinese)
     /// 30    | EUC-KR (Korean)
     ///
+    /// # Errors
+    ///
     /// If the QR code version does not support ECI, this method will return
     /// `Err(QrError::UnsupportedCharacterSet)`.
     ///
@@ -234,19 +256,19 @@ impl Bits {
     /// return `Err(QrError::InvalidECIDesignator)`.
     pub fn push_eci_designator(&mut self, eci_designator: u32) -> QrResult<()> {
         self.reserve(12); // assume the common case that eci_designator <= 127.
-        try!(self.push_mode_indicator(ExtendedMode::Eci));
+        self.push_mode_indicator(ExtendedMode::Eci)?;
         match eci_designator {
-            0...127 => {
-                self.push_number(8, eci_designator as u16);
+            0..=127 => {
+                self.push_number(8, eci_designator.as_u16());
             }
-            128...16383 => {
+            128..=16383 => {
                 self.push_number(2, 0b10);
-                self.push_number(14, eci_designator as u16);
+                self.push_number(14, eci_designator.as_u16());
             }
-            16384...999999 => {
+            16384..=999_999 => {
                 self.push_number(3, 0b110);
-                self.push_number(5, (eci_designator >> 16) as u16);
-                self.push_number(16, (eci_designator & 0xffff) as u16);
+                self.push_number(5, (eci_designator >> 16).as_u16());
+                self.push_number(16, (eci_designator & 0xffff).as_u16());
             }
             _ => return Err(QrError::InvalidEciDesignator),
         }
@@ -256,8 +278,8 @@ impl Bits {
 
 #[cfg(test)]
 mod eci_tests {
-    use bits::Bits;
-    use types::{Version, QrError};
+    use crate::bits::Bits;
+    use crate::types::{QrError, Version};
 
     #[test]
     fn test_9() {
@@ -277,10 +299,7 @@ mod eci_tests {
     fn test_999999() {
         let mut bits = Bits::new(Version::Normal(1));
         assert_eq!(bits.push_eci_designator(999999), Ok(()));
-        assert_eq!(bits.into_bytes(), vec![0b0111__110_0,
-                                           0b11110100,
-                                           0b00100011,
-                                           0b1111__0000]);
+        assert_eq!(bits.into_bytes(), vec![0b0111__110_0, 0b11110100, 0b00100011, 0b1111__0000]);
     }
 
     #[test]
@@ -304,18 +323,22 @@ impl Bits {
     fn push_header(&mut self, mode: Mode, raw_data_len: usize) -> QrResult<()> {
         let length_bits = mode.length_bits_count(self.version);
         self.reserve(length_bits + 4 + mode.data_bits_count(raw_data_len));
-        try!(self.push_mode_indicator(ExtendedMode::Data(mode)));
-        try!(self.push_number_checked(length_bits, raw_data_len));
+        self.push_mode_indicator(ExtendedMode::Data(mode))?;
+        self.push_number_checked(length_bits, raw_data_len)?;
         Ok(())
     }
 
     /// Encodes a numeric string to the bits.
     ///
     /// The data should only contain the characters 0 to 9.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(QrError::DataTooLong)` on overflow.
     pub fn push_numeric_data(&mut self, data: &[u8]) -> QrResult<()> {
-        try!(self.push_header(Mode::Numeric, data.len()));
+        self.push_header(Mode::Numeric, data.len())?;
         for chunk in data.chunks(3) {
-            let number = chunk.iter().map(|b| (*b - b'0') as u16).fold(0, |a, b| a*10 + b);
+            let number = chunk.iter().map(|b| u16::from(*b - b'0')).fold(0, |a, b| a * 10 + b);
             let length = chunk.len() * 3 + 1;
             self.push_number(length, number);
         }
@@ -325,48 +348,56 @@ impl Bits {
 
 #[cfg(test)]
 mod numeric_tests {
-    use bits::Bits;
-    use types::{Version, QrError};
+    use crate::bits::Bits;
+    use crate::types::{QrError, Version};
 
     #[test]
     fn test_iso_18004_2006_example_1() {
         let mut bits = Bits::new(Version::Normal(1));
         assert_eq!(bits.push_numeric_data(b"01234567"), Ok(()));
-        assert_eq!(bits.into_bytes(), vec![0b0001_0000,
-                                           0b001000_00,
-                                           0b00001100,
-                                           0b01010110,
-                                           0b01_100001,
-                                           0b1__0000000]);
+        assert_eq!(
+            bits.into_bytes(),
+            vec![0b0001_0000, 0b001000_00, 0b00001100, 0b01010110, 0b01_100001, 0b1__0000000]
+        );
     }
 
     #[test]
     fn test_iso_18004_2000_example_2() {
         let mut bits = Bits::new(Version::Normal(1));
         assert_eq!(bits.push_numeric_data(b"0123456789012345"), Ok(()));
-        assert_eq!(bits.into_bytes(), vec![0b0001_0000,
-                                           0b010000_00,
-                                           0b00001100,
-                                           0b01010110,
-                                           0b01_101010,
-                                           0b0110_1110,
-                                           0b000101_00,
-                                           0b11101010,
-                                           0b0101__0000]);
+        assert_eq!(
+            bits.into_bytes(),
+            vec![
+                0b0001_0000,
+                0b010000_00,
+                0b00001100,
+                0b01010110,
+                0b01_101010,
+                0b0110_1110,
+                0b000101_00,
+                0b11101010,
+                0b0101__0000,
+            ]
+        );
     }
 
     #[test]
     fn test_iso_18004_2006_example_2() {
         let mut bits = Bits::new(Version::Micro(3));
         assert_eq!(bits.push_numeric_data(b"0123456789012345"), Ok(()));
-        assert_eq!(bits.into_bytes(), vec![0b00_10000_0,
-                                           0b00000110,
-                                           0b0_0101011,
-                                           0b001_10101,
-                                           0b00110_111,
-                                           0b0000101_0,
-                                           0b01110101,
-                                           0b00101__000]);
+        assert_eq!(
+            bits.into_bytes(),
+            vec![
+                0b00_10000_0,
+                0b00000110,
+                0b0_0101011,
+                0b001_10101,
+                0b00110_111,
+                0b0000101_0,
+                0b01110101,
+                0b00101__000,
+            ]
+        );
     }
 
     #[test]
@@ -380,16 +411,16 @@ mod numeric_tests {
 //------------------------------------------------------------------------------
 //{{{ Mode::Alphanumeric mode
 
-/// In QR code "Mode::Alphanumeric" mode, a pair of alphanumeric characters will be
-/// encoded as a base-45 integer. `alphanumeric_digit` converts each character
-/// into its corresponding base-45 digit.
+/// In QR code `Mode::Alphanumeric` mode, a pair of alphanumeric characters will
+/// be encoded as a base-45 integer. `alphanumeric_digit` converts each
+/// character into its corresponding base-45 digit.
 ///
 /// The conversion is specified in ISO/IEC 18004:2006, §8.4.3, Table 5.
 #[inline]
 fn alphanumeric_digit(character: u8) -> u16 {
     match character {
-        b'0' ... b'9' => (character - b'0') as u16,
-        b'A' ... b'Z' => (character - b'A') as u16 + 10,
+        b'0'..=b'9' => u16::from(character - b'0'),
+        b'A'..=b'Z' => u16::from(character - b'A') + 10,
         b' ' => 36,
         b'$' => 37,
         b'%' => 38,
@@ -408,10 +439,14 @@ impl Bits {
     ///
     /// The data should only contain the charaters A to Z (excluding lowercase),
     /// 0 to 9, space, `$`, `%`, `*`, `+`, `-`, `.`, `/` or `:`.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(QrError::DataTooLong)` on overflow.
     pub fn push_alphanumeric_data(&mut self, data: &[u8]) -> QrResult<()> {
-        try!(self.push_header(Mode::Alphanumeric, data.len()));
+        self.push_header(Mode::Alphanumeric, data.len())?;
         for chunk in data.chunks(2) {
-            let number = chunk.iter().map(|b| alphanumeric_digit(*b)).fold(0, |a, b| a*45 + b);
+            let number = chunk.iter().map(|b| alphanumeric_digit(*b)).fold(0, |a, b| a * 45 + b);
             let length = chunk.len() * 5 + 1;
             self.push_number(length, number);
         }
@@ -421,19 +456,17 @@ impl Bits {
 
 #[cfg(test)]
 mod alphanumeric_tests {
-    use bits::Bits;
-    use types::{Version, QrError};
+    use crate::bits::Bits;
+    use crate::types::{QrError, Version};
 
     #[test]
     fn test_iso_18004_2006_example() {
         let mut bits = Bits::new(Version::Normal(1));
         assert_eq!(bits.push_alphanumeric_data(b"AC-42"), Ok(()));
-        assert_eq!(bits.into_bytes(), vec![0b0010_0000,
-                                           0b00101_001,
-                                           0b11001110,
-                                           0b11100111,
-                                           0b001_00001,
-                                           0b0__0000000]);
+        assert_eq!(
+            bits.into_bytes(),
+            vec![0b0010_0000, 0b00101_001, 0b11001110, 0b11100111, 0b001_00001, 0b0__0000000]
+        );
     }
 
     #[test]
@@ -455,10 +488,14 @@ mod alphanumeric_tests {
 
 impl Bits {
     /// Encodes 8-bit byte data to the bits.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(QrError::DataTooLong)` on overflow.
     pub fn push_byte_data(&mut self, data: &[u8]) -> QrResult<()> {
-        try!(self.push_header(Mode::Byte, data.len()));
+        self.push_header(Mode::Byte, data.len())?;
         for b in data {
-            self.push_number(8, *b as u16);
+            self.push_number(8, u16::from(*b));
         }
         Ok(())
     }
@@ -466,23 +503,28 @@ impl Bits {
 
 #[cfg(test)]
 mod byte_tests {
-    use bits::Bits;
-    use types::{Version, QrError};
+    use crate::bits::Bits;
+    use crate::types::{QrError, Version};
 
     #[test]
     fn test() {
         let mut bits = Bits::new(Version::Normal(1));
         assert_eq!(bits.push_byte_data(b"\x12\x34\x56\x78\x9a\xbc\xde\xf0"), Ok(()));
-        assert_eq!(bits.into_bytes(), vec![0b0100_0000,
-                                           0b1000_0001,
-                                           0b0010_0011,
-                                           0b0100_0101,
-                                           0b0110_0111,
-                                           0b1000_1001,
-                                           0b1010_1011,
-                                           0b1100_1101,
-                                           0b1110_1111,
-                                           0b0000__0000]);
+        assert_eq!(
+            bits.into_bytes(),
+            vec![
+                0b0100_0000,
+                0b1000_0001,
+                0b0010_0011,
+                0b0100_0101,
+                0b0110_0111,
+                0b1000_1001,
+                0b1010_1011,
+                0b1100_1101,
+                0b1110_1111,
+                0b0000__0000,
+            ]
+        );
     }
 
     #[test]
@@ -504,13 +546,20 @@ mod byte_tests {
 
 impl Bits {
     /// Encodes Shift JIS double-byte data to the bits.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(QrError::DataTooLong)` on overflow.
+    ///
+    /// Returns `Err(QrError::InvalidCharacter)` if the data is not Shift JIS
+    /// double-byte data (e.g. if the length of data is not an even number).
     pub fn push_kanji_data(&mut self, data: &[u8]) -> QrResult<()> {
-        try!(self.push_header(Mode::Kanji, data.len()/2));
+        self.push_header(Mode::Kanji, data.len() / 2)?;
         for kanji in data.chunks(2) {
             if kanji.len() != 2 {
                 return Err(QrError::InvalidCharacter);
             }
-            let cp = (kanji[0] as u16) * 256 + (kanji[1] as u16);
+            let cp = u16::from(kanji[0]) * 256 + u16::from(kanji[1]);
             let bytes = if cp < 0xe040 { cp - 0x8140 } else { cp - 0xc140 };
             let number = (bytes >> 8) * 0xc0 + (bytes & 0xff);
             self.push_number(13, number);
@@ -521,18 +570,14 @@ impl Bits {
 
 #[cfg(test)]
 mod kanji_tests {
-    use bits::Bits;
-    use types::{Version, QrError};
+    use crate::bits::Bits;
+    use crate::types::{QrError, Version};
 
     #[test]
     fn test_iso_18004_example() {
         let mut bits = Bits::new(Version::Normal(1));
         assert_eq!(bits.push_kanji_data(b"\x93\x5f\xe4\xaa"), Ok(()));
-        assert_eq!(bits.into_bytes(), vec![0b1000_0000,
-                                           0b0010_0110,
-                                           0b11001111,
-                                           0b1_1101010,
-                                           0b101010__00]);
+        assert_eq!(bits.into_bytes(), vec![0b1000_0000, 0b0010_0110, 0b11001111, 0b1_1101010, 0b101010__00]);
     }
 
     #[test]
@@ -544,8 +589,7 @@ mod kanji_tests {
     #[test]
     fn test_data_too_long() {
         let mut bits = Bits::new(Version::Micro(3));
-        assert_eq!(bits.push_kanji_data(b"\x93_\x93_\x93_\x93_\x93_\x93_\x93_\x93_"),
-                   Err(QrError::DataTooLong));
+        assert_eq!(bits.push_kanji_data(b"\x93_\x93_\x93_\x93_\x93_\x93_\x93_\x93_"), Err(QrError::DataTooLong));
     }
 }
 
@@ -568,6 +612,11 @@ impl Bits {
     ///     bits.push_alphanumeric_data(b"%10ABC123");
     ///
     /// In QR code, the character `%` is used as the data field separator (0x1D).
+    ///
+    /// # Errors
+    ///
+    /// If the mode is not supported in the provided version, this method
+    /// returns `Err(QrError::UnsupportedCharacterSet)`.
     pub fn push_fnc1_first_position(&mut self) -> QrResult<()> {
         self.push_mode_indicator(ExtendedMode::Fnc1First)
     }
@@ -592,9 +641,14 @@ impl Bits {
     /// ```ignore
     /// bits.push_fnc1_second_position(b'A' + 100);
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// If the mode is not supported in the provided version, this method
+    /// returns `Err(QrError::UnsupportedCharacterSet)`.
     pub fn push_fnc1_second_position(&mut self, application_indicator: u8) -> QrResult<()> {
-        try!(self.push_mode_indicator(ExtendedMode::Fnc1Second));
-        self.push_number(8, application_indicator as u16);
+        self.push_mode_indicator(ExtendedMode::Fnc1Second)?;
+        self.push_number(8, u16::from(application_indicator));
         Ok(())
     }
 }
@@ -646,7 +700,6 @@ static DATA_LENGTHS: [[usize; 4]; 44] = [
     [21616, 16816, 12016, 9136],
     [22496, 17728, 12656, 9776],
     [23648, 18672, 13328, 10208],
-
     // Micro versions
     [20, 0, 0, 0],
     [40, 32, 0, 0],
@@ -656,14 +709,22 @@ static DATA_LENGTHS: [[usize; 4]; 44] = [
 
 impl Bits {
     /// Pushes the ending bits to indicate no more data.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(QrError::DataTooLong)` on overflow.
+    ///
+    /// Returns `Err(QrError::InvalidVersion)` if it is not valid to use the
+    /// `ec_level` for the given version (e.g. `Version::Micro(1)` with
+    /// `EcLevel::H`).
     pub fn push_terminator(&mut self, ec_level: EcLevel) -> QrResult<()> {
         let terminator_size = match self.version {
-            Version::Micro(a) => (a as usize) * 2 + 1,
+            Version::Micro(a) => a.as_usize() * 2 + 1,
             _ => 4,
         };
 
         let cur_length = self.len();
-        let data_length = try!(self.max_len(ec_level));
+        let data_length = self.max_len(ec_level)?;
         if cur_length > data_length {
             return Err(QrError::DataTooLong);
         }
@@ -674,7 +735,7 @@ impl Bits {
         }
 
         if self.len() < data_length {
-            const PADDING_BYTES: &'static [u8] = &[0b11101100, 0b00010001];
+            const PADDING_BYTES: &[u8] = &[0b1110_1100, 0b0001_0001];
 
             self.bit_offset = 0;
             let data_bytes_length = data_length / 8;
@@ -693,19 +754,21 @@ impl Bits {
 
 #[cfg(test)]
 mod finish_tests {
-    use bits::Bits;
-    use types::{Version, EcLevel, QrError};
+    use crate::bits::Bits;
+    use crate::types::{EcLevel, QrError, Version};
 
     #[test]
     fn test_hello_world() {
         let mut bits = Bits::new(Version::Normal(1));
         assert_eq!(bits.push_alphanumeric_data(b"HELLO WORLD"), Ok(()));
         assert_eq!(bits.push_terminator(EcLevel::Q), Ok(()));
-        assert_eq!(bits.into_bytes(), vec![0b00100000, 0b01011011, 0b00001011,
-                                           0b01111000, 0b11010001, 0b01110010,
-                                           0b11011100, 0b01001101, 0b01000011,
-                                           0b01000000, 0b11101100, 0b00010001,
-                                           0b11101100]);
+        assert_eq!(
+            bits.into_bytes(),
+            vec![
+                0b00100000, 0b01011011, 0b00001011, 0b01111000, 0b11010001, 0b01110010, 0b11011100, 0b01001101,
+                0b01000011, 0b01000000, 0b11101100, 0b00010001, 0b11101100,
+            ]
+        );
     }
 
     #[test]
@@ -754,56 +817,68 @@ mod finish_tests {
 
 impl Bits {
     /// Push a segmented data to the bits, and then terminate it.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(QrError::DataTooLong)` on overflow.
+    ///
+    /// Returns `Err(QrError::InvalidData)` if the segment refers to incorrectly
+    /// encoded byte sequence.
     pub fn push_segments<I>(&mut self, data: &[u8], segments_iter: I) -> QrResult<()>
-        where I: Iterator<Item=Segment>
+    where
+        I: Iterator<Item = Segment>,
     {
         for segment in segments_iter {
-            let slice = &data[segment.begin .. segment.end];
-            try!(match segment.mode {
+            let slice = &data[segment.begin..segment.end];
+            match segment.mode {
                 Mode::Numeric => self.push_numeric_data(slice),
                 Mode::Alphanumeric => self.push_alphanumeric_data(slice),
                 Mode::Byte => self.push_byte_data(slice),
                 Mode::Kanji => self.push_kanji_data(slice),
-            });
+            }?;
         }
         Ok(())
     }
 
     /// Pushes the data the bits, using the optimal encoding.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(QrError::DataTooLong)` on overflow.
     pub fn push_optimal_data(&mut self, data: &[u8]) -> QrResult<()> {
         let segments = Parser::new(data).optimize(self.version);
         self.push_segments(data, segments)
     }
-
 }
 
 #[cfg(test)]
 mod encode_tests {
-    use bits::Bits;
-    use types::{Version, QrError, QrResult, EcLevel};
+    use crate::bits::Bits;
+    use crate::types::{EcLevel, QrError, QrResult, Version};
 
     fn encode(data: &[u8], version: Version, ec_level: EcLevel) -> QrResult<Vec<u8>> {
         let mut bits = Bits::new(version);
-        try!(bits.push_optimal_data(data));
-        try!(bits.push_terminator(ec_level));
+        bits.push_optimal_data(data)?;
+        bits.push_terminator(ec_level)?;
         Ok(bits.into_bytes())
     }
 
     #[test]
     fn test_alphanumeric() {
         let res = encode(b"HELLO WORLD", Version::Normal(1), EcLevel::Q);
-        assert_eq!(res, Ok(vec![0b00100000, 0b01011011, 0b00001011,
-                                0b01111000, 0b11010001, 0b01110010,
-                                0b11011100, 0b01001101, 0b01000011,
-                                0b01000000, 0b11101100, 0b00010001,
-                                0b11101100]));
+        assert_eq!(
+            res,
+            Ok(vec![
+                0b00100000, 0b01011011, 0b00001011, 0b01111000, 0b11010001, 0b01110010, 0b11011100, 0b01001101,
+                0b01000011, 0b01000000, 0b11101100, 0b00010001, 0b11101100,
+            ])
+        );
     }
 
     #[test]
     fn test_auto_mode_switch() {
         let res = encode(b"123A", Version::Micro(2), EcLevel::L);
-        assert_eq!(res, Ok(vec![0b0_0011_000, 0b1111011_1, 0b001_00101,
-                                0b0_00000__00, 0b11101100]));
+        assert_eq!(res, Ok(vec![0b0_0011_000, 0b1111011_1, 0b001_00101, 0b0_00000__00, 0b11101100]));
     }
 
     #[test]
@@ -821,18 +896,23 @@ mod encode_tests {
 /// the result.
 ///
 /// This method will not consider any Micro QR code versions.
+///
+/// # Errors
+///
+/// Returns `Err(QrError::DataTooLong)` if the data is too long to fit even the
+/// highest QR code version.
 pub fn encode_auto(data: &[u8], ec_level: EcLevel) -> QrResult<Bits> {
     let segments = Parser::new(data).collect::<Vec<Segment>>();
     for version in &[Version::Normal(9), Version::Normal(26), Version::Normal(40)] {
-        let opt_segments = Optimizer::new(segments.iter().map(|s| *s), *version).collect::<Vec<_>>();
+        let opt_segments = Optimizer::new(segments.iter().cloned(), *version).collect::<Vec<_>>();
         let total_len = total_encoded_len(&*opt_segments, *version);
-        let data_capacity = version.fetch(ec_level, &DATA_LENGTHS).unwrap();
+        let data_capacity = version.fetch(ec_level, &DATA_LENGTHS).expect("invalid DATA_LENGTHS");
         if total_len <= data_capacity {
             let min_version = find_min_version(total_len, ec_level);
             let mut bits = Bits::new(min_version);
             bits.reserve(total_len);
-            try!(bits.push_segments(data, opt_segments.into_iter()));
-            try!(bits.push_terminator(ec_level));
+            bits.push_segments(data, opt_segments.into_iter())?;
+            bits.push_terminator(ec_level)?;
             return Ok(bits);
         }
     }
@@ -842,23 +922,26 @@ pub fn encode_auto(data: &[u8], ec_level: EcLevel) -> QrResult<Bits> {
 /// Finds the smallest version (QR code only) that can store N bits of data
 /// in the given error correction level.
 fn find_min_version(length: usize, ec_level: EcLevel) -> Version {
-    let mut min = 0;
-    let mut max = 39;
-    while min < max {
-        let half = (min + max) / 2;
-        if DATA_LENGTHS[half][ec_level as usize] < length {
-            min = half + 1;
-        } else {
-            max = half;
-        }
+    let mut base = 0_usize;
+    let mut size = 39;
+    while size > 1 {
+        let half = size / 2;
+        let mid = base + half;
+        // mid is always in [0, size).
+        // mid >= 0: by definition
+        // mid < size: mid = size / 2 + size / 4 + size / 8 ...
+        base = if DATA_LENGTHS[mid][ec_level as usize] > length { base } else { mid };
+        size -= half;
     }
-    Version::Normal((min + 1) as i16)
+    // base is always in [0, mid) because base <= mid.
+    base = if DATA_LENGTHS[base][ec_level as usize] >= length { base } else { base + 1 };
+    Version::Normal((base + 1).as_i16())
 }
 
 #[cfg(test)]
 mod encode_auto_tests {
-    use bits::{find_min_version, encode_auto};
-    use types::{Version, EcLevel};
+    use crate::bits::{encode_auto, find_min_version};
+    use crate::types::{EcLevel, Version};
 
     #[test]
     fn test_find_min_version() {
@@ -870,7 +953,6 @@ mod encode_auto_tests {
         assert_eq!(find_min_version(641, EcLevel::L), Version::Normal(5));
         assert_eq!(find_min_version(999999, EcLevel::H), Version::Normal(40));
     }
-
 
     #[test]
     fn test_alpha_q() {
@@ -891,7 +973,21 @@ mod encode_auto_tests {
     }
 }
 
+#[cfg(feature = "bench")]
+#[bench]
+fn bench_find_min_version(bencher: &mut test::Bencher) {
+    use test::black_box;
+
+    bencher.iter(|| {
+        black_box(find_min_version(60, EcLevel::L));
+        black_box(find_min_version(200, EcLevel::L));
+        black_box(find_min_version(200, EcLevel::H));
+        black_box(find_min_version(20000, EcLevel::L));
+        black_box(find_min_version(640, EcLevel::L));
+        black_box(find_min_version(641, EcLevel::L));
+        black_box(find_min_version(999999, EcLevel::H));
+    })
+}
+
 //}}}
 //------------------------------------------------------------------------------
-
-

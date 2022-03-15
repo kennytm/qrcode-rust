@@ -1,9 +1,8 @@
 //! The `ec` module applies the Reed-Solomon error correction codes.
 
-use std::iter::repeat;
 use std::ops::Deref;
 
-use types::{QrResult, Version, EcLevel};
+use crate::types::{EcLevel, QrResult, Version};
 
 //------------------------------------------------------------------------------
 //{{{ Error correction primitive
@@ -14,34 +13,35 @@ use types::{QrResult, Version, EcLevel};
 /// 69 bytes. Longer blocks will result in task panic.
 ///
 /// This method treats the data as a polynomial of the form
-/// (a[0] x<sup>m+n</sup> + a[1] x<sup>m+n-1</sup> + … + a[m] x<sup>n</sup>) in
-/// GF(256), and then computes the polynomial modulus with a generator
-/// polynomial of degree N.
+/// (a\[0\] x<sup>m+n</sup> + a\[1\] x<sup>m+n-1</sup> + … + a\[m\] x<sup>n</sup>)
+/// in GF(2<sup>8</sup>), and then computes the polynomial modulus with a
+/// generator polynomial of degree N.
 pub fn create_error_correction_code(data: &[u8], ec_code_size: usize) -> Vec<u8> {
-    let mut res = data.to_vec();
-    res.extend(repeat(0).take(ec_code_size));
-
     let data_len = data.len();
     let log_den = GENERATOR_POLYNOMIALS[ec_code_size];
 
-    for i in 0 .. data_len {
+    let mut res = data.to_vec();
+    res.resize(ec_code_size + data_len, 0);
+
+    // rust-lang-nursery/rust-clippy#2213
+    for i in 0..data_len {
         let lead_coeff = res[i] as usize;
         if lead_coeff == 0 {
             continue;
         }
 
-        let log_lead_coeff = LOG_TABLE[lead_coeff] as usize;
-        for (u, v) in res[i+1 ..].iter_mut().zip(log_den.iter()) {
-            *u ^= EXP_TABLE[((*v as usize + log_lead_coeff) % 255) as usize];
+        let log_lead_coeff = usize::from(LOG_TABLE[lead_coeff]);
+        for (u, v) in res[i + 1..].iter_mut().zip(log_den.iter()) {
+            *u ^= EXP_TABLE[(usize::from(*v) + log_lead_coeff) % 255];
         }
     }
 
-    res.into_iter().skip(data_len).collect()
+    res.split_off(data_len)
 }
 
 #[cfg(test)]
 mod ec_tests {
-    use ec::create_error_correction_code;
+    use crate::ec::create_error_correction_code;
 
     #[test]
     fn test_poly_mod_1() {
@@ -73,10 +73,10 @@ mod ec_tests {
 ///
 /// The longest slice must be at the last of `blocks`, and `blocks` must not be
 /// empty.
-fn interleave<T: Copy, V: Deref<Target=[T]>>(blocks: &Vec<V>) -> Vec<T> {
-    let last_block_len = blocks.last().unwrap().len();
+fn interleave<T: Copy, V: Deref<Target = [T]>>(blocks: &[V]) -> Vec<T> {
+    let last_block_len = blocks.last().expect("non-empty blocks").len();
     let mut res = Vec::with_capacity(last_block_len * blocks.len());
-    for i in 0 .. last_block_len {
+    for i in 0..last_block_len {
         for t in blocks {
             if i < t.len() {
                 res.push(t[i]);
@@ -88,7 +88,7 @@ fn interleave<T: Copy, V: Deref<Target=[T]>>(blocks: &Vec<V>) -> Vec<T> {
 
 #[test]
 fn test_interleave() {
-    let res = interleave(&vec![&b"1234"[..], b"5678", b"abcdef", b"ghijkl"]);
+    let res = interleave(&[&b"1234"[..], b"5678", b"abcdef", b"ghijkl"]);
     assert_eq!(&*res, b"15ag26bh37ci48djekfl");
 }
 
@@ -98,11 +98,14 @@ fn test_interleave() {
 
 /// Constructs data and error correction codewords ready to be put in the QR
 /// code matrix.
-pub fn construct_codewords(rawbits: &[u8],
-                           version: Version,
-                           ec_level: EcLevel) -> QrResult<(Vec<u8>, Vec<u8>)> {
-    let (block_1_size, block_1_count, block_2_size, block_2_count) =
-        try!(version.fetch(ec_level, &DATA_BYTES_PER_BLOCK));
+///
+/// # Errors
+///
+/// Returns `Err(QrError::InvalidVersion)` if it is not valid to use the
+///  `ec_level` for the given version (e.g. `Version::Micro(1)` with
+/// `EcLevel::H`).
+pub fn construct_codewords(rawbits: &[u8], version: Version, ec_level: EcLevel) -> QrResult<(Vec<u8>, Vec<u8>)> {
+    let (block_1_size, block_1_count, block_2_size, block_2_count) = version.fetch(ec_level, &DATA_BYTES_PER_BLOCK)?;
 
     let blocks_count = block_1_count + block_2_count;
     let block_1_end = block_1_size * block_1_count;
@@ -118,10 +121,8 @@ pub fn construct_codewords(rawbits: &[u8],
     }
 
     // Generate EC codes.
-    let ec_bytes = try!(version.fetch(ec_level, &EC_BYTES_PER_BLOCK));
-    let ec_codes = blocks.iter()
-                         .map(|block| create_error_correction_code(*block, ec_bytes))
-                         .collect::<Vec<Vec<u8>>>();
+    let ec_bytes = version.fetch(ec_level, &EC_BYTES_PER_BLOCK)?;
+    let ec_codes = blocks.iter().map(|block| create_error_correction_code(*block, ec_bytes)).collect::<Vec<Vec<u8>>>();
 
     let blocks_vec = interleave(&blocks);
     let ec_vec = interleave(&ec_codes);
@@ -131,8 +132,8 @@ pub fn construct_codewords(rawbits: &[u8],
 
 #[cfg(test)]
 mod construct_codewords_test {
-    use ec::construct_codewords;
-    use types::{Version, EcLevel};
+    use crate::ec::construct_codewords;
+    use crate::types::{EcLevel, Version};
 
     #[test]
     fn test_add_ec_simple() {
@@ -144,12 +145,20 @@ mod construct_codewords_test {
 
     #[test]
     fn test_add_ec_complex() {
-        let msg = b"CUF\x86W&U\xc2w2\x06\x12\x06g&\xf6\xf6B\x07v\x86\xf2\x07&V\x16\xc6\xc7\x92\x06\xb6\xe6\xf7w2\x07v\x86W&R\x06\x86\x972\x07F\xf7vV\xc2\x06\x972\x10\xec\x11\xec\x11\xec\x11\xec";
+        let msg = b"CUF\x86W&U\xc2w2\x06\x12\x06g&\xf6\xf6B\x07v\x86\xf2\x07&V\x16\xc6\xc7\x92\x06\
+                    \xb6\xe6\xf7w2\x07v\x86W&R\x06\x86\x972\x07F\xf7vV\xc2\x06\x972\x10\xec\x11\xec\
+                    \x11\xec\x11\xec";
+        let expected_blocks = b"C\xf6\xb6FU\xf6\xe6\xf7FB\xf7v\x86\x07wVWv2\xc2&\x86\x07\x06U\xf2v\
+                                \x97\xc2\x07\x862w&W\x102V&\xec\x06\x16R\x11\x12\xc6\x06\xec\x06\
+                                \xc7\x86\x11g\x92\x97\xec&\x062\x11\x07\xec";
+        let expected_ec = b"\xd5W\x94\xeb\xc7\xcct\x9f\x0b`\xb1\x05-<\xd4\xads\xcaL\x18\xf7\xb6\x85\
+                            \x93\xf1|K;\xdf\x9d\xf2!\xe5\xc8\xeej\xf8\x86L(\x9a\x1b\xc3\xffu\x81\
+                            \xe6\xac\x9a\xd1\xbdRo\x11\n\x02V\xa3l\x83\xa1\xa3\xf0 ox\xc0\xb2'\x85\
+                            \x8d\xec";
+
         let (blocks_vec, ec_vec) = construct_codewords(msg, Version::Normal(5), EcLevel::Q).unwrap();
-        assert_eq!(&*blocks_vec,
-                   &b"C\xf6\xb6FU\xf6\xe6\xf7FB\xf7v\x86\x07wVWv2\xc2&\x86\x07\x06U\xf2v\x97\xc2\x07\x862w&W\x102V&\xec\x06\x16R\x11\x12\xc6\x06\xec\x06\xc7\x86\x11g\x92\x97\xec&\x062\x11\x07\xec"[..]);
-        assert_eq!(&*ec_vec,
-                   &b"\xd5W\x94\xeb\xc7\xcct\x9f\x0b`\xb1\x05-<\xd4\xads\xcaL\x18\xf7\xb6\x85\x93\xf1|K;\xdf\x9d\xf2!\xe5\xc8\xeej\xf8\x86L(\x9a\x1b\xc3\xffu\x81\xe6\xac\x9a\xd1\xbdRo\x11\n\x02V\xa3l\x83\xa1\xa3\xf0 ox\xc0\xb2'\x85\x8d\xec"[..]);
+        assert_eq!(&*blocks_vec, &expected_blocks[..]);
+        assert_eq!(&*ec_vec, &expected_ec[..]);
     }
 }
 
@@ -159,9 +168,15 @@ mod construct_codewords_test {
 
 /// Computes the maximum allowed number of erratic modules can be introduced to
 /// the QR code, before the data becomes truly corrupted.
+///
+/// # Errors
+///
+/// Returns `Err(QrError::InvalidVersion)` if it is not valid to use the
+///  `ec_level` for the given version (e.g. `Version::Micro(1)` with
+/// `EcLevel::H`).
 pub fn max_allowed_errors(version: Version, ec_level: EcLevel) -> QrResult<usize> {
-    use Version::{Micro, Normal};
-    use EcLevel::{L, M};
+    use crate::EcLevel::{L, M};
+    use crate::Version::{Micro, Normal};
 
     let p = match (version, ec_level) {
         (Micro(2), L) | (Normal(1), L) => 3,
@@ -170,8 +185,8 @@ pub fn max_allowed_errors(version: Version, ec_level: EcLevel) -> QrResult<usize
         _ => 0,
     };
 
-    let ec_bytes_per_block = try!(version.fetch(ec_level, &EC_BYTES_PER_BLOCK));
-    let (_, count1, _, count2) = try!(version.fetch(ec_level, &DATA_BYTES_PER_BLOCK));
+    let ec_bytes_per_block = version.fetch(ec_level, &EC_BYTES_PER_BLOCK)?;
+    let (_, count1, _, count2) = version.fetch(ec_level, &DATA_BYTES_PER_BLOCK)?;
     let ec_bytes = (count1 + count2) * ec_bytes_per_block;
 
     Ok((ec_bytes - p) / 2)
@@ -179,8 +194,8 @@ pub fn max_allowed_errors(version: Version, ec_level: EcLevel) -> QrResult<usize
 
 #[cfg(test)]
 mod max_allowed_errors_test {
-    use ec::max_allowed_errors;
-    use types::{Version, EcLevel};
+    use crate::ec::max_allowed_errors;
+    use crate::types::{EcLevel, Version};
 
     #[test]
     fn test_low_versions() {
@@ -231,10 +246,42 @@ mod max_allowed_errors_test {
 //{{{ Precomputed tables for GF(256).
 
 /// `EXP_TABLE` encodes the value of 2<sup>n</sup> in the Galois Field GF(256).
-static EXP_TABLE: &'static [u8] = b"\x01\x02\x04\x08\x10\x20\x40\x80\x1d\x3a\x74\xe8\xcd\x87\x13\x26\x4c\x98\x2d\x5a\xb4\x75\xea\xc9\x8f\x03\x06\x0c\x18\x30\x60\xc0\x9d\x27\x4e\x9c\x25\x4a\x94\x35\x6a\xd4\xb5\x77\xee\xc1\x9f\x23\x46\x8c\x05\x0a\x14\x28\x50\xa0\x5d\xba\x69\xd2\xb9\x6f\xde\xa1\x5f\xbe\x61\xc2\x99\x2f\x5e\xbc\x65\xca\x89\x0f\x1e\x3c\x78\xf0\xfd\xe7\xd3\xbb\x6b\xd6\xb1\x7f\xfe\xe1\xdf\xa3\x5b\xb6\x71\xe2\xd9\xaf\x43\x86\x11\x22\x44\x88\x0d\x1a\x34\x68\xd0\xbd\x67\xce\x81\x1f\x3e\x7c\xf8\xed\xc7\x93\x3b\x76\xec\xc5\x97\x33\x66\xcc\x85\x17\x2e\x5c\xb8\x6d\xda\xa9\x4f\x9e\x21\x42\x84\x15\x2a\x54\xa8\x4d\x9a\x29\x52\xa4\x55\xaa\x49\x92\x39\x72\xe4\xd5\xb7\x73\xe6\xd1\xbf\x63\xc6\x91\x3f\x7e\xfc\xe5\xd7\xb3\x7b\xf6\xf1\xff\xe3\xdb\xab\x4b\x96\x31\x62\xc4\x95\x37\x6e\xdc\xa5\x57\xae\x41\x82\x19\x32\x64\xc8\x8d\x07\x0e\x1c\x38\x70\xe0\xdd\xa7\x53\xa6\x51\xa2\x59\xb2\x79\xf2\xf9\xef\xc3\x9b\x2b\x56\xac\x45\x8a\x09\x12\x24\x48\x90\x3d\x7a\xf4\xf5\xf7\xf3\xfb\xeb\xcb\x8b\x0b\x16\x2c\x58\xb0\x7d\xfa\xe9\xcf\x83\x1b\x36\x6c\xd8\xad\x47\x8e\x01";
+static EXP_TABLE: &[u8] = b"\
+\x01\x02\x04\x08\x10\x20\x40\x80\x1d\x3a\x74\xe8\xcd\x87\x13\x26\
+\x4c\x98\x2d\x5a\xb4\x75\xea\xc9\x8f\x03\x06\x0c\x18\x30\x60\xc0\
+\x9d\x27\x4e\x9c\x25\x4a\x94\x35\x6a\xd4\xb5\x77\xee\xc1\x9f\x23\
+\x46\x8c\x05\x0a\x14\x28\x50\xa0\x5d\xba\x69\xd2\xb9\x6f\xde\xa1\
+\x5f\xbe\x61\xc2\x99\x2f\x5e\xbc\x65\xca\x89\x0f\x1e\x3c\x78\xf0\
+\xfd\xe7\xd3\xbb\x6b\xd6\xb1\x7f\xfe\xe1\xdf\xa3\x5b\xb6\x71\xe2\
+\xd9\xaf\x43\x86\x11\x22\x44\x88\x0d\x1a\x34\x68\xd0\xbd\x67\xce\
+\x81\x1f\x3e\x7c\xf8\xed\xc7\x93\x3b\x76\xec\xc5\x97\x33\x66\xcc\
+\x85\x17\x2e\x5c\xb8\x6d\xda\xa9\x4f\x9e\x21\x42\x84\x15\x2a\x54\
+\xa8\x4d\x9a\x29\x52\xa4\x55\xaa\x49\x92\x39\x72\xe4\xd5\xb7\x73\
+\xe6\xd1\xbf\x63\xc6\x91\x3f\x7e\xfc\xe5\xd7\xb3\x7b\xf6\xf1\xff\
+\xe3\xdb\xab\x4b\x96\x31\x62\xc4\x95\x37\x6e\xdc\xa5\x57\xae\x41\
+\x82\x19\x32\x64\xc8\x8d\x07\x0e\x1c\x38\x70\xe0\xdd\xa7\x53\xa6\
+\x51\xa2\x59\xb2\x79\xf2\xf9\xef\xc3\x9b\x2b\x56\xac\x45\x8a\x09\
+\x12\x24\x48\x90\x3d\x7a\xf4\xf5\xf7\xf3\xfb\xeb\xcb\x8b\x0b\x16\
+\x2c\x58\xb0\x7d\xfa\xe9\xcf\x83\x1b\x36\x6c\xd8\xad\x47\x8e\x01";
 
 /// `LOG_TABLE` is the inverse function of `EXP_TABLE`.
-static LOG_TABLE: &'static [u8] = b"\xff\x00\x01\x19\x02\x32\x1a\xc6\x03\xdf\x33\xee\x1b\x68\xc7\x4b\x04\x64\xe0\x0e\x34\x8d\xef\x81\x1c\xc1\x69\xf8\xc8\x08\x4c\x71\x05\x8a\x65\x2f\xe1\x24\x0f\x21\x35\x93\x8e\xda\xf0\x12\x82\x45\x1d\xb5\xc2\x7d\x6a\x27\xf9\xb9\xc9\x9a\x09\x78\x4d\xe4\x72\xa6\x06\xbf\x8b\x62\x66\xdd\x30\xfd\xe2\x98\x25\xb3\x10\x91\x22\x88\x36\xd0\x94\xce\x8f\x96\xdb\xbd\xf1\xd2\x13\x5c\x83\x38\x46\x40\x1e\x42\xb6\xa3\xc3\x48\x7e\x6e\x6b\x3a\x28\x54\xfa\x85\xba\x3d\xca\x5e\x9b\x9f\x0a\x15\x79\x2b\x4e\xd4\xe5\xac\x73\xf3\xa7\x57\x07\x70\xc0\xf7\x8c\x80\x63\x0d\x67\x4a\xde\xed\x31\xc5\xfe\x18\xe3\xa5\x99\x77\x26\xb8\xb4\x7c\x11\x44\x92\xd9\x23\x20\x89\x2e\x37\x3f\xd1\x5b\x95\xbc\xcf\xcd\x90\x87\x97\xb2\xdc\xfc\xbe\x61\xf2\x56\xd3\xab\x14\x2a\x5d\x9e\x84\x3c\x39\x53\x47\x6d\x41\xa2\x1f\x2d\x43\xd8\xb7\x7b\xa4\x76\xc4\x17\x49\xec\x7f\x0c\x6f\xf6\x6c\xa1\x3b\x52\x29\x9d\x55\xaa\xfb\x60\x86\xb1\xbb\xcc\x3e\x5a\xcb\x59\x5f\xb0\x9c\xa9\xa0\x51\x0b\xf5\x16\xeb\x7a\x75\x2c\xd7\x4f\xae\xd5\xe9\xe6\xe7\xad\xe8\x74\xd6\xf4\xea\xa8\x50\x58\xaf";
+static LOG_TABLE: &[u8] = b"\
+\xff\x00\x01\x19\x02\x32\x1a\xc6\x03\xdf\x33\xee\x1b\x68\xc7\x4b\
+\x04\x64\xe0\x0e\x34\x8d\xef\x81\x1c\xc1\x69\xf8\xc8\x08\x4c\x71\
+\x05\x8a\x65\x2f\xe1\x24\x0f\x21\x35\x93\x8e\xda\xf0\x12\x82\x45\
+\x1d\xb5\xc2\x7d\x6a\x27\xf9\xb9\xc9\x9a\x09\x78\x4d\xe4\x72\xa6\
+\x06\xbf\x8b\x62\x66\xdd\x30\xfd\xe2\x98\x25\xb3\x10\x91\x22\x88\
+\x36\xd0\x94\xce\x8f\x96\xdb\xbd\xf1\xd2\x13\x5c\x83\x38\x46\x40\
+\x1e\x42\xb6\xa3\xc3\x48\x7e\x6e\x6b\x3a\x28\x54\xfa\x85\xba\x3d\
+\xca\x5e\x9b\x9f\x0a\x15\x79\x2b\x4e\xd4\xe5\xac\x73\xf3\xa7\x57\
+\x07\x70\xc0\xf7\x8c\x80\x63\x0d\x67\x4a\xde\xed\x31\xc5\xfe\x18\
+\xe3\xa5\x99\x77\x26\xb8\xb4\x7c\x11\x44\x92\xd9\x23\x20\x89\x2e\
+\x37\x3f\xd1\x5b\x95\xbc\xcf\xcd\x90\x87\x97\xb2\xdc\xfc\xbe\x61\
+\xf2\x56\xd3\xab\x14\x2a\x5d\x9e\x84\x3c\x39\x53\x47\x6d\x41\xa2\
+\x1f\x2d\x43\xd8\xb7\x7b\xa4\x76\xc4\x17\x49\xec\x7f\x0c\x6f\xf6\
+\x6c\xa1\x3b\x52\x29\x9d\x55\xaa\xfb\x60\x86\xb1\xbb\xcc\x3e\x5a\
+\xcb\x59\x5f\xb0\x9c\xa9\xa0\x51\x0b\xf5\x16\xeb\x7a\x75\x2c\xd7\
+\x4f\xae\xd5\xe9\xe6\xe7\xad\xe8\x74\xd6\xf4\xea\xa8\x50\x58\xaf";
 
 /// The generator polynomial list.
 ///
@@ -245,7 +292,9 @@ static LOG_TABLE: &'static [u8] = b"\xff\x00\x01\x19\x02\x32\x1a\xc6\x03\xdf\x33
 /// is the Reed-Solomon error correction code.
 ///
 /// A partial list can be found from ISO/IEC 18004:2006 Annex A.
-static GENERATOR_POLYNOMIALS: [&'static [u8]; 70] = [
+#[rustfmt::skip]
+// ^ this attribute is currently useless, see rust-lang-nursery/rustfmt#1080 and 1298
+static GENERATOR_POLYNOMIALS: [&[u8]; 70] = [
     b"",
     b"\x00",
     b"\x19\x01",
@@ -329,55 +378,51 @@ static GENERATOR_POLYNOMIALS: [&'static [u8]; 70] = [
 /// by the sum of the 6th column).
 static EC_BYTES_PER_BLOCK: [[usize; 4]; 44] = [
     // Normal versions.
-    [7, 10, 13, 17],    // 1
-    [10, 16, 22, 28],   // 2
-    [15, 26, 18, 22],   // 3
-    [20, 18, 26, 16],   // 4
-    [26, 24, 18, 22],   // 5
-    [18, 16, 24, 28],   // 6
-    [20, 18, 18, 26],   // 7
-    [24, 22, 22, 26],   // 8
-    [30, 22, 20, 24],   // 9
-    [18, 26, 24, 28],   // 10
-
-    [20, 30, 28, 24],   // 11
-    [24, 22, 26, 28],   // 12
-    [26, 22, 24, 22],   // 13
-    [30, 24, 20, 24],   // 14
-    [22, 24, 30, 24],   // 15
-    [24, 28, 24, 30],   // 16
-    [28, 28, 28, 28],   // 17
-    [30, 26, 28, 28],   // 18
-    [28, 26, 26, 26],   // 19
-    [28, 26, 30, 28],   // 20
-
-    [28, 26, 28, 30],   // 21
-    [28, 28, 30, 24],   // 22
-    [30, 28, 30, 30],   // 23
-    [30, 28, 30, 30],   // 24
-    [26, 28, 30, 30],   // 25
-    [28, 28, 28, 30],   // 26
-    [30, 28, 30, 30],   // 27
-    [30, 28, 30, 30],   // 28
-    [30, 28, 30, 30],   // 29
-    [30, 28, 30, 30],   // 30
-
-    [30, 28, 30, 30],   // 31
-    [30, 28, 30, 30],   // 32
-    [30, 28, 30, 30],   // 33
-    [30, 28, 30, 30],   // 34
-    [30, 28, 30, 30],   // 35
-    [30, 28, 30, 30],   // 36
-    [30, 28, 30, 30],   // 37
-    [30, 28, 30, 30],   // 38
-    [30, 28, 30, 30],   // 39
-    [30, 28, 30, 30],   // 40
-
+    [7, 10, 13, 17],  // 1
+    [10, 16, 22, 28], // 2
+    [15, 26, 18, 22], // 3
+    [20, 18, 26, 16], // 4
+    [26, 24, 18, 22], // 5
+    [18, 16, 24, 28], // 6
+    [20, 18, 18, 26], // 7
+    [24, 22, 22, 26], // 8
+    [30, 22, 20, 24], // 9
+    [18, 26, 24, 28], // 10
+    [20, 30, 28, 24], // 11
+    [24, 22, 26, 28], // 12
+    [26, 22, 24, 22], // 13
+    [30, 24, 20, 24], // 14
+    [22, 24, 30, 24], // 15
+    [24, 28, 24, 30], // 16
+    [28, 28, 28, 28], // 17
+    [30, 26, 28, 28], // 18
+    [28, 26, 26, 26], // 19
+    [28, 26, 30, 28], // 20
+    [28, 26, 28, 30], // 21
+    [28, 28, 30, 24], // 22
+    [30, 28, 30, 30], // 23
+    [30, 28, 30, 30], // 24
+    [26, 28, 30, 30], // 25
+    [28, 28, 28, 30], // 26
+    [30, 28, 30, 30], // 27
+    [30, 28, 30, 30], // 28
+    [30, 28, 30, 30], // 29
+    [30, 28, 30, 30], // 30
+    [30, 28, 30, 30], // 31
+    [30, 28, 30, 30], // 32
+    [30, 28, 30, 30], // 33
+    [30, 28, 30, 30], // 34
+    [30, 28, 30, 30], // 35
+    [30, 28, 30, 30], // 36
+    [30, 28, 30, 30], // 37
+    [30, 28, 30, 30], // 38
+    [30, 28, 30, 30], // 39
+    [30, 28, 30, 30], // 40
     // Micro versions.
-    [2, 0, 0, 0],       // M1
-    [5, 6, 0, 0],       // M2
-    [6, 8, 0, 0],       // M3
-    [8, 10, 14, 0],     // M4
+    [2, 0, 0, 0],   // M1
+    [5, 6, 0, 0],   // M2
+    [6, 8, 0, 0],   // M3
+    [8, 10, 14, 0], // M4
 ];
 
 /// `DATA_BYTES_PER_BLOCK` provides the number of codewords (bytes) used for
@@ -391,57 +436,51 @@ static EC_BYTES_PER_BLOCK: [[usize; 4]; 44] = [
 /// 20 blocks with 15 bytes in size, and 61 blocks with 16 bytes in size.
 static DATA_BYTES_PER_BLOCK: [[(usize, usize, usize, usize); 4]; 44] = [
     // Normal versions.
-    [(19, 1, 0, 0), (16, 1, 0, 0), (13, 1, 0, 0), (9, 1, 0, 0)],                // 1
-    [(34, 1, 0, 0), (28, 1, 0, 0), (22, 1, 0, 0), (16, 1, 0, 0)],               // 2
-    [(55, 1, 0, 0), (44, 1, 0, 0), (17, 2, 0, 0), (13, 2, 0, 0)],               // 3
-    [(80, 1, 0, 0), (32, 2, 0, 0), (24, 2, 0, 0), (9, 4, 0, 0)],                // 4
-    [(108, 1, 0, 0), (43, 2, 0, 0), (15, 2, 16, 2), (11, 2, 12, 2)],            // 5
-    [(68, 2, 0, 0), (27, 4, 0, 0), (19, 4, 0, 0), (15, 4, 0, 0)],               // 6
-    [(78, 2, 0, 0), (31, 4, 0, 0), (14, 2, 15, 4), (13, 4, 14, 1)],             // 7
-    [(97, 2, 0, 0), (38, 2, 39, 2), (18, 4, 19, 2), (14, 4, 15, 2)],            // 8
-    [(116, 2, 0, 0), (36, 3, 37, 2), (16, 4, 17, 4), (12, 4, 13, 4)],           // 9
-    [(68, 2, 69, 2), (43, 4, 44, 1), (19, 6, 20, 2), (15, 6, 16, 2)],           // 10
-
-    [(81, 4, 0, 0), (50, 1, 51, 4), (22, 4, 23, 4), (12, 3, 13, 8)],            // 11
-    [(92, 2, 93, 2), (36, 6, 37, 2), (20, 4, 21, 6), (14, 7, 15, 4)],           // 12
-    [(107, 4, 0, 0), (37, 8, 38, 1), (20, 8, 21, 4), (11, 12, 12, 4)],          // 13
-    [(115, 3, 116, 1), (40, 4, 41, 5), (16, 11, 17, 5), (12, 11, 13, 5)],       // 14
-    [(87, 5, 88, 1), (41, 5, 42, 5), (24, 5, 25, 7), (12, 11, 13, 7)],          // 15
-    [(98, 5, 99, 1), (45, 7, 46, 3), (19, 15, 20, 2), (15, 3, 16, 13)],         // 16
-    [(107, 1, 108, 5), (46, 10, 47, 1), (22, 1, 23, 15), (14, 2, 15, 17)],      // 17
-    [(120, 5, 121, 1), (43, 9, 44, 4), (22, 17, 23, 1), (14, 2, 15, 19)],       // 18
-    [(113, 3, 114, 4), (44, 3, 45, 11), (21, 17, 22, 4), (13, 9, 14, 16)],      // 19
-    [(107, 3, 108, 5), (41, 3, 42, 13), (24, 15, 25, 5), (15, 15, 16, 10)],     // 20
-
-    [(116, 4, 117, 4), (42, 17, 0, 0), (22, 17, 23, 6), (16, 19, 17, 6)],       // 21
-    [(111, 2, 112, 7), (46, 17, 0, 0), (24, 7, 25, 16), (13, 34, 0, 0)],        // 22
-    [(121, 4, 122, 5), (47, 4, 48, 14), (24, 11, 25, 14), (15, 16, 16, 14)],    // 23
-    [(117, 6, 118, 4), (45, 6, 46, 14), (24, 11, 25, 16), (16, 30, 17, 2)],     // 24
-    [(106, 8, 107, 4), (47, 8, 48, 13), (24, 7, 25, 22), (15, 22, 16, 13)],     // 25
-    [(114, 10, 115, 2), (46, 19, 47, 4), (22, 28, 23, 6), (16, 33, 17, 4)],     // 26
-    [(122, 8, 123, 4), (45, 22, 46, 3), (23, 8, 24, 26), (15, 12, 16, 28)],     // 27
-    [(117, 3, 118, 10), (45, 3, 46, 23), (24, 4, 25, 31), (15, 11, 16, 31)],    // 28
-    [(116, 7, 117, 7), (45, 21, 46, 7), (23, 1, 24, 37), (15, 19, 16, 26)],     // 29
-    [(115, 5, 116, 10), (47, 19, 48, 10), (24, 15, 25, 25), (15, 23, 16, 25)],  // 30
-
-    [(115, 13, 116, 3), (46, 2, 47, 29), (24, 42, 25, 1), (15, 23, 16, 28)],    // 31
-    [(115, 17, 0, 0), (46, 10, 47, 23), (24, 10, 25, 35), (15, 19, 16, 35)],    // 32
-    [(115, 17, 116, 1), (46, 14, 47, 21), (24, 29, 25, 19), (15, 11, 16, 46)],  // 33
-    [(115, 13, 116, 6), (46, 14, 47, 23), (24, 44, 25, 7), (16, 59, 17, 1)],    // 34
-    [(121, 12, 122, 7), (47, 12, 48, 26), (24, 39, 25, 14), (15, 22, 16, 41)],  // 35
-    [(121, 6, 122, 14), (47, 6, 48, 34), (24, 46, 25, 10), (15, 2, 16, 64)],    // 36
-    [(122, 17, 123, 4), (46, 29, 47, 14), (24, 49, 25, 10), (15, 24, 16, 46)],  // 37
-    [(122, 4, 123, 18), (46, 13, 47, 32), (24, 48, 25, 14), (15, 42, 16, 32)],  // 38
-    [(117, 20, 118, 4), (47, 40, 48, 7), (24, 43, 25, 22), (15, 10, 16, 67)],   // 39
-    [(118, 19, 119, 6), (47, 18, 48, 31), (24, 34, 25, 34), (15, 20, 16, 61)],  // 40
-
+    [(19, 1, 0, 0), (16, 1, 0, 0), (13, 1, 0, 0), (9, 1, 0, 0)], // 1
+    [(34, 1, 0, 0), (28, 1, 0, 0), (22, 1, 0, 0), (16, 1, 0, 0)], // 2
+    [(55, 1, 0, 0), (44, 1, 0, 0), (17, 2, 0, 0), (13, 2, 0, 0)], // 3
+    [(80, 1, 0, 0), (32, 2, 0, 0), (24, 2, 0, 0), (9, 4, 0, 0)], // 4
+    [(108, 1, 0, 0), (43, 2, 0, 0), (15, 2, 16, 2), (11, 2, 12, 2)], // 5
+    [(68, 2, 0, 0), (27, 4, 0, 0), (19, 4, 0, 0), (15, 4, 0, 0)], // 6
+    [(78, 2, 0, 0), (31, 4, 0, 0), (14, 2, 15, 4), (13, 4, 14, 1)], // 7
+    [(97, 2, 0, 0), (38, 2, 39, 2), (18, 4, 19, 2), (14, 4, 15, 2)], // 8
+    [(116, 2, 0, 0), (36, 3, 37, 2), (16, 4, 17, 4), (12, 4, 13, 4)], // 9
+    [(68, 2, 69, 2), (43, 4, 44, 1), (19, 6, 20, 2), (15, 6, 16, 2)], // 10
+    [(81, 4, 0, 0), (50, 1, 51, 4), (22, 4, 23, 4), (12, 3, 13, 8)], // 11
+    [(92, 2, 93, 2), (36, 6, 37, 2), (20, 4, 21, 6), (14, 7, 15, 4)], // 12
+    [(107, 4, 0, 0), (37, 8, 38, 1), (20, 8, 21, 4), (11, 12, 12, 4)], // 13
+    [(115, 3, 116, 1), (40, 4, 41, 5), (16, 11, 17, 5), (12, 11, 13, 5)], // 14
+    [(87, 5, 88, 1), (41, 5, 42, 5), (24, 5, 25, 7), (12, 11, 13, 7)], // 15
+    [(98, 5, 99, 1), (45, 7, 46, 3), (19, 15, 20, 2), (15, 3, 16, 13)], // 16
+    [(107, 1, 108, 5), (46, 10, 47, 1), (22, 1, 23, 15), (14, 2, 15, 17)], // 17
+    [(120, 5, 121, 1), (43, 9, 44, 4), (22, 17, 23, 1), (14, 2, 15, 19)], // 18
+    [(113, 3, 114, 4), (44, 3, 45, 11), (21, 17, 22, 4), (13, 9, 14, 16)], // 19
+    [(107, 3, 108, 5), (41, 3, 42, 13), (24, 15, 25, 5), (15, 15, 16, 10)], // 20
+    [(116, 4, 117, 4), (42, 17, 0, 0), (22, 17, 23, 6), (16, 19, 17, 6)], // 21
+    [(111, 2, 112, 7), (46, 17, 0, 0), (24, 7, 25, 16), (13, 34, 0, 0)], // 22
+    [(121, 4, 122, 5), (47, 4, 48, 14), (24, 11, 25, 14), (15, 16, 16, 14)], // 23
+    [(117, 6, 118, 4), (45, 6, 46, 14), (24, 11, 25, 16), (16, 30, 17, 2)], // 24
+    [(106, 8, 107, 4), (47, 8, 48, 13), (24, 7, 25, 22), (15, 22, 16, 13)], // 25
+    [(114, 10, 115, 2), (46, 19, 47, 4), (22, 28, 23, 6), (16, 33, 17, 4)], // 26
+    [(122, 8, 123, 4), (45, 22, 46, 3), (23, 8, 24, 26), (15, 12, 16, 28)], // 27
+    [(117, 3, 118, 10), (45, 3, 46, 23), (24, 4, 25, 31), (15, 11, 16, 31)], // 28
+    [(116, 7, 117, 7), (45, 21, 46, 7), (23, 1, 24, 37), (15, 19, 16, 26)], // 29
+    [(115, 5, 116, 10), (47, 19, 48, 10), (24, 15, 25, 25), (15, 23, 16, 25)], // 30
+    [(115, 13, 116, 3), (46, 2, 47, 29), (24, 42, 25, 1), (15, 23, 16, 28)], // 31
+    [(115, 17, 0, 0), (46, 10, 47, 23), (24, 10, 25, 35), (15, 19, 16, 35)], // 32
+    [(115, 17, 116, 1), (46, 14, 47, 21), (24, 29, 25, 19), (15, 11, 16, 46)], // 33
+    [(115, 13, 116, 6), (46, 14, 47, 23), (24, 44, 25, 7), (16, 59, 17, 1)], // 34
+    [(121, 12, 122, 7), (47, 12, 48, 26), (24, 39, 25, 14), (15, 22, 16, 41)], // 35
+    [(121, 6, 122, 14), (47, 6, 48, 34), (24, 46, 25, 10), (15, 2, 16, 64)], // 36
+    [(122, 17, 123, 4), (46, 29, 47, 14), (24, 49, 25, 10), (15, 24, 16, 46)], // 37
+    [(122, 4, 123, 18), (46, 13, 47, 32), (24, 48, 25, 14), (15, 42, 16, 32)], // 38
+    [(117, 20, 118, 4), (47, 40, 48, 7), (24, 43, 25, 22), (15, 10, 16, 67)], // 39
+    [(118, 19, 119, 6), (47, 18, 48, 31), (24, 34, 25, 34), (15, 20, 16, 61)], // 40
     // Micro versions.
-    [(3, 1, 0, 0), (0, 0, 0, 0), (0, 0, 0, 0), (0, 0, 0, 0)],                   // M1
-    [(5, 1, 0, 0), (4, 1, 0, 0), (0, 0, 0, 0), (0, 0, 0, 0)],                   // M2
-    [(11, 1, 0, 0), (9, 1, 0, 0), (0, 0, 0, 0), (0, 0, 0, 0)],                  // M3
-    [(16, 1, 0, 0), (14, 1, 0, 0), (10, 1, 0, 0), (0, 0, 0, 0)],                // M4
+    [(3, 1, 0, 0), (0, 0, 0, 0), (0, 0, 0, 0), (0, 0, 0, 0)], // M1
+    [(5, 1, 0, 0), (4, 1, 0, 0), (0, 0, 0, 0), (0, 0, 0, 0)], // M2
+    [(11, 1, 0, 0), (9, 1, 0, 0), (0, 0, 0, 0), (0, 0, 0, 0)], // M3
+    [(16, 1, 0, 0), (14, 1, 0, 0), (10, 1, 0, 0), (0, 0, 0, 0)], // M4
 ];
 
 //}}}
-
-

@@ -1,6 +1,7 @@
+use crate::cast::As;
+use std::cmp::{Ordering, PartialOrd};
 use std::default::Default;
-use std::cmp::{PartialOrd, Ordering};
-use std::fmt::{Display, Formatter, Error};
+use std::fmt::{Display, Error, Formatter};
 use std::ops::Not;
 
 //------------------------------------------------------------------------------
@@ -40,6 +41,8 @@ impl Display for QrError {
     }
 }
 
+impl ::std::error::Error for QrError {}
+
 /// `QrResult` is a convenient alias for a QR code generation result.
 pub type QrResult<T> = Result<T, QrError>;
 
@@ -76,8 +79,8 @@ impl Color {
 }
 
 impl Not for Color {
-    type Output = Color;
-    fn not(self) -> Color {
+    type Output = Self;
+    fn not(self) -> Self {
         match self {
             Color::Light => Color::Dark,
             Color::Dark => Color::Light,
@@ -128,8 +131,8 @@ pub enum Version {
 impl Version {
     /// Get the number of "modules" on each size of the QR code, i.e. the width
     /// and height of the code.
-    pub fn width(&self) -> i16 {
-        match *self {
+    pub fn width(self) -> i16 {
+        match self {
             Version::Normal(v) => v * 4 + 17,
             Version::Micro(v) => v * 2 + 9,
         }
@@ -143,42 +146,45 @@ impl Version {
     /// inner array represents the content in each error correction level, in
     /// the order [L, M, Q, H].
     ///
-    /// If the entry compares equal to the default value of T, this method
+    /// # Errors
+    ///
+    /// If the entry compares equal to the default value of `T`, this method
     /// returns `Err(QrError::InvalidVersion)`.
-    pub fn fetch<T>(&self, ec_level: EcLevel, table: &[[T; 4]]) -> QrResult<T>
-        where T: PartialEq + Default + Copy
+    pub fn fetch<T>(self, ec_level: EcLevel, table: &[[T; 4]]) -> QrResult<T>
+    where
+        T: PartialEq + Default + Copy,
     {
-        match *self {
-            Version::Normal(v @ 1...40) => Ok(table[v as usize - 1][ec_level as usize]),
-            Version::Micro(v @ 1...4) => {
-                let obj = table[v as usize + 39][ec_level as usize];
-                if obj != Default::default() {
-                    Ok(obj)
-                } else {
-                    Err(QrError::InvalidVersion)
+        match self {
+            Version::Normal(v @ 1..=40) => {
+                return Ok(table[(v - 1).as_usize()][ec_level as usize]);
+            }
+            Version::Micro(v @ 1..=4) => {
+                let obj = table[(v + 39).as_usize()][ec_level as usize];
+                if obj != T::default() {
+                    return Ok(obj);
                 }
             }
-            _ => Err(QrError::InvalidVersion)
+            _ => {}
         }
+        Err(QrError::InvalidVersion)
     }
 
     /// The number of bits needed to encode the mode indicator.
-    pub fn mode_bits_count(&self) -> usize {
-        match *self {
-            Version::Micro(a) => (a - 1) as usize,
+    pub fn mode_bits_count(self) -> usize {
+        match self {
+            Version::Micro(a) => (a - 1).as_usize(),
             _ => 4,
         }
     }
 
     /// Checks whether is version refers to a Micro QR code.
-    pub fn is_micro(&self) -> bool {
-        match *self {
+    pub fn is_micro(self) -> bool {
+        match self {
             Version::Normal(_) => false,
             Version::Micro(_) => true,
         }
     }
 }
-
 
 //}}}
 //------------------------------------------------------------------------------
@@ -210,29 +216,28 @@ impl Mode {
     ///
     /// This method will return `Err(QrError::UnsupportedCharacterSet)` if the
     /// mode is not supported in the given version.
-    pub fn length_bits_count(&self, version: Version) -> usize {
+    pub fn length_bits_count(self, version: Version) -> usize {
         match version {
             Version::Micro(a) => {
-                let a = a as usize;
-                match *self {
+                let a = a.as_usize();
+                match self {
                     Mode::Numeric => 2 + a,
                     Mode::Alphanumeric | Mode::Byte => 1 + a,
                     Mode::Kanji => a,
                 }
             }
-            Version::Normal(1...9) => match *self {
+            Version::Normal(1..=9) => match self {
                 Mode::Numeric => 10,
                 Mode::Alphanumeric => 9,
-                Mode::Byte => 8,
-                Mode::Kanji => 8,
+                Mode::Byte | Mode::Kanji => 8,
             },
-            Version::Normal(10...26) => match *self {
+            Version::Normal(10..=26) => match self {
                 Mode::Numeric => 12,
                 Mode::Alphanumeric => 11,
                 Mode::Byte => 16,
                 Mode::Kanji => 10,
             },
-            Version::Normal(_) => match *self {
+            Version::Normal(_) => match self {
                 Mode::Numeric => 14,
                 Mode::Alphanumeric => 13,
                 Mode::Byte => 16,
@@ -249,8 +254,8 @@ impl Mode {
     ///
     /// Note that in Kanji mode, the `raw_data_len` is the number of Kanjis,
     /// i.e. half the total size of bytes.
-    pub fn data_bits_count(&self, raw_data_len: usize) -> usize {
-        match *self {
+    pub fn data_bits_count(self, raw_data_len: usize) -> usize {
+        match self {
             Mode::Numeric => (raw_data_len * 10 + 2) / 3,
             Mode::Alphanumeric => (raw_data_len * 11 + 1) / 2,
             Mode::Byte => raw_data_len * 8,
@@ -268,10 +273,10 @@ impl Mode {
     ///     assert!(a <= c);
     ///     assert!(b <= c);
     ///
-    pub fn max(&self, other: Mode) -> Mode {
+    pub fn max(self, other: Self) -> Self {
         match self.partial_cmp(&other) {
             Some(Ordering::Less) | Some(Ordering::Equal) => other,
-            Some(Ordering::Greater) => *self,
+            Some(Ordering::Greater) => self,
             None => Mode::Byte,
         }
     }
@@ -280,16 +285,16 @@ impl Mode {
 impl PartialOrd for Mode {
     /// Defines a partial ordering between modes. If `a <= b`, then `b` contains
     /// a superset of all characters supported by `a`.
-    fn partial_cmp(&self, other: &Mode) -> Option<Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match (*self, *other) {
-            (Mode::Numeric, Mode::Alphanumeric) => Some(Ordering::Less),
-            (Mode::Alphanumeric, Mode::Numeric) => Some(Ordering::Greater),
-            (Mode::Numeric, Mode::Byte) => Some(Ordering::Less),
-            (Mode::Byte, Mode::Numeric) => Some(Ordering::Greater),
-            (Mode::Alphanumeric, Mode::Byte) => Some(Ordering::Less),
-            (Mode::Byte, Mode::Alphanumeric) => Some(Ordering::Greater),
-            (Mode::Kanji, Mode::Byte) => Some(Ordering::Less),
-            (Mode::Byte, Mode::Kanji) => Some(Ordering::Greater),
+            (Mode::Numeric, Mode::Alphanumeric)
+            | (Mode::Numeric, Mode::Byte)
+            | (Mode::Alphanumeric, Mode::Byte)
+            | (Mode::Kanji, Mode::Byte) => Some(Ordering::Less),
+            (Mode::Alphanumeric, Mode::Numeric)
+            | (Mode::Byte, Mode::Numeric)
+            | (Mode::Byte, Mode::Alphanumeric)
+            | (Mode::Byte, Mode::Kanji) => Some(Ordering::Greater),
             (a, b) if a == b => Some(Ordering::Equal),
             _ => None,
         }
@@ -298,7 +303,7 @@ impl PartialOrd for Mode {
 
 #[cfg(test)]
 mod mode_tests {
-    use types::Mode::{Numeric, Alphanumeric, Byte, Kanji};
+    use crate::types::Mode::{Alphanumeric, Byte, Kanji, Numeric};
 
     #[test]
     fn test_mode_order() {
@@ -321,5 +326,3 @@ mod mode_tests {
 }
 
 //}}}
-
-

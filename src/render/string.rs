@@ -1,7 +1,8 @@
 //! String rendering support.
 
-use render::{Pixel, Canvas as RenderCanvas};
-use types::Color;
+use crate::cast::As;
+use crate::render::{Canvas as RenderCanvas, Pixel};
+use crate::types::Color;
 
 pub trait Element: Copy {
     fn default_color(color: Color) -> Self;
@@ -11,7 +12,7 @@ pub trait Element: Copy {
 
 impl Element for char {
     fn default_color(color: Color) -> Self {
-        color.select('#', ' ')
+        color.select('\u{2588}', ' ')
     }
 
     fn strlen(self) -> usize {
@@ -25,7 +26,7 @@ impl Element for char {
 
 impl<'a> Element for &'a str {
     fn default_color(color: Color) -> Self {
-        color.select("#", " ")
+        color.select("\u{2588}", " ")
     }
 
     fn strlen(self) -> usize {
@@ -47,7 +48,7 @@ pub struct Canvas<P: Element> {
 }
 
 impl<P: Element> Pixel for P {
-    type Canvas = Canvas<P>;
+    type Canvas = Canvas<Self>;
     type Image = String;
 
     fn default_unit_size() -> (u32, u32) {
@@ -64,29 +65,28 @@ impl<P: Element> RenderCanvas for Canvas<P> {
     type Image = String;
 
     fn new(width: u32, height: u32, dark_pixel: P, light_pixel: P) -> Self {
-        let width = width as usize;
-        let height = height as isize;
-        let dark_cap = dark_pixel.strlen() as isize;
-        let light_cap = light_pixel.strlen() as isize;
-        Canvas {
-            buffer: vec![light_pixel; width * (height as usize)],
+        let width = width.as_usize();
+        let height = height.as_isize();
+        let dark_cap = dark_pixel.strlen().as_isize();
+        let light_cap = light_pixel.strlen().as_isize();
+        Self {
+            buffer: vec![light_pixel; width * height.as_usize()],
             width,
             dark_pixel,
             dark_cap_inc: dark_cap - light_cap,
-            capacity: light_cap * (width as isize) * height + (height - 1),
+            capacity: light_cap * width.as_isize() * height + (height - 1),
         }
     }
 
     fn draw_dark_pixel(&mut self, x: u32, y: u32) {
-        let x = x as usize;
-        let y = y as usize;
+        let x = x.as_usize();
+        let y = y.as_usize();
         self.capacity += self.dark_cap_inc;
-        self.buffer[x + y*self.width] = self.dark_pixel;
+        self.buffer[x + y * self.width] = self.dark_pixel;
     }
 
-
     fn into_image(self) -> String {
-        let mut result = String::with_capacity(self.capacity as usize);
+        let mut result = String::with_capacity(self.capacity.as_usize());
         for (i, pixel) in self.buffer.into_iter().enumerate() {
             if i != 0 && i % self.width == 0 {
                 result.push('\n');
@@ -99,28 +99,23 @@ impl<P: Element> RenderCanvas for Canvas<P> {
 
 #[test]
 fn test_render_to_string() {
-    use render::Renderer;
+    use crate::render::Renderer;
 
-    let colors = &[
-        Color::Dark, Color::Light,
-        Color::Light, Color::Dark,
-    ];
+    let colors = &[Color::Dark, Color::Light, Color::Light, Color::Dark];
     let image: String = Renderer::<char>::new(colors, 2, 1).build();
-    assert_eq!(&image, "    \n #  \n  # \n    ");
+    assert_eq!(&image, "    \n \u{2588}  \n  \u{2588} \n    ");
 
-    let image2 = Renderer::new(colors, 2, 1)
-        .light_color("A")
-        .dark_color("!B!")
-        .module_dimensions(2, 2)
-        .build();
+    let image2 = Renderer::new(colors, 2, 1).light_color("A").dark_color("!B!").module_dimensions(2, 2).build();
 
-    assert_eq!(&image2, "\
-        AAAAAAAA\n\
-        AAAAAAAA\n\
-        AA!B!!B!AAAA\n\
-        AA!B!!B!AAAA\n\
-        AAAA!B!!B!AA\n\
-        AAAA!B!!B!AA\n\
-        AAAAAAAA\n\
-        AAAAAAAA");
+    assert_eq!(
+        &image2,
+        "AAAAAAAA\n\
+         AAAAAAAA\n\
+         AA!B!!B!AAAA\n\
+         AA!B!!B!AAAA\n\
+         AAAA!B!!B!AA\n\
+         AAAA!B!!B!AA\n\
+         AAAAAAAA\n\
+         AAAAAAAA"
+    );
 }

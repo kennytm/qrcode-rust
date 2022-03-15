@@ -12,18 +12,18 @@ addons:
             - libiberty-dev
             - gcc-multilib
 
-os:
-    - linux
-    - osx
-
-rust:
-    - 1.17.0
-    - beta
-    - nightly
-
 matrix:
-    allow_failures:
-        - rust: beta
+    include:
+        - os: linux
+          rust: 1.34.2
+        - os: linux
+          rust: stable
+        - os: osx
+          rust: stable
+        - os: linux
+          rust: beta
+        - os: linux
+          rust: nightly
 
 install:
     - if [ "$TRAVIS_OS_NAME" = 'linux' ]; then OS=unknown-linux-gnu; else OS=apple-darwin; fi
@@ -32,11 +32,14 @@ install:
 script:
     - cargo test --no-default-features
     - cargo test
-    - if [ "$TRAVIS_RUST_VERSION" = 'nightly' ]; then cargo bench --features=bench; fi
+    - if [ "$TRAVIS_RUST_VERSION" = 'nightly' ]; then cargo test --features bench && cargo bench --features bench; fi
     - cargo test --target i686-$OS
 
 after_success:
-    - cargo install cargo-kcov
-    - cargo kcov --print-install-kcov-sh | bash
-    - cargo kcov --coveralls
+    - >
+        if [ "$TRAVIS_OS_NAME" = 'linux' ]; then
+            cargo install cargo-kcov &&
+            ( cargo kcov --print-install-kcov-sh | bash ) &&
+            cargo kcov --coveralls
+        fi
 
