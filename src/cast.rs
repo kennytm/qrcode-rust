@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 #[cfg(debug_assertions)]
-use checked_int_cast::CheckedIntCast;
+use std::convert::TryInto;
 
 pub trait Truncate {
     fn truncate_as_u8(self) -> u8;
@@ -27,13 +27,10 @@ trait ExpectOrOverflow {
     fn expect_or_overflow<D: Display>(self, value: D, ty: &str) -> Self::Output;
 }
 
-impl<T> ExpectOrOverflow for Option<T> {
+impl<T, E> ExpectOrOverflow for Result<T, E> {
     type Output = T;
     fn expect_or_overflow<D: Display>(self, value: D, ty: &str) -> Self::Output {
-        match self {
-            Some(v) => v,
-            None => panic!("{} overflows {}", value, ty),
-        }
+        self.unwrap_or_else(|_err| panic!("{} overflows {}", value, ty))
     }
 }
 
@@ -42,23 +39,23 @@ macro_rules! impl_as {
         #[cfg(debug_assertions)]
         impl As for $ty {
             fn as_u16(self) -> u16 {
-                self.as_u16_checked().expect_or_overflow(self, "u16")
+                self.try_into().expect_or_overflow(self, "u16")
             }
 
             fn as_i16(self) -> i16 {
-                self.as_i16_checked().expect_or_overflow(self, "i16")
+                self.try_into().expect_or_overflow(self, "i16")
             }
 
             fn as_u32(self) -> u32 {
-                self.as_u32_checked().expect_or_overflow(self, "u32")
+                self.try_into().expect_or_overflow(self, "u32")
             }
 
             fn as_usize(self) -> usize {
-                self.as_usize_checked().expect_or_overflow(self, "usize")
+                self.try_into().expect_or_overflow(self, "usize")
             }
 
             fn as_isize(self) -> isize {
-                self.as_isize_checked().expect_or_overflow(self, "usize")
+                self.try_into().expect_or_overflow(self, "usize")
             }
         }
 
