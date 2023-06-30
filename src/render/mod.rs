@@ -2,7 +2,7 @@
 
 use crate::cast::As;
 use crate::types::Color;
-use std::cmp::max;
+use core::cmp::max;
 
 pub mod image;
 pub mod string;
