@@ -1,6 +1,6 @@
 //! Find the optimal data mode sequence to encode a piece of data.
 use crate::types::{Mode, Version};
-use std::slice::Iter;
+use alloc::slice::Iter;
 
 #[cfg(feature = "bench")]
 extern crate test;
@@ -155,6 +155,7 @@ impl<'a> Iterator for Parser<'a> {
 mod parse_tests {
     use crate::optimize::{Parser, Segment};
     use crate::types::Mode;
+    use alloc::vec::Vec;
 
     fn parse(data: &[u8]) -> Vec<Segment> {
         Parser::new(data).collect()
@@ -338,6 +339,7 @@ pub fn total_encoded_len(segments: &[Segment], version: Version) -> usize {
 mod optimize_tests {
     use crate::optimize::{total_encoded_len, Optimizer, Segment};
     use crate::types::{Mode, Version};
+    use alloc::vec::Vec;
 
     fn test_optimization_result(given: Vec<Segment>, expected: Vec<Segment>, version: Version) {
         let prev_len = total_encoded_len(&*given, version);

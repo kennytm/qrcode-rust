@@ -1,6 +1,7 @@
 //! The `ec` module applies the Reed-Solomon error correction codes.
 
-use std::ops::Deref;
+use alloc::vec::Vec;
+use core::ops::Deref;
 
 use crate::types::{EcLevel, QrResult, Version};
 

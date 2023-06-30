@@ -1,6 +1,7 @@
 //! The `bits` module encodes binary data into raw bits used in a QR code.
 
-use std::cmp::min;
+use alloc::vec::Vec;
+use core::cmp::min;
 
 #[cfg(feature = "bench")]
 extern crate test;
@@ -855,6 +856,7 @@ impl Bits {
 mod encode_tests {
     use crate::bits::Bits;
     use crate::types::{EcLevel, QrError, QrResult, Version};
+    use alloc::vec::Vec;
 
     fn encode(data: &[u8], version: Version, ec_level: EcLevel) -> QrResult<Vec<u8>> {
         let mut bits = Bits::new(version);

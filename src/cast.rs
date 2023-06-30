@@ -1,6 +1,6 @@
-use std::fmt::Display;
+use core::fmt::Display;
 
-#[cfg(debug_assertions)]
+#[cfg(all(debug_assertions, feature = "std"))]
 use checked_int_cast::CheckedIntCast;
 
 pub trait Truncate {
@@ -39,7 +39,7 @@ impl<T> ExpectOrOverflow for Option<T> {
 
 macro_rules! impl_as {
     ($ty:ty) => {
-        #[cfg(debug_assertions)]
+        #[cfg(all(debug_assertions, feature = "std"))]
         impl As for $ty {
             fn as_u16(self) -> u16 {
                 self.as_u16_checked().expect_or_overflow(self, "u16")
@@ -62,7 +62,7 @@ macro_rules! impl_as {
             }
         }
 
-        #[cfg(not(debug_assertions))]
+        #[cfg(any(not(debug_assertions), not(feature = "std")))]
         impl As for $ty {
             fn as_u16(self) -> u16 {
                 self as u16

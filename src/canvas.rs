@@ -9,7 +9,12 @@
 //!     c.apply_mask(MaskPattern::Checkerboard);
 //!     let bools = c.to_bools();
 
-use std::cmp::max;
+use alloc::boxed::Box;
+use alloc::vec::Vec;
+use core::cmp::max;
+
+#[cfg(test)]
+use alloc::string::String;
 
 use crate::cast::As;
 use crate::types::{Color, EcLevel, Version};
@@ -1188,6 +1193,7 @@ impl Iterator for DataModuleIter {
 mod data_iter_tests {
     use crate::canvas::DataModuleIter;
     use crate::types::Version;
+    use alloc::vec::Vec;
 
     #[test]
     fn test_qr() {

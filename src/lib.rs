@@ -26,16 +26,24 @@
 //! println!("{}", string);
 //! ```
 
-#![cfg_attr(feature = "bench", feature(test, external_doc))] // Unstable libraries
+#![cfg_attr(feature = "bench", feature(test))] // Unstable libraries
 #![deny(warnings, clippy::pedantic)]
 #![allow(
     clippy::must_use_candidate, // This is just annoying.
     clippy::use_self, // Rust 1.33 doesn't support Self::EnumVariant, let's try again in 1.37.
 )]
-#![cfg_attr(feature = "bench", doc(include = "../README.md"))]
+#![cfg_attr(all(feature = "bench", feature = "svg", feature = "image"), doc = include_str!("../README.md"))]
 // ^ make sure we can test our README.md.
 
-use std::ops::Index;
+// Compile without the stdlib unless the std feature is enabled
+#![feature(error_in_core)]
+#![cfg_attr(not(feature = "std"), no_std)]
+#[macro_use]
+extern crate alloc;
+
+use alloc::string::String;
+use alloc::vec::Vec;
+use core::ops::Index;
 
 pub mod bits;
 pub mod canvas;
@@ -49,6 +57,7 @@ pub use crate::types::{Color, EcLevel, QrResult, Version};
 
 use crate::cast::As;
 use crate::render::{Pixel, Renderer};
+#[cfg(feature = "std")]
 use checked_int_cast::CheckedIntCast;
 
 /// The encoded QR code symbol.
@@ -185,6 +194,7 @@ impl QrCode {
 
     /// Checks whether a module at coordinate (x, y) is a functional module or
     /// not.
+    #[cfg(feature = "std")]
     pub fn is_functional(&self, x: usize, y: usize) -> bool {
         let x = x.as_i16_checked().expect("coordinate is too large for QR code");
         let y = y.as_i16_checked().expect("coordinate is too large for QR code");
@@ -325,7 +335,7 @@ mod image_tests {
     fn test_annex_i_qr_as_image() {
         let code = QrCode::new(b"01234567").unwrap();
         let image = code.render::<Luma<u8>>().build();
-        let expected = load_from_memory(include_bytes!("test_annex_i_qr_as_image.png")).unwrap().to_luma();
+        let expected = load_from_memory(include_bytes!("test_annex_i_qr_as_image.png")).unwrap().to_luma8();
         assert_eq!(image.dimensions(), expected.dimensions());
         assert_eq!(image.into_raw(), expected.into_raw());
     }
@@ -339,7 +349,7 @@ mod image_tests {
             .dark_color(Rgb([128, 0, 0]))
             .light_color(Rgb([255, 255, 128]))
             .build();
-        let expected = load_from_memory(include_bytes!("test_annex_i_micro_qr_as_image.png")).unwrap().to_rgb();
+        let expected = load_from_memory(include_bytes!("test_annex_i_micro_qr_as_image.png")).unwrap().to_rgb8();
         assert_eq!(image.dimensions(), expected.dimensions());
         assert_eq!(image.into_raw(), expected.into_raw());
     }
