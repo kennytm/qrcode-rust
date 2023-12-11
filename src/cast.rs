@@ -9,6 +9,7 @@ impl Truncate for u16 {
     }
 }
 
+#[allow(clippy::wrong_self_convention)]
 pub trait As {
     fn as_u16(self) -> u16;
     fn as_i16(self) -> i16;

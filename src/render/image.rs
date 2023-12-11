@@ -1,4 +1,4 @@
-#![cfg(feature="image")]
+#![cfg(feature = "image")]
 
 use crate::render::{Canvas, Pixel};
 use crate::types::Color;
