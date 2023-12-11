@@ -14,10 +14,6 @@ exclude = [
 ]
 
 [badges]
-travis-ci = { repository = "kennytm/qrcode-rust" }
-coveralls = { repository = "kennytm/qrcode-rust" }
-is-it-maintained-issue-resolution = { repository = "kennytm/qrcode-rust" }
-is-it-maintained-open-issues = { repository = "kennytm/qrcode-rust" }
 maintenance = { status = "passively-maintained" }
 
 [dependencies]
