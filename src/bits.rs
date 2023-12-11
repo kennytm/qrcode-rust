@@ -31,7 +31,7 @@ impl Bits {
     /// `n` bit in size. Otherwise the excess bits may stomp on the existing
     /// ones.
     fn push_number(&mut self, n: usize, number: u16) {
-        debug_assert!(n == 16 || n < 16 && number < (1 << n), "{} is too big as a {}-bit number", number, n);
+        debug_assert!(n == 16 || n < 16 && number < (1 << n), "{number} is too big as a {n}-bit number");
 
         let b = self.bit_offset + n;
         let last_index = self.data.len().wrapping_sub(1);
@@ -718,10 +718,7 @@ impl Bits {
     /// `ec_level` for the given version (e.g. `Version::Micro(1)` with
     /// `EcLevel::H`).
     pub fn push_terminator(&mut self, ec_level: EcLevel) -> QrResult<()> {
-        let terminator_size = match self.version {
-            Version::Micro(a) => a.as_usize() * 2 + 1,
-            _ => 4,
-        };
+        let terminator_size = if let Version::Micro(a) = self.version { a.as_usize() * 2 + 1 } else { 4 };
 
         let cur_length = self.len();
         let data_length = self.max_len(ec_level)?;
@@ -740,7 +737,7 @@ impl Bits {
             self.bit_offset = 0;
             let data_bytes_length = data_length / 8;
             let padding_bytes_count = data_bytes_length - self.data.len();
-            let padding = PADDING_BYTES.iter().cloned().cycle().take(padding_bytes_count);
+            let padding = PADDING_BYTES.iter().copied().cycle().take(padding_bytes_count);
             self.data.extend(padding);
         }
 
@@ -901,11 +898,12 @@ mod encode_tests {
 ///
 /// Returns `Err(QrError::DataTooLong)` if the data is too long to fit even the
 /// highest QR code version.
+#[allow(clippy::missing_panics_doc)] // the panic caused by the expect() will never actually happen since the `version`s are known good constants.
 pub fn encode_auto(data: &[u8], ec_level: EcLevel) -> QrResult<Bits> {
     let segments = Parser::new(data).collect::<Vec<Segment>>();
     for version in &[Version::Normal(9), Version::Normal(26), Version::Normal(40)] {
-        let opt_segments = Optimizer::new(segments.iter().cloned(), *version).collect::<Vec<_>>();
-        let total_len = total_encoded_len(&*opt_segments, *version);
+        let opt_segments = Optimizer::new(segments.iter().copied(), *version).collect::<Vec<_>>();
+        let total_len = total_encoded_len(&opt_segments, *version);
         let data_capacity = version.fetch(ec_level, &DATA_LENGTHS).expect("invalid DATA_LENGTHS");
         if total_len <= data_capacity {
             let min_version = find_min_version(total_len, ec_level);

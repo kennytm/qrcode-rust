@@ -171,18 +171,16 @@ impl Version {
 
     /// The number of bits needed to encode the mode indicator.
     pub fn mode_bits_count(self) -> usize {
-        match self {
-            Version::Micro(a) => (a - 1).as_usize(),
-            _ => 4,
+        if let Version::Micro(a) = self {
+            (a - 1).as_usize()
+        } else {
+            4
         }
     }
 
     /// Checks whether is version refers to a Micro QR code.
     pub fn is_micro(self) -> bool {
-        match self {
-            Version::Normal(_) => false,
-            Version::Micro(_) => true,
-        }
+        matches!(self, Version::Micro(_))
     }
 }
 
@@ -273,10 +271,11 @@ impl Mode {
     ///     assert!(a <= c);
     ///     assert!(b <= c);
     ///
+    #[must_use]
     pub fn max(self, other: Self) -> Self {
         match self.partial_cmp(&other) {
-            Some(Ordering::Less) | Some(Ordering::Equal) => other,
             Some(Ordering::Greater) => self,
+            Some(_) => other,
             None => Mode::Byte,
         }
     }
@@ -287,15 +286,9 @@ impl PartialOrd for Mode {
     /// a superset of all characters supported by `a`.
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match (*self, *other) {
-            (Mode::Numeric, Mode::Alphanumeric)
-            | (Mode::Numeric, Mode::Byte)
-            | (Mode::Alphanumeric, Mode::Byte)
-            | (Mode::Kanji, Mode::Byte) => Some(Ordering::Less),
-            (Mode::Alphanumeric, Mode::Numeric)
-            | (Mode::Byte, Mode::Numeric)
-            | (Mode::Byte, Mode::Alphanumeric)
-            | (Mode::Byte, Mode::Kanji) => Some(Ordering::Greater),
             (a, b) if a == b => Some(Ordering::Equal),
+            (Mode::Numeric, Mode::Alphanumeric) | (_, Mode::Byte) => Some(Ordering::Less),
+            (Mode::Alphanumeric, Mode::Numeric) | (Mode::Byte, _) => Some(Ordering::Greater),
             _ => None,
         }
     }

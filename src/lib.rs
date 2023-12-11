@@ -26,13 +26,12 @@
 //! println!("{}", string);
 //! ```
 
-#![cfg_attr(feature = "bench", feature(test, external_doc))] // Unstable libraries
-#![deny(warnings, clippy::pedantic)]
+#![cfg_attr(feature = "bench", feature(test))] // Unstable libraries
+#![warn(clippy::pedantic)]
 #![allow(
     clippy::must_use_candidate, // This is just annoying.
-    clippy::use_self, // Rust 1.33 doesn't support Self::EnumVariant, let's try again in 1.37.
 )]
-#![cfg_attr(feature = "bench", doc(include = "../README.md"))]
+#![cfg_attr(feature = "bench", doc = include_str!("../README.md"))]
 // ^ make sure we can test our README.md.
 
 use std::ops::Index;
@@ -49,7 +48,6 @@ pub use crate::types::{Color, EcLevel, QrResult, Version};
 
 use crate::cast::As;
 use crate::render::{Pixel, Renderer};
-use checked_int_cast::CheckedIntCast;
 
 /// The encoded QR code symbol.
 #[derive(Clone)]
@@ -151,10 +149,10 @@ impl QrCode {
     pub fn with_bits(bits: bits::Bits, ec_level: EcLevel) -> QrResult<Self> {
         let version = bits.version();
         let data = bits.into_bytes();
-        let (encoded_data, ec_data) = ec::construct_codewords(&*data, version, ec_level)?;
+        let (encoded_data, ec_data) = ec::construct_codewords(&data, version, ec_level)?;
         let mut canvas = canvas::Canvas::new(version, ec_level);
         canvas.draw_all_functional_patterns();
-        canvas.draw_data(&*encoded_data, &*ec_data);
+        canvas.draw_data(&encoded_data, &ec_data);
         let canvas = canvas.apply_best_mask();
         Ok(Self { content: canvas.into_colors(), version, ec_level, width: version.width().as_usize() })
     }
@@ -179,15 +177,20 @@ impl QrCode {
     /// Gets the maximum number of allowed erratic modules can be introduced
     /// before the data becomes corrupted. Note that errors should not be
     /// introduced to functional modules.
+    #[allow(clippy::missing_panics_doc)] // the version and ec_level should have been checked when calling `.with_version()`.
     pub fn max_allowed_errors(&self) -> usize {
         ec::max_allowed_errors(self.version, self.ec_level).expect("invalid version or ec_level")
     }
 
     /// Checks whether a module at coordinate (x, y) is a functional module or
     /// not.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `x` or `y` is beyond the size of the QR code.
     pub fn is_functional(&self, x: usize, y: usize) -> bool {
-        let x = x.as_i16_checked().expect("coordinate is too large for QR code");
-        let y = y.as_i16_checked().expect("coordinate is too large for QR code");
+        let x = x.try_into().expect("coordinate is too large for QR code");
+        let y = y.try_into().expect("coordinate is too large for QR code");
         canvas::is_functional(self.version, self.version.width(), x, y)
     }
 
@@ -325,7 +328,7 @@ mod image_tests {
     fn test_annex_i_qr_as_image() {
         let code = QrCode::new(b"01234567").unwrap();
         let image = code.render::<Luma<u8>>().build();
-        let expected = load_from_memory(include_bytes!("test_annex_i_qr_as_image.png")).unwrap().to_luma();
+        let expected = load_from_memory(include_bytes!("test_annex_i_qr_as_image.png")).unwrap().into_luma8();
         assert_eq!(image.dimensions(), expected.dimensions());
         assert_eq!(image.into_raw(), expected.into_raw());
     }
@@ -339,7 +342,7 @@ mod image_tests {
             .dark_color(Rgb([128, 0, 0]))
             .light_color(Rgb([255, 255, 128]))
             .build();
-        let expected = load_from_memory(include_bytes!("test_annex_i_micro_qr_as_image.png")).unwrap().to_rgb();
+        let expected = load_from_memory(include_bytes!("test_annex_i_micro_qr_as_image.png")).unwrap().into_rgb8();
         assert_eq!(image.dimensions(), expected.dimensions());
         assert_eq!(image.into_raw(), expected.into_raw());
     }

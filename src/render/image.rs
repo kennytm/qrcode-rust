@@ -1,14 +1,20 @@
-#![cfg(feature="image")]
+#![cfg(feature = "image")]
 
 use crate::render::{Canvas, Pixel};
 use crate::types::Color;
 
-use image::{ImageBuffer, Luma, LumaA, Pixel as ImagePixel, Primitive, Rgb, Rgba};
+use image::{ImageBuffer, Luma, LumaA, Primitive, Rgb, Rgba};
 
+// need to keep using this macro to implement Pixel separately for each color model,
+// otherwise we'll have conflicting impl with `impl Pixel for impl Element` 🤷
 macro_rules! impl_pixel_for_image_pixel {
     ($p:ident<$s:ident>: $c:pat => $d:expr) => {
-        impl<$s: Primitive + 'static> Pixel for $p<$s> {
-            type Image = ImageBuffer<Self, Vec<S>>;
+        impl<$s> Pixel for $p<$s>
+        where
+            $s: Primitive + 'static,
+            $p<$s>: image::Pixel<Subpixel = $s>,
+        {
+            type Image = ImageBuffer<Self, Vec<$s>>;
             type Canvas = (Self, Self::Image);
 
             fn default_color(color: Color) -> Self {
@@ -25,7 +31,7 @@ impl_pixel_for_image_pixel! { LumaA<S>: p => [p, S::max_value()] }
 impl_pixel_for_image_pixel! { Rgb<S>: p => [p, p, p] }
 impl_pixel_for_image_pixel! { Rgba<S>: p => [p, p, p, S::max_value()] }
 
-impl<P: ImagePixel + 'static> Canvas for (P, ImageBuffer<P, Vec<P::Subpixel>>) {
+impl<P: image::Pixel + 'static> Canvas for (P, ImageBuffer<P, Vec<P::Subpixel>>) {
     type Pixel = P;
     type Image = ImageBuffer<P, Vec<P::Subpixel>>;
 

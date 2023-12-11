@@ -20,7 +20,7 @@ impl Element for char {
     }
 
     fn append_to_string(self, string: &mut String) {
-        string.push(self)
+        string.push(self);
     }
 }
 
@@ -34,7 +34,7 @@ impl<'a> Element for &'a str {
     }
 
     fn append_to_string(self, string: &mut String) {
-        string.push_str(self)
+        string.push_str(self);
     }
 }
 

@@ -57,6 +57,7 @@ impl Module {
     ///     assert_eq!(Module::Masked(Color::Dark).mask(true), Module::Masked(Color::Dark));
     ///     assert_eq!(Module::Masked(Color::Dark).mask(false), Module::Masked(Color::Dark));
     ///
+    #[must_use]
     pub fn mask(self, should_invert: bool) -> Self {
         match (self, should_invert) {
             (Module::Empty, true) => Module::Masked(Color::Dark),
@@ -223,9 +224,9 @@ impl Canvas {
                     y + j,
                     #[allow(clippy::match_same_arms)]
                     match (i, j) {
-                        (4, _) | (_, 4) | (-4, _) | (_, -4) => Color::Light,
-                        (3, _) | (_, 3) | (-3, _) | (_, -3) => Color::Dark,
-                        (2, _) | (_, 2) | (-2, _) | (_, -2) => Color::Light,
+                        (4 | -4, _) | (_, 4 | -4) => Color::Light,
+                        (3 | -3, _) | (_, 3 | -3) => Color::Dark,
+                        (2 | -2, _) | (_, 2 | -2) => Color::Light,
                         _ => Color::Dark,
                     },
                 );
@@ -325,7 +326,7 @@ impl Canvas {
                     x + i,
                     y + j,
                     match (i, j) {
-                        (2, _) | (_, 2) | (-2, _) | (_, -2) | (0, 0) => Color::Dark,
+                        (2 | -2, _) | (_, 2 | -2) | (0, 0) => Color::Dark,
                         _ => Color::Light,
                     },
                 );
@@ -343,8 +344,8 @@ impl Canvas {
             Version::Normal(2..=6) => self.draw_alignment_pattern_at(-7, -7),
             Version::Normal(a) => {
                 let positions = ALIGNMENT_PATTERN_POSITIONS[(a - 7).as_usize()];
-                for x in positions.iter() {
-                    for y in positions.iter() {
+                for x in positions {
+                    for y in positions {
                         self.draw_alignment_pattern_at(*x, *y);
                     }
                 }
@@ -988,26 +989,25 @@ pub fn is_functional(version: Version, width: i16, x: i16, y: i16) -> bool {
                     (x < 9 && y < 9) ||                  // Top-left finder pattern
                     (x < 9 && y >= width-8) ||           // Bottom-left finder pattern
                     (x >= width-8 && y < 9); // Top-right finder pattern
-            if non_alignment_test {
-                true
-            } else if a == 1 {
-                false
-            } else if 2 <= a && a <= 6 {
-                (width - 7 - x).abs() <= 2 && (width - 7 - y).abs() <= 2
-            } else {
-                let positions = ALIGNMENT_PATTERN_POSITIONS[(a - 7).as_usize()];
-                let last = positions.len() - 1;
-                for (i, align_x) in positions.iter().enumerate() {
-                    for (j, align_y) in positions.iter().enumerate() {
-                        if i == 0 && (j == 0 || j == last) || (i == last && j == 0) {
-                            continue;
-                        }
-                        if (*align_x - x).abs() <= 2 && (*align_y - y).abs() <= 2 {
-                            return true;
+            match a {
+                _ if non_alignment_test => true,
+                1 => false,
+                2..=6 => (width - 7 - x).abs() <= 2 && (width - 7 - y).abs() <= 2,
+                _ => {
+                    let positions = ALIGNMENT_PATTERN_POSITIONS[(a - 7).as_usize()];
+                    let last = positions.len() - 1;
+                    for (i, align_x) in positions.iter().enumerate() {
+                        for (j, align_y) in positions.iter().enumerate() {
+                            if i == 0 && (j == 0 || j == last) || (i == last && j == 0) {
+                                continue;
+                            }
+                            if (*align_x - x).abs() <= 2 && (*align_y - y).abs() <= 2 {
+                                return true;
+                            }
                         }
                     }
+                    false
                 }
-                false
             }
         }
     }
@@ -1364,7 +1364,7 @@ impl Canvas {
             let bits_end = if i == last_word { 4 } else { 0 };
             'outside: for j in (bits_end..=7).rev() {
                 let color = if (*b & (1 << j)) == 0 { Color::Light } else { Color::Dark };
-                while let Some((x, y)) = coords.next() {
+                for (x, y) in coords.by_ref() {
                     let r = self.get_mut(x, y);
                     if *r == Module::Empty {
                         *r = Module::Unmasked(color);
@@ -1378,11 +1378,8 @@ impl Canvas {
 
     /// Draws the encoded data and error correction codes to the empty modules.
     pub fn draw_data(&mut self, data: &[u8], ec: &[u8]) {
-        let is_half_codeword_at_end = match (self.version, self.ec_level) {
-            (Version::Micro(1), EcLevel::L) | (Version::Micro(3), EcLevel::M) => true,
-            _ => false,
-        };
-
+        let is_half_codeword_at_end =
+            matches!((self.version, self.ec_level), (Version::Micro(1), EcLevel::L) | (Version::Micro(3), EcLevel::M));
         let mut coords = DataModuleIter::new(self.version);
         self.draw_codewords(data, is_half_codeword_at_end, &mut coords);
         self.draw_codewords(ec, false, &mut coords);
@@ -1766,7 +1763,7 @@ impl Canvas {
                     Box::new(|k| self.get(i, k).into())
                 };
 
-                if (j..(j + 7)).map(&*get).ne(PATTERN.iter().cloned()) {
+                if (j..(j + 7)).map(&*get).ne(PATTERN.iter().copied()) {
                     continue;
                 }
 
@@ -1971,6 +1968,8 @@ static ALL_PATTERNS_MICRO_QR: [MaskPattern; 4] =
 impl Canvas {
     /// Construct a new canvas and apply the best masking that gives the lowest
     /// penalty score.
+    #[allow(clippy::missing_panics_doc)] // the expect() only panics when the input iterators (ALL_PATTERNS_QR, ALL_PATTERNS_MICRO_QR) are empty
+    #[must_use]
     pub fn apply_best_mask(&self) -> Self {
         match self.version {
             Version::Normal(_) => ALL_PATTERNS_QR.iter(),

@@ -10,7 +10,7 @@
 //! let svg_xml = code.render::<svg::Color>().build();
 //! println!("{}", svg_xml);
 
-#![cfg(feature="svg")]
+#![cfg(feature = "svg")]
 
 use std::fmt::Write;
 use std::marker::PhantomData;
@@ -62,11 +62,11 @@ impl<'a> RenderCanvas for Canvas<'a> {
     }
 
     fn draw_dark_pixel(&mut self, x: u32, y: u32) {
-        self.draw_dark_rect(x, y, 1, 1)
+        self.draw_dark_rect(x, y, 1, 1);
     }
 
     fn draw_dark_rect(&mut self, left: u32, top: u32, width: u32, height: u32) {
-        write!(self.svg, "M{l} {t}h{w}v{h}H{l}V{t}", l = left, t = top, w = width, h = height).unwrap();
+        write!(self.svg, "M{left} {top}h{width}v{height}H{left}V{top}").unwrap();
     }
 
     fn into_image(mut self) -> String {

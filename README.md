@@ -1,8 +1,7 @@
 qrcode-rust
 ===========
 
-[![Build status](https://travis-ci.org/kennytm/qrcode-rust.svg?branch=master)](https://travis-ci.org/kennytm/qrcode-rust)
-[![Coverage Status](https://coveralls.io/repos/github/kennytm/qrcode-rust/badge.svg?branch=coveralls)](https://coveralls.io/github/kennytm/qrcode-rust?branch=coveralls)
+[![Build status](https://github.com/kennytm/qrcode-rust/workflows/Rust/badge.svg)](https://github.com/kennytm/qrcode-rust/actions?query=workflow%3ARust)
 [![crates.io](https://img.shields.io/crates/v/qrcode.svg)](https://crates.io/crates/qrcode)
 [![MIT OR Apache 2.0](https://img.shields.io/badge/license-MIT%20%2f%20Apache%202.0-blue.svg)](./LICENSE-APACHE.txt)
 
@@ -13,14 +12,14 @@ Cargo.toml
 
 ```toml
 [dependencies]
-qrcode = "0.12"
+qrcode = "0.13"
 ```
 
 The default settings will depend on the `image` crate. If you don't need image generation capability, disable the `default-features`:
 
 ```toml
 [dependencies]
-qrcode = { version = "0.12", default-features = false }
+qrcode = { version = "0.13", default-features = false }
 ```
 
 Example

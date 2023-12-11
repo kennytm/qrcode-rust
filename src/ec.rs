@@ -122,7 +122,7 @@ pub fn construct_codewords(rawbits: &[u8], version: Version, ec_level: EcLevel) 
 
     // Generate EC codes.
     let ec_bytes = version.fetch(ec_level, &EC_BYTES_PER_BLOCK)?;
-    let ec_codes = blocks.iter().map(|block| create_error_correction_code(*block, ec_bytes)).collect::<Vec<Vec<u8>>>();
+    let ec_codes = blocks.iter().map(|block| create_error_correction_code(block, ec_bytes)).collect::<Vec<Vec<u8>>>();
 
     let blocks_vec = interleave(&blocks);
     let ec_vec = interleave(&ec_codes);
@@ -179,8 +179,8 @@ pub fn max_allowed_errors(version: Version, ec_level: EcLevel) -> QrResult<usize
     use crate::Version::{Micro, Normal};
 
     let p = match (version, ec_level) {
-        (Micro(2), L) | (Normal(1), L) => 3,
-        (Micro(_), L) | (Normal(2), L) | (Micro(2), M) | (Normal(1), M) => 2,
+        (Micro(2) | Normal(1), L) => 3,
+        (Micro(_) | Normal(2), L) | (Micro(2) | Normal(1), M) => 2,
         (Normal(1), _) | (Normal(3), L) => 1,
         _ => 0,
     };

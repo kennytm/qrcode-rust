@@ -72,6 +72,10 @@ pub struct Renderer<'a, P: Pixel> {
 
 impl<'a, P: Pixel> Renderer<'a, P> {
     /// Creates a new renderer.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the length of `content` is not exactly `modules_count * modules_count`.
     pub fn new(content: &'a [Color], modules_count: usize, quiet_zone: u32) -> Renderer<'a, P> {
         assert!(modules_count * modules_count == content.len());
         Renderer {
