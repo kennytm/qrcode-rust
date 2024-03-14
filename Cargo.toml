@@ -2,7 +2,7 @@
 name = "qrcode"
 description = "QR code encoder in Rust"
 license = "MIT OR Apache-2.0"
-version = "0.13.0"
+version = "0.14.0"
 edition = "2021"
 rust-version = "1.67.1"
 authors = ["kennytm <kennytm@gmail.com>"]
