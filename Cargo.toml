@@ -4,6 +4,7 @@ description = "QR code encoder in Rust"
 license = "MIT OR Apache-2.0"
 version = "0.13.0"
 edition = "2021"
+rust-version = "1.67.1"
 authors = ["kennytm <kennytm@gmail.com>"]
 keywords = ["qrcode"]
 repository = "https://github.com/kennytm/qrcode-rust"
@@ -17,10 +18,10 @@ exclude = [
 maintenance = { status = "passively-maintained" }
 
 [dependencies]
-image = { version = "0.24", default-features = false, optional = true }
+image = { version = "0.25", default-features = false, optional = true }
 
 [dev-dependencies]
-image = "0.24"
+image = "0.25"
 
 [features]
 default = ["image", "svg"]
