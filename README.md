@@ -144,3 +144,36 @@ Generates this output:
 █████████████████████████████
 ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
 ```
+
+## PIC generation
+
+```rust
+use qrcode::render::pic;
+use qrcode::QrCode;
+
+fn main() {
+    let code = QrCode::new(b"01234567").unwrap();
+    let image = code
+        .render::<pic::Color>()
+        .min_dimensions(1, 1)
+        .build();
+    println!("{}", image);
+}
+```
+
+Generates [PIC](https://en.wikipedia.org/wiki/PIC_(markup_language))
+output that renders as follows:
+
+```pic
+maxpswid=29;maxpsht=29;movewid=0;moveht=1;boxwid=1;boxht=1
+define p { box wid $3 ht $4 fill 1 with .nw at $1,-$2 }
+box wid maxpswid ht maxpsht with .nw at 0,0
+p(4,4,1,1)
+p(5,4,1,1)
+p(6,4,1,1)
+p(7,4,1,1)
+p(8,4,1,1)
+p(9,4,1,1)
+…
+```
+See [`test_annex_i_micro_qr_as_pic.pic`](src/test_annex_i_micro_qr_as_pic.pic) for a full example.
