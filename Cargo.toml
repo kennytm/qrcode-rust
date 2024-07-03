@@ -24,9 +24,10 @@ image = { version = "0.25", default-features = false, optional = true }
 image = "0.25"
 
 [features]
-default = ["image", "svg"]
+default = ["image", "svg", "pic"]
 bench = []
 svg = []
+pic = []
 
 [[bin]]
 name = "qrencode"
@@ -41,3 +42,7 @@ name = "encode_string"
 [[example]]
 name = "encode_svg"
 required-features = ["svg"]
+
+[[example]]
+name = "encode_pic"
+required-features = ["pic"]
