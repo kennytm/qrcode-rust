@@ -374,3 +374,25 @@ mod svg_tests {
         assert_eq!(&image, expected);
     }
 }
+
+#[cfg(all(test, feature = "pic"))]
+mod pic_tests {
+    use crate::render::pic::Color as PicColor;
+    use crate::{EcLevel, QrCode, Version};
+
+    #[test]
+    fn test_annex_i_qr_as_pic() {
+        let code = QrCode::new(b"01234567").unwrap();
+        let image = code.render::<PicColor>().build();
+        let expected = include_str!("test_annex_i_qr_as_pic.pic");
+        assert_eq!(&image, expected);
+    }
+
+    #[test]
+    fn test_annex_i_micro_qr_as_pic() {
+        let code = QrCode::with_version(b"01234567", Version::Micro(2), EcLevel::L).unwrap();
+        let image = code.render::<PicColor>().min_dimensions(1, 1).build();
+        let expected = include_str!("test_annex_i_micro_qr_as_pic.pic");
+        assert_eq!(&image, expected);
+    }
+}
