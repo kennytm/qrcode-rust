@@ -58,10 +58,10 @@ impl RenderCanvas for Canvas {
     }
 
     fn draw_dark_rect(&mut self, left: u32, top: u32, width: u32, height: u32) {
-        write!(self.pic, "p({left},{top},{width},{height})\n").unwrap();
+        writeln!(self.pic, "p({left},{top},{width},{height})").unwrap();
     }
 
-    fn into_image(mut self) -> String {
+    fn into_image(self) -> String {
         self.pic
     }
 }
