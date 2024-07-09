@@ -44,7 +44,7 @@ impl RenderCanvas for Canvas {
             pic: format!(
                 concat!(
                     "maxpswid={w};maxpsht={h};movewid=0;moveht=1;boxwid=1;boxht=1\n",
-                    "define p {{ box wid $3 ht $4 fill 1 with .nw at $1,-$2 }}\n",
+                    "define p {{ box wid $3 ht $4 fill 1 thickness 0.1 with .nw at $1,-$2 }}\n",
                     "box wid maxpswid ht maxpsht with .nw at 0,0\n",
                 ),
                 w = width,
