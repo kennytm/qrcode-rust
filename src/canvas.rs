@@ -1,15 +1,17 @@
 //! The `canvas` module puts raw bits into the QR code canvas.
 //!
-//!     use qrcode::types::{Version, EcLevel};
-//!     use qrcode::canvas::{Canvas, MaskPattern};
+//! ```
+//! use qrcode::canvas::{Canvas, MaskPattern};
+//! use qrcode::types::{EcLevel, Version};
 //!
-//!     let mut c = Canvas::new(Version::Normal(1), EcLevel::L);
-//!     c.draw_all_functional_patterns();
-//!     c.draw_data(b"data_here", b"ec_code_here");
-//!     c.apply_mask(MaskPattern::Checkerboard);
-//!     let bools = c.to_bools();
+//! let mut c = Canvas::new(Version::Normal(1), EcLevel::L);
+//! c.draw_all_functional_patterns();
+//! c.draw_data(b"data_here", b"ec_code_here");
+//! c.apply_mask(MaskPattern::Checkerboard);
+//! let bools = c.to_bools();
+//! ```
 
-use std::cmp::max;
+use std::{cmp::max, iter};
 
 use crate::cast::As;
 use crate::types::{Color, EcLevel, Version};
@@ -34,7 +36,7 @@ pub enum Module {
 impl From<Module> for Color {
     fn from(module: Module) -> Self {
         match module {
-            Module::Empty => Color::Light,
+            Module::Empty => Self::Light,
             Module::Masked(c) | Module::Unmasked(c) => c,
         }
     }
@@ -48,22 +50,23 @@ impl Module {
 
     /// Apply a mask to the unmasked modules.
     ///
-    ///     use qrcode::canvas::Module;
-    ///     use qrcode::types::Color;
+    /// ```
+    /// use qrcode::canvas::Module;
+    /// use qrcode::types::Color;
     ///
-    ///     assert_eq!(Module::Unmasked(Color::Light).mask(true), Module::Masked(Color::Dark));
-    ///     assert_eq!(Module::Unmasked(Color::Dark).mask(true), Module::Masked(Color::Light));
-    ///     assert_eq!(Module::Unmasked(Color::Light).mask(false), Module::Masked(Color::Light));
-    ///     assert_eq!(Module::Masked(Color::Dark).mask(true), Module::Masked(Color::Dark));
-    ///     assert_eq!(Module::Masked(Color::Dark).mask(false), Module::Masked(Color::Dark));
-    ///
+    /// assert_eq!(Module::Unmasked(Color::Light).mask(true), Module::Masked(Color::Dark));
+    /// assert_eq!(Module::Unmasked(Color::Dark).mask(true), Module::Masked(Color::Light));
+    /// assert_eq!(Module::Unmasked(Color::Light).mask(false), Module::Masked(Color::Light));
+    /// assert_eq!(Module::Masked(Color::Dark).mask(true), Module::Masked(Color::Dark));
+    /// assert_eq!(Module::Masked(Color::Dark).mask(false), Module::Masked(Color::Dark));
+    /// ```
     #[must_use]
     pub fn mask(self, should_invert: bool) -> Self {
         match (self, should_invert) {
-            (Module::Empty, true) => Module::Masked(Color::Dark),
-            (Module::Empty, false) => Module::Masked(Color::Light),
-            (Module::Unmasked(c), true) => Module::Masked(!c),
-            (Module::Unmasked(c), false) | (Module::Masked(c), _) => Module::Masked(c),
+            (Self::Empty, true) => Self::Masked(Color::Dark),
+            (Self::Empty, false) => Self::Masked(Color::Light),
+            (Self::Unmasked(c), true) => Self::Masked(!c),
+            (Self::Unmasked(c), false) | (Self::Masked(c), _) => Self::Masked(c),
         }
     }
 }
@@ -542,7 +545,6 @@ impl Canvas {
     /// On even coordinates, `color_even` will be plotted; on odd coordinates,
     /// `color_odd` will be plotted instead. Thus the timing pattern can be
     /// drawn using this method.
-    ///
     fn draw_line(&mut self, x1: i16, y1: i16, x2: i16, y2: i16, color_even: Color, color_odd: Color) {
         debug_assert!(x1 == x2 || y1 == y2);
 
@@ -694,7 +696,7 @@ mod draw_version_info_tests {
     #[test]
     fn test_draw_number() {
         let mut c = Canvas::new(Version::Micro(1), EcLevel::L);
-        c.draw_number(0b10101101, 8, Color::Dark, Color::Light, &[(0, 0), (0, -1), (-2, -2), (-2, 0)]);
+        c.draw_number(0b1010_1101, 8, Color::Dark, Color::Light, &[(0, 0), (0, -1), (-2, -2), (-2, 0)]);
         assert_eq!(
             &*c.to_debug_str(),
             "\n\
@@ -1136,7 +1138,7 @@ struct DataModuleIter {
 }
 
 impl DataModuleIter {
-    fn new(version: Version) -> Self {
+    const fn new(version: Version) -> Self {
         let width = version.width();
         Self {
             x: width - 1,
@@ -1487,28 +1489,28 @@ pub enum MaskPattern {
 }
 
 mod mask_functions {
-    pub fn checkerboard(x: i16, y: i16) -> bool {
+    pub const fn checkerboard(x: i16, y: i16) -> bool {
         (x + y) % 2 == 0
     }
-    pub fn horizontal_lines(_: i16, y: i16) -> bool {
+    pub const fn horizontal_lines(_: i16, y: i16) -> bool {
         y % 2 == 0
     }
-    pub fn vertical_lines(x: i16, _: i16) -> bool {
+    pub const fn vertical_lines(x: i16, _: i16) -> bool {
         x % 3 == 0
     }
-    pub fn diagonal_lines(x: i16, y: i16) -> bool {
+    pub const fn diagonal_lines(x: i16, y: i16) -> bool {
         (x + y) % 3 == 0
     }
-    pub fn large_checkerboard(x: i16, y: i16) -> bool {
+    pub const fn large_checkerboard(x: i16, y: i16) -> bool {
         ((y / 2) + (x / 3)) % 2 == 0
     }
-    pub fn fields(x: i16, y: i16) -> bool {
+    pub const fn fields(x: i16, y: i16) -> bool {
         (x * y) % 2 + (x * y) % 3 == 0
     }
-    pub fn diamonds(x: i16, y: i16) -> bool {
+    pub const fn diamonds(x: i16, y: i16) -> bool {
         ((x * y) % 2 + (x * y) % 3) % 2 == 0
     }
-    pub fn meadow(x: i16, y: i16) -> bool {
+    pub const fn meadow(x: i16, y: i16) -> bool {
         ((x + y) % 2 + (x * y) % 3) % 2 == 0
     }
 }
@@ -1700,7 +1702,7 @@ impl Canvas {
         for i in 0..self.width {
             let map_fn = |j| if is_horizontal { self.get(j, i) } else { self.get(i, j) };
 
-            let colors = (0..self.width).map(map_fn).chain(Some(Module::Empty).into_iter());
+            let colors = (0..self.width).map(map_fn).chain(iter::once(Module::Empty));
             let mut last_color = Module::Empty;
             let mut consecutive_len = 1_u16;
 
@@ -1792,7 +1794,8 @@ impl Canvas {
         if ratio >= 100 { ratio - 100 } else { 100 - ratio }.as_u16()
     }
 
-    /// Compute the penalty score for having too many light modules on the sides.
+    /// Compute the penalty score for having too many light modules on the
+    /// sides.
     ///
     /// This penalty score is exclusive to Micro QR code.
     ///

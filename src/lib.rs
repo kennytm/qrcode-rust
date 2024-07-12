@@ -1,11 +1,12 @@
-//! QRCode encoder
+//! QR code encoder
 //!
 //! This crate provides a QR code and Micro QR code encoder for binary data.
 //!
-#![cfg_attr(feature = "image", doc = "```rust")]
-#![cfg_attr(not(feature = "image"), doc = "```ignore")]
-//! use qrcode::QrCode;
+//! ```
+//! # #[cfg(feature = "image")]
+//! # {
 //! use image::Luma;
+//! use qrcode::QrCode;
 //!
 //! // Encode some data into bits.
 //! let code = QrCode::new(b"01234567").unwrap();
@@ -19,11 +20,9 @@
 //! # }
 //!
 //! // You can also render it into a string.
-//! let string = code.render()
-//!     .light_color(' ')
-//!     .dark_color('#')
-//!     .build();
+//! let string = code.render().light_color(' ').dark_color('#').build();
 //! println!("{}", string);
+//! # }
 //! ```
 
 #![cfg_attr(feature = "bench", feature(test))] // Unstable libraries
@@ -64,9 +63,11 @@ impl QrCode {
     /// This method uses the "medium" error correction level and automatically
     /// chooses the smallest QR code.
     ///
-    ///     use qrcode::QrCode;
+    /// ```
+    /// use qrcode::QrCode;
     ///
-    ///     let code = QrCode::new(b"Some data").unwrap();
+    /// let code = QrCode::new(b"Some data").unwrap();
+    /// ```
     ///
     /// # Errors
     ///
@@ -81,9 +82,11 @@ impl QrCode {
     ///
     /// This method automatically chooses the smallest QR code.
     ///
-    ///     use qrcode::{QrCode, EcLevel};
+    /// ```
+    /// use qrcode::{EcLevel, QrCode};
     ///
-    ///     let code = QrCode::with_error_correction_level(b"Some data", EcLevel::H).unwrap();
+    /// let code = QrCode::with_error_correction_level(b"Some data", EcLevel::H).unwrap();
+    /// ```
     ///
     /// # Errors
     ///
@@ -97,15 +100,19 @@ impl QrCode {
     /// Constructs a new QR code for the given version and error correction
     /// level.
     ///
-    ///     use qrcode::{QrCode, Version, EcLevel};
+    /// ```
+    /// use qrcode::{EcLevel, QrCode, Version};
     ///
-    ///     let code = QrCode::with_version(b"Some data", Version::Normal(5), EcLevel::M).unwrap();
+    /// let code = QrCode::with_version(b"Some data", Version::Normal(5), EcLevel::M).unwrap();
+    /// ```
     ///
     /// This method can also be used to generate Micro QR code.
     ///
-    ///     use qrcode::{QrCode, Version, EcLevel};
+    /// ```
+    /// use qrcode::{EcLevel, QrCode, Version};
     ///
-    ///     let micro_code = QrCode::with_version(b"123", Version::Micro(1), EcLevel::L).unwrap();
+    /// let micro_code = QrCode::with_version(b"123", Version::Micro(1), EcLevel::L).unwrap();
+    /// ```
     ///
     /// # Errors
     ///
@@ -130,16 +137,18 @@ impl QrCode {
     ///
     /// See the `Bits` structure for detail.
     ///
-    ///     #![allow(unused_must_use)]
+    /// ```
+    /// #![allow(unused_must_use)]
     ///
-    ///     use qrcode::{QrCode, Version, EcLevel};
-    ///     use qrcode::bits::Bits;
+    /// use qrcode::bits::Bits;
+    /// use qrcode::{EcLevel, QrCode, Version};
     ///
-    ///     let mut bits = Bits::new(Version::Normal(1));
-    ///     bits.push_eci_designator(9);
-    ///     bits.push_byte_data(b"\xca\xfe\xe4\xe9\xea\xe1\xf2 QR");
-    ///     bits.push_terminator(EcLevel::L);
-    ///     let qrcode = QrCode::with_bits(bits, EcLevel::L);
+    /// let mut bits = Bits::new(Version::Normal(1));
+    /// bits.push_eci_designator(9);
+    /// bits.push_byte_data(b"\xca\xfe\xe4\xe9\xea\xe1\xf2 QR");
+    /// bits.push_terminator(EcLevel::L);
+    /// let qrcode = QrCode::with_bits(bits, EcLevel::L);
+    /// ```
     ///
     /// # Errors
     ///
@@ -158,26 +167,27 @@ impl QrCode {
     }
 
     /// Gets the version of this QR code.
-    pub fn version(&self) -> Version {
+    pub const fn version(&self) -> Version {
         self.version
     }
 
     /// Gets the error correction level of this QR code.
-    pub fn error_correction_level(&self) -> EcLevel {
+    pub const fn error_correction_level(&self) -> EcLevel {
         self.ec_level
     }
 
     /// Gets the number of modules per side, i.e. the width of this QR code.
     ///
     /// The width here does not contain the quiet zone paddings.
-    pub fn width(&self) -> usize {
+    pub const fn width(&self) -> usize {
         self.width
     }
 
     /// Gets the maximum number of allowed erratic modules can be introduced
     /// before the data becomes corrupted. Note that errors should not be
     /// introduced to functional modules.
-    #[allow(clippy::missing_panics_doc)] // the version and ec_level should have been checked when calling `.with_version()`.
+    // the version and ec_level should have been checked when calling `.with_version()`.
+    #[allow(clippy::missing_panics_doc)]
     pub fn max_allowed_errors(&self) -> usize {
         ec::max_allowed_errors(self.version, self.ec_level).expect("invalid version or ec_level")
     }
@@ -230,18 +240,21 @@ impl QrCode {
     ///
     /// # Examples
     ///
-    #[cfg_attr(feature = "image", doc = " ```rust")]
-    #[cfg_attr(not(feature = "image"), doc = " ```ignore")]
+    /// ```
+    /// # #[cfg(feature = "image")]
+    /// # {
     /// # use qrcode::QrCode;
     /// # use image::Rgb;
     ///
-    /// let image = QrCode::new(b"hello").unwrap()
-    ///                     .render()
-    ///                     .dark_color(Rgb([0, 0, 128]))
-    ///                     .light_color(Rgb([224, 224, 224])) // adjust colors
-    ///                     .quiet_zone(false)          // disable quiet zone (white border)
-    ///                     .min_dimensions(300, 300)   // sets minimum image size
-    ///                     .build();
+    /// let image = QrCode::new(b"hello")
+    ///     .unwrap()
+    ///     .render()
+    ///     .dark_color(Rgb([0, 0, 128]))
+    ///     .light_color(Rgb([224, 224, 224])) // adjust colors
+    ///     .quiet_zone(false) // disable quiet zone (white border)
+    ///     .min_dimensions(300, 300) // sets minimum image size
+    ///     .build();
+    /// # }
     /// ```
     ///
     /// Note: the `image` crate itself also provides method to rotate the image,

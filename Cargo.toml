@@ -7,6 +7,7 @@ edition = "2021"
 rust-version = "1.67.1"
 authors = ["kennytm <kennytm@gmail.com>"]
 keywords = ["qrcode"]
+categories = ["encoding", "multimedia::images"]
 repository = "https://github.com/kennytm/qrcode-rust"
 readme = "README.md"
 documentation = "http://docs.rs/qrcode"
