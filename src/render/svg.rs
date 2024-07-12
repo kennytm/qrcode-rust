@@ -45,7 +45,7 @@ impl<'a> RenderCanvas for Canvas<'a> {
         Canvas {
             svg: format!(
                 concat!(
-                    r#"<?xml version="1.0" standalone="yes"?>"#,
+                    r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>"#,
                     r#"<svg xmlns="http://www.w3.org/2000/svg""#,
                     r#" version="1.1" width="{w}" height="{h}""#,
                     r#" viewBox="0 0 {w} {h}" shape-rendering="crispEdges">"#,
