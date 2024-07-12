@@ -696,7 +696,7 @@ mod draw_version_info_tests {
     #[test]
     fn test_draw_number() {
         let mut c = Canvas::new(Version::Micro(1), EcLevel::L);
-        c.draw_number(0b1010_1101, 8, Color::Dark, Color::Light, &[(0, 0), (0, -1), (-2, -2), (-2, 0)]);
+        c.draw_number(0b10101101, 8, Color::Dark, Color::Light, &[(0, 0), (0, -1), (-2, -2), (-2, 0)]);
         assert_eq!(
             &*c.to_debug_str(),
             "\n\
@@ -1794,8 +1794,7 @@ impl Canvas {
         if ratio >= 100 { ratio - 100 } else { 100 - ratio }.as_u16()
     }
 
-    /// Compute the penalty score for having too many light modules on the
-    /// sides.
+    /// Compute the penalty score for having too many light modules on the sides.
     ///
     /// This penalty score is exclusive to Micro QR code.
     ///

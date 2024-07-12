@@ -13,9 +13,9 @@ use crate::types::{EcLevel, QrResult, Version};
 /// 69 bytes. Longer blocks will result in task panic.
 ///
 /// This method treats the data as a polynomial of the form
-/// (a\[0\] x<sup>m+n</sup> + a\[1\] x<sup>m+n-1</sup> + … + a\[m\]
-/// x<sup>n</sup>) in GF(2<sup>8</sup>), and then computes the polynomial
-/// modulus with a generator polynomial of degree N.
+/// (a\[0\] x<sup>m+n</sup> + a\[1\] x<sup>m+n-1</sup> + … + a\[m\] x<sup>n</sup>)
+/// in GF(2<sup>8</sup>), and then computes the polynomial modulus with a
+/// generator polynomial of degree N.
 pub fn create_error_correction_code(data: &[u8], ec_code_size: usize) -> Vec<u8> {
     let data_len = data.len();
     let log_den = GENERATOR_POLYNOMIALS[ec_code_size];
@@ -431,9 +431,9 @@ static EC_BYTES_PER_BLOCK: [[usize; 4]; 44] = [
 /// This is a copy of ISO/IEC 18004:2006, §6.5.1, Table 9 (The value "k" of the
 /// 7th column, followed by the 6th column).
 ///
-/// Every entry is a 4-tuple. Take `DATA_BYTES_PER_BLOCK[39][3] == (15, 20, 16,
-/// 61)` as an example, this means in version 40 with correction level H, there
-/// are 20 blocks with 15 bytes in size, and 61 blocks with 16 bytes in size.
+/// Every entry is a 4-tuple. Take `DATA_BYTES_PER_BLOCK[39][3] == (15, 20, 16, 61)`
+/// as an example, this means in version 40 with correction level H, there are
+/// 20 blocks with 15 bytes in size, and 61 blocks with 16 bytes in size.
 static DATA_BYTES_PER_BLOCK: [[(usize, usize, usize, usize); 4]; 44] = [
     // Normal versions.
     [(19, 1, 0, 0), (16, 1, 0, 0), (13, 1, 0, 0), (9, 1, 0, 0)], // 1

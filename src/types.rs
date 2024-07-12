@@ -301,16 +301,14 @@ impl PartialOrd for Mode {
 
 #[cfg(test)]
 mod mode_tests {
-    use std::cmp::Ordering;
-
     use crate::types::Mode::{Alphanumeric, Byte, Kanji, Numeric};
 
     #[test]
     fn test_mode_order() {
         assert!(Numeric < Alphanumeric);
         assert!(Byte > Kanji);
-        assert!(matches!(Numeric.partial_cmp(&Kanji), None | Some(Ordering::Equal | Ordering::Greater)));
-        assert!(matches!(Numeric.partial_cmp(&Kanji), None | Some(Ordering::Less)));
+        assert!(!(Numeric < Kanji));
+        assert!(!(Numeric >= Kanji));
     }
 
     #[test]

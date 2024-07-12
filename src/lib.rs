@@ -1,4 +1,4 @@
-//! QR code encoder
+//! QRCode encoder
 //!
 //! This crate provides a QR code and Micro QR code encoder for binary data.
 //!
@@ -186,8 +186,7 @@ impl QrCode {
     /// Gets the maximum number of allowed erratic modules can be introduced
     /// before the data becomes corrupted. Note that errors should not be
     /// introduced to functional modules.
-    // the version and ec_level should have been checked when calling `.with_version()`.
-    #[allow(clippy::missing_panics_doc)]
+    #[allow(clippy::missing_panics_doc)] // the version and ec_level should have been checked when calling `.with_version()`.
     pub fn max_allowed_errors(&self) -> usize {
         ec::max_allowed_errors(self.version, self.ec_level).expect("invalid version or ec_level")
     }

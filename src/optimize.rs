@@ -491,8 +491,8 @@ enum ExclCharSet {
     /// The end of string.
     End = 0,
 
-    /// All symbols supported by the Alphanumeric encoding, i.e. space, `$`,
-    /// `%`, `*`, `+`, `-`, `.`, `/` and `:`.
+    /// All symbols supported by the Alphanumeric encoding, i.e. space, `$`, `%`,
+    /// `*`, `+`, `-`, `.`, `/` and `:`.
     Symbol = 1,
 
     /// All numbers (0–9).
@@ -514,8 +514,8 @@ enum ExclCharSet {
     KanjiHi3 = 6,
 
     /// The second byte of a Shift JIS 2-byte encoding, in the range 0x40–0xbf,
-    /// excluding letters (covered by `Alpha`), 0x81–0x9f (covered by
-    /// `KanjiHi1`), and the invalid byte 0x7f.
+    /// excluding letters (covered by `Alpha`), 0x81–0x9f (covered by `KanjiHi1`),
+    /// and the invalid byte 0x7f.
     KanjiLo1 = 7,
 
     /// The second byte of a Shift JIS 2-byte encoding, in the range 0xc0–0xfc,
