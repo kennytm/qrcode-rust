@@ -27,6 +27,7 @@
 //! ```
 
 #![cfg_attr(feature = "bench", feature(test))] // Unstable libraries
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![warn(clippy::pedantic)]
 #![allow(
     clippy::must_use_candidate, // This is just annoying.
