@@ -77,7 +77,7 @@ impl<'a, P: Pixel> Renderer<'a, P> {
     /// # Panics
     ///
     /// Panics if the length of `content` is not exactly `modules_count * modules_count`.
-    pub fn new(content: &'a [Color], modules_count: usize, quiet_zone: u32) -> Renderer<'a, P> {
+    pub fn new(content: &'a [Color], modules_count: usize, quiet_zone: u32) -> Self {
         assert!(modules_count * modules_count == content.len());
         Renderer {
             content,

@@ -26,7 +26,7 @@ impl Pixel for Color {
     type Image = String;
 
     fn default_color(_color: ModuleColor) -> Self {
-        Color
+        Self
     }
 }
 
@@ -40,7 +40,7 @@ impl RenderCanvas for Canvas {
     type Image = String;
 
     fn new(width: u32, height: u32, _dark_pixel: Color, _light_pixel: Color) -> Self {
-        Canvas {
+        Self {
             pic: format!(
                 concat!(
                     "maxpswid={w};maxpsht={h};movewid=0;moveht=1;boxwid=1;boxht=1\n",

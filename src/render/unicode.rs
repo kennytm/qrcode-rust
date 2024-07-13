@@ -4,7 +4,7 @@ use crate::render::{Canvas as RenderCanvas, Color, Pixel};
 
 const CODEPAGE: [&str; 4] = [" ", "\u{2584}", "\u{2580}", "\u{2588}"];
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub enum Dense1x2 {
     Dark,
     Light,
@@ -13,8 +13,8 @@ pub enum Dense1x2 {
 impl Pixel for Dense1x2 {
     type Image = String;
     type Canvas = Canvas1x2;
-    fn default_color(color: Color) -> Dense1x2 {
-        color.select(Dense1x2::Dark, Dense1x2::Light)
+    fn default_color(color: Color) -> Self {
+        color.select(Self::Dark, Self::Light)
     }
     fn default_unit_size() -> (u32, u32) {
         (1, 1)
@@ -22,10 +22,10 @@ impl Pixel for Dense1x2 {
 }
 
 impl Dense1x2 {
-    fn value(self) -> u8 {
+    const fn value(self) -> u8 {
         match self {
-            Dense1x2::Dark => 1,
-            Dense1x2::Light => 0,
+            Self::Dark => 1,
+            Self::Light => 0,
         }
     }
     fn parse_2_bits(sym: u8) -> &'static str {
@@ -45,7 +45,7 @@ impl RenderCanvas for Canvas1x2 {
 
     fn new(width: u32, height: u32, dark_pixel: Dense1x2, light_pixel: Dense1x2) -> Self {
         let a = vec![light_pixel.value(); (width * height) as usize];
-        Canvas1x2 { width, canvas: a, dark_pixel: dark_pixel.value() }
+        Self { width, canvas: a, dark_pixel: dark_pixel.value() }
     }
 
     fn draw_dark_pixel(&mut self, x: u32, y: u32) {
@@ -111,7 +111,7 @@ fn integration_render_utf8_1x2() {
             + "  ▀███▄ ▀▀ █ ██  \n"
             + "  ▀▀▀ ▀ ▀▀ ▀  ▀  \n"
             + "                 "
-    )
+    );
 }
 
 #[test]

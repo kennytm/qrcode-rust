@@ -21,7 +21,7 @@ pub struct Bits {
 
 impl Bits {
     /// Constructs a new, empty bits structure.
-    pub fn new(version: Version) -> Self {
+    pub const fn new(version: Version) -> Self {
         Self { data: Vec::new(), bit_offset: 0, version }
     }
 
@@ -110,7 +110,7 @@ impl Bits {
     }
 
     /// Version of the QR code.
-    pub fn version(&self) -> Version {
+    pub const fn version(&self) -> Version {
         self.version
     }
 }
@@ -223,29 +223,30 @@ impl Bits {
     /// the following binary data. After calling this method, one could call
     /// `.push_byte_data()` or similar methods to insert the actual data, e.g.
     ///
-    ///     #![allow(unused_must_use)]
+    /// ```
+    /// #![allow(unused_must_use)]
     ///
-    ///     use qrcode::bits::Bits;
-    ///     use qrcode::types::Version;
+    /// use qrcode::bits::Bits;
+    /// use qrcode::types::Version;
     ///
-    ///     let mut bits = Bits::new(Version::Normal(1));
-    ///     bits.push_eci_designator(9); // 9 = ISO-8859-7 (Greek).
-    ///     bits.push_byte_data(b"\xa1\xa2\xa3\xa4\xa5"); // ΑΒΓΔΕ
-    ///
+    /// let mut bits = Bits::new(Version::Normal(1));
+    /// bits.push_eci_designator(9); // 9 = ISO-8859-7 (Greek).
+    /// bits.push_byte_data(b"\xa1\xa2\xa3\xa4\xa5"); // ΑΒΓΔΕ
+    /// ```
     ///
     /// The full list of ECI designator values can be found from
     /// <http://strokescribe.com/en/ECI.html>. Some example values are:
     ///
-    /// ECI # | Character set
-    /// ------|-------------------------------------
-    /// 3     | ISO-8859-1 (Western European)
-    /// 20    | Shift JIS (Japanese)
-    /// 23    | Windows 1252 (Latin 1) (Western European)
-    /// 25    | UTF-16 Big Endian
-    /// 26    | UTF-8
-    /// 28    | Big 5 (Traditional Chinese)
-    /// 29    | GB-18030 (Simplified Chinese)
-    /// 30    | EUC-KR (Korean)
+    /// | ECI # | Character set                             |
+    /// | ----- | ----------------------------------------- |
+    /// | 3     | ISO-8859-1 (Western European)             |
+    /// | 20    | Shift JIS (Japanese)                      |
+    /// | 23    | Windows 1252 (Latin 1) (Western European) |
+    /// | 25    | UTF-16 Big Endian                         |
+    /// | 26    | UTF-8                                     |
+    /// | 28    | Big 5 (Traditional Chinese)               |
+    /// | 29    | GB-18030 (Simplified Chinese)             |
+    /// | 30    | EUC-KR (Korean)                           |
     ///
     /// # Errors
     ///
@@ -601,15 +602,17 @@ impl Bits {
     /// Encodes an indicator that the following data are formatted according to
     /// the UCC/EAN Application Identifiers standard.
     ///
-    ///     #![allow(unused_must_use)]
+    /// ```
+    /// #![allow(unused_must_use)]
     ///
-    ///     use qrcode::bits::Bits;
-    ///     use qrcode::types::Version;
+    /// use qrcode::bits::Bits;
+    /// use qrcode::types::Version;
     ///
-    ///     let mut bits = Bits::new(Version::Normal(1));
-    ///     bits.push_fnc1_first_position();
-    ///     bits.push_numeric_data(b"01049123451234591597033130128");
-    ///     bits.push_alphanumeric_data(b"%10ABC123");
+    /// let mut bits = Bits::new(Version::Normal(1));
+    /// bits.push_fnc1_first_position();
+    /// bits.push_numeric_data(b"01049123451234591597033130128");
+    /// bits.push_alphanumeric_data(b"%10ABC123");
+    /// ```
     ///
     /// In QR code, the character `%` is used as the data field separator (0x1D).
     ///
@@ -625,15 +628,17 @@ impl Bits {
     /// with specific industry or application specifications previously agreed
     /// with AIM International.
     ///
-    ///     #![allow(unused_must_use)]
+    /// ```
+    /// #![allow(unused_must_use)]
     ///
-    ///     use qrcode::bits::Bits;
-    ///     use qrcode::types::Version;
+    /// use qrcode::bits::Bits;
+    /// use qrcode::types::Version;
     ///
-    ///     let mut bits = Bits::new(Version::Normal(1));
-    ///     bits.push_fnc1_second_position(37);
-    ///     bits.push_alphanumeric_data(b"AA1234BBB112");
-    ///     bits.push_byte_data(b"text text text text\r");
+    /// let mut bits = Bits::new(Version::Normal(1));
+    /// bits.push_fnc1_second_position(37);
+    /// bits.push_alphanumeric_data(b"AA1234BBB112");
+    /// bits.push_byte_data(b"text text text text\r");
+    /// ```
     ///
     /// If the application indicator is a single Latin alphabet (a–z / A–Z),
     /// please pass in its ASCII value + 100:
