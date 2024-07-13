@@ -14,9 +14,6 @@ exclude = [
     ".travis.yml", ".gitignore", "test-data/**"
 ]
 
-[package.metadata.docs.rs]
-rustdoc-args = ["--cfg", "docsrs"]
-
 [badges]
 maintenance = { status = "passively-maintained" }
 
