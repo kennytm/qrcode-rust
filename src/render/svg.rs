@@ -12,8 +12,10 @@
 
 #![cfg(feature = "svg")]
 
-use std::fmt::Write;
-use std::marker::PhantomData;
+use alloc::format;
+use alloc::string::String;
+use core::fmt::Write;
+use core::marker::PhantomData;
 
 use crate::render::{Canvas as RenderCanvas, Pixel};
 use crate::types::Color as ModuleColor;

@@ -25,6 +25,7 @@
 //! # }
 //! ```
 
+#![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "bench", feature(test))] // Unstable libraries
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![warn(clippy::pedantic)]
@@ -34,7 +35,11 @@
 #![cfg_attr(feature = "bench", doc = include_str!("../README.md"))]
 // ^ make sure we can test our README.md.
 
-use std::ops::Index;
+extern crate alloc;
+
+use alloc::string::String;
+use alloc::vec::Vec;
+use core::ops::Index;
 
 pub mod bits;
 pub mod canvas;

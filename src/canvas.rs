@@ -11,7 +11,10 @@
 //! let bools = c.to_bools();
 //! ```
 
-use std::{cmp::max, iter};
+use alloc::boxed::Box;
+use alloc::vec;
+use alloc::vec::Vec;
+use core::{cmp::max, iter};
 
 use crate::cast::As;
 use crate::types::{Color, EcLevel, Version};
@@ -102,9 +105,9 @@ impl Canvas {
 
     /// Converts the canvas into a human-readable string.
     #[cfg(test)]
-    fn to_debug_str(&self) -> String {
+    fn to_debug_str(&self) -> alloc::string::String {
         let width = self.width;
-        let mut res = String::with_capacity((width * (width + 1)) as usize);
+        let mut res = alloc::string::String::with_capacity((width * (width + 1)) as usize);
         for y in 0..width {
             res.push('\n');
             for x in 0..width {
@@ -1190,6 +1193,8 @@ impl Iterator for DataModuleIter {
 mod data_iter_tests {
     use crate::canvas::DataModuleIter;
     use crate::types::Version;
+    use alloc::vec::Vec;
+    use alloc::vec;
 
     #[test]
     fn test_qr() {

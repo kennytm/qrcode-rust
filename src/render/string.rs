@@ -4,6 +4,10 @@ use crate::cast::As;
 use crate::render::{Canvas as RenderCanvas, Pixel};
 use crate::types::Color;
 
+use alloc::string::String;
+use alloc::vec;
+use alloc::vec::Vec;
+
 pub trait Element: Copy {
     fn default_color(color: Color) -> Self;
     fn strlen(self) -> usize;

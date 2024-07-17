@@ -19,7 +19,7 @@ The default settings will depend on the `image` crate. If you don't need image g
 
 ```toml
 [dependencies]
-qrcode = { version = "0.14.1", default-features = false }
+qrcode = { version = "0.14.1", default-features = false, features = ["std"] }
 ```
 
 Example
