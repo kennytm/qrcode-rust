@@ -5,6 +5,8 @@ use crate::types::Color;
 
 use image::{ImageBuffer, Luma, LumaA, Primitive, Rgb, Rgba};
 
+use alloc::vec::Vec;
+
 // need to keep using this macro to implement Pixel separately for each color model,
 // otherwise we'll have conflicting impl with `impl Pixel for impl Element` 🤷
 macro_rules! impl_pixel_for_image_pixel {

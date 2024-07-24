@@ -1,6 +1,7 @@
 //! The `bits` module encodes binary data into raw bits used in a QR code.
 
-use std::cmp::min;
+use alloc::vec::Vec;
+use core::cmp::min;
 
 #[cfg(feature = "bench")]
 extern crate test;
@@ -117,6 +118,7 @@ impl Bits {
 
 #[test]
 fn test_push_number() {
+    use alloc::vec;
     let mut bits = Bits::new(Version::Normal(1));
 
     bits.push_number(3, 0b010); // 0:0 .. 0:3
@@ -281,6 +283,7 @@ impl Bits {
 mod eci_tests {
     use crate::bits::Bits;
     use crate::types::{QrError, Version};
+    use alloc::vec;
 
     #[test]
     fn test_9() {
@@ -351,6 +354,7 @@ impl Bits {
 mod numeric_tests {
     use crate::bits::Bits;
     use crate::types::{QrError, Version};
+    use alloc::vec;
 
     #[test]
     fn test_iso_18004_2006_example_1() {
@@ -459,6 +463,7 @@ impl Bits {
 mod alphanumeric_tests {
     use crate::bits::Bits;
     use crate::types::{QrError, Version};
+    use alloc::vec;
 
     #[test]
     fn test_iso_18004_2006_example() {
@@ -506,6 +511,7 @@ impl Bits {
 mod byte_tests {
     use crate::bits::Bits;
     use crate::types::{QrError, Version};
+    use alloc::vec;
 
     #[test]
     fn test() {
@@ -573,6 +579,7 @@ impl Bits {
 mod kanji_tests {
     use crate::bits::Bits;
     use crate::types::{QrError, Version};
+    use alloc::vec;
 
     #[test]
     fn test_iso_18004_example() {
@@ -758,6 +765,7 @@ impl Bits {
 mod finish_tests {
     use crate::bits::Bits;
     use crate::types::{EcLevel, QrError, Version};
+    use alloc::vec;
 
     #[test]
     fn test_hello_world() {
@@ -857,6 +865,8 @@ impl Bits {
 mod encode_tests {
     use crate::bits::Bits;
     use crate::types::{EcLevel, QrError, QrResult, Version};
+    use alloc::vec;
+    use alloc::vec::Vec;
 
     fn encode(data: &[u8], version: Version, ec_level: EcLevel) -> QrResult<Vec<u8>> {
         let mut bits = Bits::new(version);

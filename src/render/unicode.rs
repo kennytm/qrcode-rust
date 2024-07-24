@@ -2,6 +2,10 @@
 
 use crate::render::{Canvas as RenderCanvas, Color, Pixel};
 
+use alloc::string::String;
+use alloc::vec;
+use alloc::vec::Vec;
+
 const CODEPAGE: [&str; 4] = [" ", "\u{2584}", "\u{2580}", "\u{2588}"];
 
 #[derive(Copy, Clone, PartialEq, Eq)]

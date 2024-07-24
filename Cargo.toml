@@ -25,7 +25,9 @@ image = { version = "0.25", default-features = false, optional = true }
 image = "0.25"
 
 [features]
-default = ["image", "svg", "pic"]
+default = ["std", "image", "svg", "pic"]
+image = ["dep:image", "std"]
+std = []
 bench = []
 svg = []
 pic = []
