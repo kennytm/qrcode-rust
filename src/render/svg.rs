@@ -51,7 +51,7 @@ impl<'a> RenderCanvas for Canvas<'a> {
                     r#"<svg xmlns="http://www.w3.org/2000/svg""#,
                     r#" version="1.1" width="{w}" height="{h}""#,
                     r#" viewBox="0 0 {w} {h}" shape-rendering="crispEdges">"#,
-                    r#"<rect x="0" y="0" width="{w}" height="{h}" fill="{bg}"/>"#,
+                    r#"<path d="M0 0h{w}v{h}H0z" fill="{bg}"/>"#,
                     r#"<path fill="{fg}" d=""#,
                 ),
                 w = width,
@@ -68,7 +68,7 @@ impl<'a> RenderCanvas for Canvas<'a> {
     }
 
     fn draw_dark_rect(&mut self, left: u32, top: u32, width: u32, height: u32) {
-        write!(self.svg, "M{left} {top}h{width}v{height}H{left}V{top}").unwrap();
+        write!(self.svg, "M{left} {top}h{width}v{height}h-{width}z").unwrap();
     }
 
     fn into_image(mut self) -> String {
