@@ -44,7 +44,7 @@ impl<'a> RenderCanvas for Canvas<'a> {
     type Image = String;
 
     fn new(width: u32, height: u32, dark_pixel: Color<'a>, light_pixel: Color<'a>) -> Self {
-        Canvas {
+        Self {
             svg: format!(
                 concat!(
                     r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>"#,
