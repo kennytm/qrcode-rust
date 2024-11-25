@@ -48,6 +48,7 @@ pub mod ec;
 pub mod optimize;
 pub mod render;
 pub mod types;
+pub mod yew;
 
 pub use crate::types::{Color, EcLevel, QrResult, Version};
 
