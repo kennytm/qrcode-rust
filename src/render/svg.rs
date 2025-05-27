@@ -8,7 +8,7 @@
 //!
 //! let code = QrCode::new(b"Hello").unwrap();
 //! let svg_xml = code.render::<svg::Color>().build();
-//! println!("{}", svg_xml);
+//! println!("{svg_xml}");
 
 #![cfg(feature = "svg")]
 

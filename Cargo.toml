@@ -25,12 +25,13 @@ image = { version = "0.25", default-features = false, optional = true }
 image = "0.25"
 
 [features]
-default = ["std", "image", "svg", "pic"]
+default = ["std", "image", "svg", "pic", "eps"]
 image = ["dep:image", "std"]
 std = []
 bench = []
 svg = []
 pic = []
+eps = []
 
 [[bin]]
 name = "qrencode"
@@ -49,3 +50,7 @@ required-features = ["svg"]
 [[example]]
 name = "encode_pic"
 required-features = ["pic"]
+
+[[example]]
+name = "encode_eps"
+required-features = ["eps"]
