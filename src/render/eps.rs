@@ -49,9 +49,8 @@ impl RenderCanvas for Canvas {
             eps: format!(
                 concat!(
                     "%!PS-Adobe-3.0 EPSF-3.0\n",
-                    "%%Pages: 1\n",
-                    "%%LanguageLevel: 2\n",
                     "%%BoundingBox: 0 0 {w} {h}\n",
+                    "%%Pages: 1\n",
                     "%%EndComments\n",
                     "gsave\n",
                     "{bgr} {bgg} {bgb} setrgbcolor\n",

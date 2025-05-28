@@ -202,15 +202,14 @@ output that renders as follows:
 
 ```postscript
 %!PS-Adobe-3.0 EPSF-3.0
-%%Pages: 1
-%%LanguageLevel: 2
 %%BoundingBox: 0 0 204 204
+%%Pages: 1
 %%EndComments
 gsave
-0.5 0 0 setrgbcolor
+1 1 0.5 setrgbcolor
 0 0 204 204 rectfill
 grestore
-1 1 0.5 setrgbcolor
+0.5 0 0 setrgbcolor
 24 180 12 12 rectfill
 36 180 12 12 rectfill
 48 180 12 12 rectfill
