@@ -4,6 +4,7 @@ use crate::cast::As;
 use crate::types::Color;
 use core::cmp::max;
 
+pub mod eps;
 pub mod image;
 pub mod pic;
 pub mod string;

@@ -354,10 +354,8 @@ mod optimize_tests {
         }
         assert!(
             opt_segs == expected,
-            "Optimization gave something better: {} < {} ({:?})",
-            new_len,
-            total_encoded_len(expected, version),
-            opt_segs
+            "Optimization gave something better: {new_len} < {} ({opt_segs:?})",
+            total_encoded_len(expected, version)
         );
     }
 

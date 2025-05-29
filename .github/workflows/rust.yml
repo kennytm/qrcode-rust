@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        rustc: [1.67.1, stable] # MSVR and current stable rustc
+        rustc: [1.70.0, stable] # MSVR and current stable rustc
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1

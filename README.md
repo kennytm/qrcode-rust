@@ -59,7 +59,7 @@ fn main() {
         .quiet_zone(false)
         .module_dimensions(2, 1)
         .build();
-    println!("{}", string);
+    println!("{string}");
 }
 ```
 
@@ -102,7 +102,7 @@ fn main() {
         .dark_color(svg::Color("#800000"))
         .light_color(svg::Color("#ffff80"))
         .build();
-    println!("{}", image);
+    println!("{image}");
 }
 ```
 
@@ -122,7 +122,7 @@ fn main() {
         .dark_color(unicode::Dense1x2::Light)
         .light_color(unicode::Dense1x2::Dark)
         .build();
-    println!("{}", image);
+    println!("{image}");
 }
 ```
 
@@ -158,7 +158,7 @@ fn main() {
         .render::<pic::Color>()
         .min_dimensions(1, 1)
         .build();
-    println!("{}", image);
+    println!("{image}");
 }
 ```
 
@@ -178,3 +178,44 @@ p(9,4,1,1)
 …
 ```
 See [`test_annex_i_micro_qr_as_pic.pic`](src/test_annex_i_micro_qr_as_pic.pic) for a full example.
+
+## EPS generation
+
+```rust
+use qrcode::render::eps;
+use qrcode::{EcLevel, QrCode, Version};
+
+fn main() {
+    let code = QrCode::with_version(b"01234567", Version::Micro(2), EcLevel::L).unwrap();
+    let image = code
+        .render()
+        .min_dimensions(200, 200)
+        .dark_color(eps::Color([0.5, 0.0, 0.0]))
+        .light_color(eps::Color([1.0, 1.0, 0.5]))
+        .build();
+    println!("{image}");
+}
+```
+
+Generates [EPS](https://en.wikipedia.org/wiki/Encapsulated_PostScript)
+output that renders as follows:
+
+```postscript
+%!PS-Adobe-3.0 EPSF-3.0
+%%BoundingBox: 0 0 204 204
+%%Pages: 1
+%%EndComments
+gsave
+1 1 0.5 setrgbcolor
+0 0 204 204 rectfill
+grestore
+0.5 0 0 setrgbcolor
+24 180 12 12 rectfill
+36 180 12 12 rectfill
+48 180 12 12 rectfill
+60 180 12 12 rectfill
+72 180 12 12 rectfill
+84 180 12 12 rectfill
+…
+```
+See [`test_annex_i_micro_qr_as_eps.eps`](src/test_annex_i_micro_qr_as_eps.eps) for a full example.

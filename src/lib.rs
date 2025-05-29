@@ -21,7 +21,7 @@
 //!
 //! // You can also render it into a string.
 //! let string = code.render().light_color(' ').dark_color('#').build();
-//! println!("{}", string);
+//! println!("{string}");
 //! # }
 //! ```
 
@@ -411,6 +411,33 @@ mod pic_tests {
         let code = QrCode::with_version(b"01234567", Version::Micro(2), EcLevel::L).unwrap();
         let image = code.render::<PicColor>().min_dimensions(1, 1).build();
         let expected = include_str!("test_annex_i_micro_qr_as_pic.pic");
+        assert_eq!(&image, expected);
+    }
+}
+
+#[cfg(all(test, feature = "eps"))]
+mod eps_tests {
+    use crate::render::eps::Color as EpsColor;
+    use crate::{EcLevel, QrCode, Version};
+
+    #[test]
+    fn test_annex_i_qr_as_eps() {
+        let code = QrCode::new(b"01234567").unwrap();
+        let image = code.render::<EpsColor>().build();
+        let expected = include_str!("test_annex_i_qr_as_eps.eps");
+        assert_eq!(&image, expected);
+    }
+
+    #[test]
+    fn test_annex_i_micro_qr_as_eps() {
+        let code = QrCode::with_version(b"01234567", Version::Micro(2), EcLevel::L).unwrap();
+        let image = code
+            .render()
+            .min_dimensions(200, 200)
+            .dark_color(EpsColor([0.5, 0.0, 0.0]))
+            .light_color(EpsColor([1.0, 1.0, 0.5]))
+            .build();
+        let expected = include_str!("test_annex_i_micro_qr_as_eps.eps");
         assert_eq!(&image, expected);
     }
 }

@@ -8,7 +8,7 @@
 //!
 //! let code = QrCode::new(b"Hello").unwrap();
 //! let pic = code.render::<pic::Color>().build();
-//! println!("{}", pic);
+//! println!("{pic}");
 
 #![cfg(feature = "pic")]
 
