@@ -8,9 +8,15 @@ use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 
+/// Abstraction of an image element.
 pub trait Element: Copy {
+    /// Obtains the default element color when a module is dark or light.
     fn default_color(color: Color) -> Self;
+
+    /// Returns the number of bytes in `self`.
     fn strlen(self) -> usize;
+
+    /// Appends `self` to the end of the given `string`.
     fn append_to_string(self, string: &mut String);
 }
 

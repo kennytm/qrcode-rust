@@ -252,6 +252,7 @@ mod parse_tests {
 //------------------------------------------------------------------------------
 //{{{ Optimizer
 
+/// QR code data optimizer.
 pub struct Optimizer<I> {
     parser: I,
     last_segment: Segment,
@@ -287,6 +288,7 @@ impl<I: Iterator<Item = Segment>> Optimizer<I> {
 }
 
 impl Parser<'_> {
+    /// Optimizes a `Parser` based on the given `version`.
     pub fn optimize(self, version: Version) -> Optimizer<Self> {
         Optimizer::new(self, version)
     }
