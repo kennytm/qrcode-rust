@@ -30,7 +30,7 @@ impl Pixel for Color {
     type Image = String;
 
     fn default_color(color: ModuleColor) -> Self {
-        Color(color.select(Default::default(), [1.0; 3]))
+        Self(color.select(Default::default(), [1.0; 3]))
     }
 }
 
@@ -45,7 +45,7 @@ impl RenderCanvas for Canvas {
     type Image = String;
 
     fn new(width: u32, height: u32, dark_pixel: Color, light_pixel: Color) -> Self {
-        Canvas {
+        Self {
             eps: format!(
                 concat!(
                     "%!PS-Adobe-3.0 EPSF-3.0\n",
