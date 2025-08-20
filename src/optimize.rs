@@ -85,7 +85,7 @@ pub struct Parser<'a> {
     pending_single_byte: bool,
 }
 
-impl<'a> Parser<'a> {
+impl Parser<'_> {
     /// Creates a new iterator which parse the data into segments that only
     /// contains their exclusive subsets. No optimization is done at this point.
     ///
@@ -103,7 +103,7 @@ impl<'a> Parser<'a> {
     ///     ]
     /// );
     /// ```
-    pub fn new(data: &[u8]) -> Parser {
+    pub fn new(data: &[u8]) -> Parser<'_> {
         Parser {
             ecs_iter: EcsIter { base: data.iter(), index: 0, ended: false },
             state: State::Init,
@@ -113,7 +113,7 @@ impl<'a> Parser<'a> {
     }
 }
 
-impl<'a> Iterator for Parser<'a> {
+impl Iterator for Parser<'_> {
     type Item = Segment;
 
     fn next(&mut self) -> Option<Segment> {
@@ -124,10 +124,7 @@ impl<'a> Iterator for Parser<'a> {
         }
 
         loop {
-            let (i, ecs) = match self.ecs_iter.next() {
-                None => return None,
-                Some(a) => a,
-            };
+            let (i, ecs) = self.ecs_iter.next()?;
             let (next_state, action) = STATE_TRANSITION[self.state as usize + ecs as usize];
             self.state = next_state;
 
@@ -289,7 +286,7 @@ impl<I: Iterator<Item = Segment>> Optimizer<I> {
     }
 }
 
-impl<'a> Parser<'a> {
+impl Parser<'_> {
     pub fn optimize(self, version: Version) -> Optimizer<Self> {
         Optimizer::new(self, version)
     }

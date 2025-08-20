@@ -67,9 +67,9 @@ impl RenderCanvas for Canvas1x2 {
                 {
                     // Then zipping those 2 lines together into a single 2-bit number list.
                     if rows.len() == 2 {
-                        rows[0].iter().zip(rows[1]).map(|(top, bot)| (top * 2 + bot)).collect::<Vec<u8>>()
+                        rows[0].iter().zip(rows[1]).map(|(top, bot)| top * 2 + bot).collect::<Vec<u8>>()
                     } else {
-                        rows[0].iter().map(|top| (top * 2)).collect::<Vec<u8>>()
+                        rows[0].iter().map(|top| top * 2).collect::<Vec<u8>>()
                     }
                 }
                 .into_iter()

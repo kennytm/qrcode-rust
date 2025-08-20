@@ -28,7 +28,7 @@ impl Element for char {
     }
 }
 
-impl<'a> Element for &'a str {
+impl Element for &str {
     fn default_color(color: Color) -> Self {
         color.select("\u{2588}", " ")
     }
