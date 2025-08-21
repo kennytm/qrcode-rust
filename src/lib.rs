@@ -1,4 +1,4 @@
-//! QRCode encoder
+//! QR Code encoder
 //!
 //! This crate provides a QR code and Micro QR code encoder for binary data.
 //!
