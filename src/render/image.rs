@@ -73,6 +73,7 @@ mod render_tests {
                 Color::Light,
             ],
             3,
+            3,
             1,
         )
         .module_dimensions(1, 1)
@@ -91,7 +92,7 @@ mod render_tests {
 
     #[test]
     fn test_render_rgba_unsized() {
-        let image = Renderer::<Rgba<u8>>::new(&[Color::Light, Color::Dark, Color::Dark, Color::Dark], 2, 1)
+        let image = Renderer::<Rgba<u8>>::new(&[Color::Light, Color::Dark, Color::Dark, Color::Dark], 2, 2, 1)
             .module_dimensions(1, 1)
             .build();
 
@@ -108,7 +109,7 @@ mod render_tests {
 
     #[test]
     fn test_render_resized_min() {
-        let image = Renderer::<Luma<u8>>::new(&[Color::Dark, Color::Light, Color::Light, Color::Dark], 2, 1)
+        let image = Renderer::<Luma<u8>>::new(&[Color::Dark, Color::Light, Color::Light, Color::Dark], 2, 2, 1)
             .min_dimensions(10, 10)
             .build();
 
@@ -137,7 +138,7 @@ mod render_tests {
 
     #[test]
     fn test_render_resized_max() {
-        let image = Renderer::<Luma<u8>>::new(&[Color::Dark, Color::Light, Color::Light, Color::Dark], 2, 1)
+        let image = Renderer::<Luma<u8>>::new(&[Color::Dark, Color::Light, Color::Light, Color::Dark], 2, 2, 1)
             .max_dimensions(10, 5)
             .build();
 

@@ -200,6 +200,14 @@ impl Bits {
             (Version::Micro(_), ExtendedMode::Data(Mode::Byte)) => 0b10,
             (Version::Micro(_), ExtendedMode::Data(Mode::Kanji)) => 0b11,
             (Version::Micro(_), _) => return Err(QrError::UnsupportedCharacterSet),
+            (Version::RectMicro(..), ExtendedMode::Data(Mode::Numeric)) => 0b001,
+            (Version::RectMicro(..), ExtendedMode::Data(Mode::Alphanumeric)) => 0b010,
+            (Version::RectMicro(..), ExtendedMode::Data(Mode::Byte)) => 0b011,
+            (Version::RectMicro(..), ExtendedMode::Data(Mode::Kanji)) => 0b100,
+            (Version::RectMicro(..), ExtendedMode::Eci) => 0b111,
+            (Version::RectMicro(..), ExtendedMode::Fnc1First) => 0b101,
+            (Version::RectMicro(..), ExtendedMode::Fnc1Second) => 0b110,
+            (Version::RectMicro(..), _) => return Err(QrError::UnsupportedCharacterSet),
             (_, ExtendedMode::Data(Mode::Numeric)) => 0b0001,
             (_, ExtendedMode::Data(Mode::Alphanumeric)) => 0b0010,
             (_, ExtendedMode::Data(Mode::Byte)) => 0b0100,
@@ -669,8 +677,9 @@ impl Bits {
 //------------------------------------------------------------------------------
 //{{{ Finish
 
-// This table is copied from ISO/IEC 18004:2006 §6.4.10, Table 7.
-static DATA_LENGTHS: [[usize; 4]; 44] = [
+// This table is copied from ISO/IEC 18004:2006 §6.4.10, Table 7, and ISO/IEC
+// 23941:2022 Table 6.
+static DATA_LENGTHS: [[usize; 4]; 76] = [
     // Normal versions
     [152, 128, 104, 72],
     [272, 224, 176, 128],
@@ -717,6 +726,39 @@ static DATA_LENGTHS: [[usize; 4]; 44] = [
     [40, 32, 0, 0],
     [84, 68, 0, 0],
     [128, 112, 80, 0],
+    // rMQR versions
+    [0, 48, 0, 24],
+    [0, 96, 0, 56],
+    [0, 160, 0, 80],
+    [0, 224, 0, 112],
+    [0, 352, 0, 192],
+    [0, 96, 0, 56],
+    [0, 168, 0, 88],
+    [0, 248, 0, 136],
+    [0, 336, 0, 176],
+    [0, 504, 0, 264],
+    [0, 56, 0, 40],
+    [0, 152, 0, 88],
+    [0, 248, 0, 120],
+    [0, 344, 0, 184],
+    [0, 456, 0, 232],
+    [0, 672, 0, 336],
+    [0, 96, 0, 56],
+    [0, 216, 0, 104],
+    [0, 304, 0, 160],
+    [0, 424, 0, 232],
+    [0, 584, 0, 280],
+    [0, 848, 0, 432],
+    [0, 264, 0, 120],
+    [0, 384, 0, 208],
+    [0, 536, 0, 248],
+    [0, 704, 0, 384],
+    [0, 1016, 0, 552],
+    [0, 312, 0, 168],
+    [0, 448, 0, 224],
+    [0, 624, 0, 304],
+    [0, 800, 0, 448],
+    [0, 1216, 0, 608],
 ];
 
 impl Bits {
@@ -730,7 +772,11 @@ impl Bits {
     /// `ec_level` for the given version (e.g. `Version::Micro(1)` with
     /// `EcLevel::H`).
     pub fn push_terminator(&mut self, ec_level: EcLevel) -> QrResult<()> {
-        let terminator_size = if let Version::Micro(a) = self.version { a.as_usize() * 2 + 1 } else { 4 };
+        let terminator_size = match self.version {
+            Version::Micro(a) => a.as_usize() * 2 + 1,
+            Version::RectMicro(..) => 3,
+            Version::Normal(_) => 4,
+        };
 
         let cur_length = self.len();
         let data_length = self.max_len(ec_level)?;
@@ -907,7 +953,7 @@ mod encode_tests {
 /// Automatically determines the minimum version to store the data, and encode
 /// the result.
 ///
-/// This method will not consider any Micro QR code versions.
+/// This method will not consider any Micro QR code or rMQR code versions.
 ///
 /// # Errors
 ///

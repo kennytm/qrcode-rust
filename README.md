@@ -5,7 +5,7 @@ qrcode-rust
 [![crates.io](https://img.shields.io/crates/v/qrcode.svg)](https://crates.io/crates/qrcode)
 [![MIT OR Apache 2.0](https://img.shields.io/badge/license-MIT%20%2f%20Apache%202.0-blue.svg)](./LICENSE-APACHE.txt)
 
-QR code and Micro QR code encoder in Rust. [Documentation](https://docs.rs/qrcode).
+QR code, Micro QR code and rMQR code encoder in Rust. [Documentation](https://docs.rs/qrcode).
 
 Cargo.toml
 ----------
@@ -25,7 +25,7 @@ qrcode = { version = "0.14.1", default-features = false, features = ["std"] }
 Example
 -------
 
-## Image generation
+### Image generation
 
 ```rust
 use qrcode::QrCode;
@@ -47,7 +47,7 @@ Generates this image:
 
 ![Output](src/test_annex_i_qr_as_image.png)
 
-## String generation
+### String generation
 
 ```rust
 use qrcode::QrCode;
@@ -89,7 +89,7 @@ Generates this output:
 ##############  ####    ##      ##    ##
 ```
 
-## SVG generation
+### SVG generation
 
 ```rust
 use qrcode::{QrCode, Version, EcLevel};
@@ -110,7 +110,7 @@ Generates this SVG:
 
 [![Output](src/test_annex_i_micro_qr_as_svg.svg)](src/test_annex_i_micro_qr_as_svg.svg)
 
-## Unicode string generation
+### Unicode string generation
 
 ```rust
 use qrcode::QrCode;
@@ -146,7 +146,7 @@ Generates this output:
 ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
 ```
 
-## PIC generation
+### PIC generation
 
 ```rust
 use qrcode::render::pic;
@@ -179,7 +179,7 @@ p(9,4,1,1)
 ```
 See [`test_annex_i_micro_qr_as_pic.pic`](src/test_annex_i_micro_qr_as_pic.pic) for a full example.
 
-## EPS generation
+### EPS generation
 
 ```rust
 use qrcode::render::eps;
@@ -219,3 +219,17 @@ grestore
 …
 ```
 See [`test_annex_i_micro_qr_as_eps.eps`](src/test_annex_i_micro_qr_as_eps.eps) for a full example.
+
+License
+-------
+
+Copyright (c) 2016 kennytm
+
+This crate is licensed under either of the
+[MIT License](https://spdx.org/licenses/MIT.html) or the
+[Apache License 2.0](https://spdx.org/licenses/Apache-2.0.html) at your option.
+
+The rMQR code encoder is based on the
+[`qrqrpar`](https://crates.io/crates/qrqrpar) crate, which is a fork of this
+crate. It is licensed under the
+[BSD 3-Clause "New" or "Revised" License](https://spdx.org/licenses/BSD-3-Clause.html).

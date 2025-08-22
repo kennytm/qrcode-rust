@@ -87,11 +87,11 @@ impl RenderCanvas for Canvas1x2 {
 fn test_render_to_utf8_string() {
     use crate::render::Renderer;
     let colors = &[Color::Dark, Color::Light, Color::Light, Color::Dark];
-    let image: String = Renderer::<Dense1x2>::new(colors, 2, 1).build();
+    let image: String = Renderer::<Dense1x2>::new(colors, 2, 2, 1).build();
 
     assert_eq!(&image, " ▄  \n  ▀ ");
 
-    let image2 = Renderer::<Dense1x2>::new(colors, 2, 1).module_dimensions(2, 2).build();
+    let image2 = Renderer::<Dense1x2>::new(colors, 2, 2, 1).module_dimensions(2, 2).build();
 
     assert_eq!(&image2, "        \n  ██    \n    ██  \n        ");
 }

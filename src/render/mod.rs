@@ -63,7 +63,8 @@ pub trait Canvas: Sized {
 /// an image.
 pub struct Renderer<'a, P: Pixel> {
     content: &'a [Color],
-    modules_count: u32, // <- we call it `modules_count` here to avoid ambiguity of `width`.
+    horizontal_modules_count: u32, // <- we call it `horizontal_modules_count` here to avoid ambiguity of `width`.
+    vertical_modules_count: u32,   // <- we call it `vertical_modules_count` here to avoid ambiguity of `height`.
     quiet_zone: u32,
     module_size: (u32, u32),
 
@@ -75,14 +76,24 @@ pub struct Renderer<'a, P: Pixel> {
 impl<'a, P: Pixel> Renderer<'a, P> {
     /// Creates a new renderer.
     ///
+    /// Except for rMQR code, `horizontal_modules_count` and
+    /// `vertical_modules_count` should be the same value.
+    ///
     /// # Panics
     ///
-    /// Panics if the length of `content` is not exactly `modules_count * modules_count`.
-    pub fn new(content: &'a [Color], modules_count: usize, quiet_zone: u32) -> Self {
-        assert!(modules_count * modules_count == content.len());
+    /// Panics if the length of `content` is not exactly
+    /// `horizontal_modules_count * vertical_modules_count`.
+    pub fn new(
+        content: &'a [Color],
+        horizontal_modules_count: usize,
+        vertical_modules_count: usize,
+        quiet_zone: u32,
+    ) -> Self {
+        assert!(horizontal_modules_count * vertical_modules_count == content.len());
         Renderer {
             content,
-            modules_count: modules_count.as_u32(),
+            horizontal_modules_count: horizontal_modules_count.as_u32(),
+            vertical_modules_count: vertical_modules_count.as_u32(),
             quiet_zone,
             module_size: P::default_unit_size(),
             dark_color: P::default_color(Color::Dark),
@@ -136,9 +147,10 @@ impl<'a, P: Pixel> Renderer<'a, P> {
     /// module's size should be 11×11, so the actual image size will be 209×209.
     pub fn min_dimensions(&mut self, width: u32, height: u32) -> &mut Self {
         let quiet_zone = if self.has_quiet_zone { 2 } else { 0 } * self.quiet_zone;
-        let width_in_modules = self.modules_count + quiet_zone;
+        let width_in_modules = self.horizontal_modules_count + quiet_zone;
+        let height_in_modules = self.vertical_modules_count + quiet_zone;
         let unit_width = (width + width_in_modules - 1) / width_in_modules;
-        let unit_height = (height + width_in_modules - 1) / width_in_modules;
+        let unit_height = (height + height_in_modules - 1) / height_in_modules;
         self.module_dimensions(unit_width, unit_height)
     }
 
@@ -155,9 +167,10 @@ impl<'a, P: Pixel> Renderer<'a, P> {
     /// final image *can* be larger than the input.
     pub fn max_dimensions(&mut self, width: u32, height: u32) -> &mut Self {
         let quiet_zone = if self.has_quiet_zone { 2 } else { 0 } * self.quiet_zone;
-        let width_in_modules = self.modules_count + quiet_zone;
+        let width_in_modules = self.horizontal_modules_count + quiet_zone;
+        let height_in_modules = self.vertical_modules_count + quiet_zone;
         let unit_width = width / width_in_modules;
-        let unit_height = height / width_in_modules;
+        let unit_height = height / height_in_modules;
         self.module_dimensions(unit_width, unit_height)
     }
 
@@ -169,19 +182,21 @@ impl<'a, P: Pixel> Renderer<'a, P> {
 
     /// Renders the QR code into an image.
     pub fn build(&self) -> P::Image {
-        let w = self.modules_count;
+        let w = self.horizontal_modules_count;
+        let h = self.vertical_modules_count;
         let qz = if self.has_quiet_zone { self.quiet_zone } else { 0 };
         let width = w + 2 * qz;
+        let height = h + 2 * qz;
 
         let (mw, mh) = self.module_size;
         let real_width = width * mw;
-        let real_height = width * mh;
+        let real_height = height * mh;
 
         let mut canvas = P::Canvas::new(real_width, real_height, self.dark_color, self.light_color);
         let mut i = 0;
-        for y in 0..width {
+        for y in 0..height {
             for x in 0..width {
-                if qz <= x && x < w + qz && qz <= y && y < w + qz {
+                if qz <= x && x < w + qz && qz <= y && y < h + qz {
                     if self.content[i] != Color::Light {
                         canvas.draw_dark_rect(x * mw, y * mh, mw, mh);
                     }
