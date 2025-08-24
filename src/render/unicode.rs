@@ -40,7 +40,7 @@ impl Dense1x2 {
     }
 }
 
-/// A canvas for UTF-8 rendering.
+/// A canvas for UTF-8 rendering with a resolution of 1×2 modules per character.
 pub struct Canvas1x2 {
     canvas: Vec<u8>,
     width: u32,
