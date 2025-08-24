@@ -288,7 +288,7 @@ impl<I: Iterator<Item = Segment>> Optimizer<I> {
 }
 
 impl Parser<'_> {
-    /// Optimizes a `Parser` based on the given `version`.
+    /// Creates a new `Optimizer` based on this parser.
     pub fn optimize(self, version: Version) -> Optimizer<Self> {
         Optimizer::new(self, version)
     }
