@@ -34,7 +34,10 @@ pub trait Pixel: Copy + Sized {
 
 /// Rendering canvas of a QR code image.
 pub trait Canvas: Sized {
+    /// Type of an image pixel.
     type Pixel: Sized;
+
+    /// Type of the finalized image.
     type Image: Sized;
 
     /// Constructs a new canvas of the given dimensions.
@@ -43,6 +46,8 @@ pub trait Canvas: Sized {
     /// Draws a single dark pixel at the (x, y) coordinate.
     fn draw_dark_pixel(&mut self, x: u32, y: u32);
 
+    /// Draws a dark rectangle with dimensions `width`×`height` at the (`left`,
+    /// `top`) coordinate.
     fn draw_dark_rect(&mut self, left: u32, top: u32, width: u32, height: u32) {
         for y in top..(top + height) {
             for x in left..(left + width) {
@@ -121,6 +126,14 @@ impl<'a, P: Pixel> Renderer<'a, P> {
         self
     }
 
+    /// Sets the minimum total image width (and thus height) in pixels,
+    /// including the quiet zone if applicable. The renderer will try to find
+    /// the dimension as small as possible, such that each module in the QR code
+    /// has uniform size (no distortion).
+    ///
+    /// For instance, a version 1 QR code has 19 modules across including the
+    /// quiet zone. If we request an image of width ≥200px, we get that each
+    /// module's size should be 11px, so the actual image size will be 209px.
     #[deprecated(since = "0.4.0", note = "use `.min_dimensions(width, width)` instead")]
     pub fn min_width(&mut self, width: u32) -> &mut Self {
         self.min_dimensions(width, width)

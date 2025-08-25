@@ -8,9 +8,12 @@ use alloc::vec::Vec;
 
 const CODEPAGE: [&str; 4] = [" ", "\u{2584}", "\u{2580}", "\u{2588}"];
 
+/// An image pixel for UTF-8 rendering.
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum Dense1x2 {
+    /// The pixel is dark colored.
     Dark,
+    /// The pixel is light colored.
     Light,
 }
 
@@ -37,6 +40,7 @@ impl Dense1x2 {
     }
 }
 
+/// A canvas for UTF-8 rendering with a resolution of 1×2 modules per character.
 pub struct Canvas1x2 {
     canvas: Vec<u8>,
     width: u32,

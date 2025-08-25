@@ -1,3 +1,6 @@
+//! The `types` module contains types associated with the functional elements of
+//! a QR code.
+
 use crate::cast::As;
 use core::cmp::{Ordering, PartialOrd};
 use core::default::Default;

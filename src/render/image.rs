@@ -1,3 +1,5 @@
+//! Raster image rendering support powered by the [`image`] crate.
+
 #![cfg(feature = "image")]
 
 use crate::render::{Canvas, Pixel};
