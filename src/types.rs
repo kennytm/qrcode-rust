@@ -130,25 +130,46 @@ pub enum Version {
 
     /// A Micro QR code version. The parameter should be between 1 and 4.
     Micro(i16),
+
+    /// A rMQR code version. The first parameter represents the height and
+    /// should be 7, 9, 11, 13, 15, or 17. The second parameter represents the
+    /// width and should be 27, 43, 59, 77, 99, or 139. 27 can only be used with
+    /// 11, or 13.
+    RectMicro(i16, i16),
 }
 
 impl Version {
-    /// Get the number of "modules" on each size of the QR code, i.e. the width
-    /// and height of the code.
+    /// Gets the number of horizontally-arranged "modules" on each size of the
+    /// QR code, i.e. the width of the code.
+    ///
+    /// Except for rMQR code, the width is the same as the height.
     pub const fn width(self) -> i16 {
         match self {
             Self::Normal(v) => v * 4 + 17,
             Self::Micro(v) => v * 2 + 9,
+            Self::RectMicro(_, w) => w,
+        }
+    }
+
+    /// Gets the number of vertically-arranged "modules" on each size of the QR
+    /// code, i.e. the height of the code.
+    ///
+    /// Except for rMQR code, the height is the same as the width.
+    pub const fn height(self) -> i16 {
+        if let Self::RectMicro(h, _) = self {
+            h
+        } else {
+            self.width()
         }
     }
 
     /// Obtains an object from a hard-coded table.
     ///
-    /// The table must be a 44×4 array. The outer array represents the content
+    /// The table must be a 76×4 array. The outer array represents the content
     /// for each version. The first 40 entry corresponds to QR code versions 1
-    /// to 40, and the last 4 corresponds to Micro QR code version 1 to 4. The
-    /// inner array represents the content in each error correction level, in
-    /// the order [L, M, Q, H].
+    /// to 40, the next 4 corresponds to Micro QR code version 1 to 4, and the
+    /// last 32 corresponds to rMQR code. The inner array represents the content
+    /// in each error correction level, in the order [L, M, Q, H].
     ///
     /// # Errors
     ///
@@ -168,6 +189,13 @@ impl Version {
                     return Ok(obj);
                 }
             }
+            Self::RectMicro(..) => {
+                let index = self.rect_micro_index()?;
+                let obj = table[index + 44][ec_level as usize];
+                if obj != T::default() {
+                    return Ok(obj);
+                }
+            }
             _ => {}
         }
         Err(QrError::InvalidVersion)
@@ -175,16 +203,78 @@ impl Version {
 
     /// The number of bits needed to encode the mode indicator.
     pub fn mode_bits_count(self) -> usize {
-        if let Self::Micro(a) = self {
-            (a - 1).as_usize()
-        } else {
-            4
+        match self {
+            Self::Normal(_) => 4,
+            Self::Micro(a) => (a - 1).as_usize(),
+            Self::RectMicro(..) => 3,
         }
+    }
+
+    /// Checks whether is version refers to a normal QR code.
+    pub const fn is_normal(self) -> bool {
+        matches!(self, Self::Normal(_))
     }
 
     /// Checks whether is version refers to a Micro QR code.
     pub const fn is_micro(self) -> bool {
         matches!(self, Self::Micro(_))
+    }
+
+    /// Checks whether is version refers to a rMQR code.
+    pub const fn is_rect_micro(self) -> bool {
+        self.rect_micro_index().is_ok()
+    }
+
+    /// Gets the index of the version of the rMQR code.
+    pub(crate) const fn rect_micro_index(self) -> QrResult<usize> {
+        match self {
+            Self::RectMicro(7, 43) => Ok(0),
+            Self::RectMicro(7, 59) => Ok(1),
+            Self::RectMicro(7, 77) => Ok(2),
+            Self::RectMicro(7, 99) => Ok(3),
+            Self::RectMicro(7, 139) => Ok(4),
+            Self::RectMicro(9, 43) => Ok(5),
+            Self::RectMicro(9, 59) => Ok(6),
+            Self::RectMicro(9, 77) => Ok(7),
+            Self::RectMicro(9, 99) => Ok(8),
+            Self::RectMicro(9, 139) => Ok(9),
+            Self::RectMicro(11, 27) => Ok(10),
+            Self::RectMicro(11, 43) => Ok(11),
+            Self::RectMicro(11, 59) => Ok(12),
+            Self::RectMicro(11, 77) => Ok(13),
+            Self::RectMicro(11, 99) => Ok(14),
+            Self::RectMicro(11, 139) => Ok(15),
+            Self::RectMicro(13, 27) => Ok(16),
+            Self::RectMicro(13, 43) => Ok(17),
+            Self::RectMicro(13, 59) => Ok(18),
+            Self::RectMicro(13, 77) => Ok(19),
+            Self::RectMicro(13, 99) => Ok(20),
+            Self::RectMicro(13, 139) => Ok(21),
+            Self::RectMicro(15, 43) => Ok(22),
+            Self::RectMicro(15, 59) => Ok(23),
+            Self::RectMicro(15, 77) => Ok(24),
+            Self::RectMicro(15, 99) => Ok(25),
+            Self::RectMicro(15, 139) => Ok(26),
+            Self::RectMicro(17, 43) => Ok(27),
+            Self::RectMicro(17, 59) => Ok(28),
+            Self::RectMicro(17, 77) => Ok(29),
+            Self::RectMicro(17, 99) => Ok(30),
+            Self::RectMicro(17, 139) => Ok(31),
+            _ => Err(QrError::InvalidVersion),
+        }
+    }
+
+    /// Gets the index in ascending order of width.
+    pub(crate) const fn rect_micro_width_index(self) -> QrResult<usize> {
+        match self {
+            Self::RectMicro(_, 27) => Ok(0),
+            Self::RectMicro(_, 43) => Ok(1),
+            Self::RectMicro(_, 59) => Ok(2),
+            Self::RectMicro(_, 77) => Ok(3),
+            Self::RectMicro(_, 99) => Ok(4),
+            Self::RectMicro(_, 139) => Ok(5),
+            _ => Err(QrError::InvalidVersion),
+        }
     }
 }
 
@@ -247,6 +337,15 @@ impl Mode {
                 Self::Byte => 16,
                 Self::Kanji => 12,
             },
+            Version::RectMicro(..) => {
+                let index = version.rect_micro_index().unwrap_or(31);
+                match self {
+                    Self::Numeric => RMQR_LENGTH_BITS_COUNT[index][0],
+                    Self::Alphanumeric => RMQR_LENGTH_BITS_COUNT[index][1],
+                    Self::Byte => RMQR_LENGTH_BITS_COUNT[index][2],
+                    Self::Kanji => RMQR_LENGTH_BITS_COUNT[index][3],
+                }
+            }
         }
     }
 
@@ -328,3 +427,41 @@ mod mode_tests {
 }
 
 //}}}
+
+/// The number of bits needed to encode the length of the data.
+///
+/// [Numeric, Alphanumeric, Byte, Kanji]
+static RMQR_LENGTH_BITS_COUNT: [[usize; 4]; 32] = [
+    [4, 3, 3, 2], // R7x43
+    [5, 5, 4, 3], // R7x59
+    [6, 5, 5, 4], // R7x77
+    [7, 6, 5, 5], // R7x99
+    [7, 6, 6, 5], // R7x139
+    [5, 5, 4, 3], // R9x43
+    [6, 5, 5, 4], // R9x59
+    [7, 6, 5, 5], // R9x77
+    [7, 6, 6, 5], // R9x99
+    [8, 7, 6, 6], // R9x139
+    [4, 4, 3, 2], // R11x27
+    [6, 5, 5, 4], // R11x43
+    [7, 6, 5, 5], // R11x59
+    [7, 6, 6, 5], // R11x77
+    [8, 7, 6, 6], // R11x99
+    [8, 7, 7, 6], // R11x139
+    [5, 5, 4, 3], // R13x27
+    [6, 6, 5, 5], // R13x43
+    [7, 6, 6, 5], // R13x59
+    [7, 7, 6, 6], // R13x77
+    [8, 7, 7, 6], // R13x99
+    [8, 8, 7, 7], // R13x139
+    [7, 6, 6, 5], // R15x43
+    [7, 7, 6, 5], // R15x59
+    [8, 7, 7, 6], // R15x77
+    [8, 7, 7, 6], // R15x99
+    [9, 8, 7, 7], // R15x139
+    [7, 6, 6, 5], // R17x43
+    [8, 7, 6, 6], // R17x59
+    [8, 7, 7, 6], // R17x77
+    [8, 8, 7, 6], // R17x99
+    [9, 8, 8, 7], // R17x139
+];

@@ -1,6 +1,7 @@
 //! QR Code encoder
 //!
-//! This crate provides a QR code and Micro QR code encoder for binary data.
+//! This crate provides a QR code, Micro QR code and rMQR code encoder for
+//! binary data.
 //!
 //! ```
 //! # #[cfg(feature = "image")]
@@ -62,6 +63,7 @@ pub struct QrCode {
     version: Version,
     ec_level: EcLevel,
     width: usize,
+    height: usize,
 }
 
 impl QrCode {
@@ -113,12 +115,13 @@ impl QrCode {
     /// let code = QrCode::with_version(b"Some data", Version::Normal(5), EcLevel::M).unwrap();
     /// ```
     ///
-    /// This method can also be used to generate Micro QR code.
+    /// This method can also be used to generate Micro QR code or rMQR code.
     ///
     /// ```
     /// use qrcode::{EcLevel, QrCode, Version};
     ///
     /// let micro_code = QrCode::with_version(b"123", Version::Micro(1), EcLevel::L).unwrap();
+    /// let rmqr_code = QrCode::with_version(b"456", Version::RectMicro(7, 43), EcLevel::M).unwrap();
     /// ```
     ///
     /// # Errors
@@ -170,7 +173,13 @@ impl QrCode {
         canvas.draw_all_functional_patterns();
         canvas.draw_data(&encoded_data, &ec_data);
         let canvas = canvas.apply_best_mask();
-        Ok(Self { content: canvas.into_colors(), version, ec_level, width: version.width().as_usize() })
+        Ok(Self {
+            content: canvas.into_colors(),
+            version,
+            ec_level,
+            width: version.width().as_usize(),
+            height: version.height().as_usize(),
+        })
     }
 
     /// Gets the version of this QR code.
@@ -188,6 +197,13 @@ impl QrCode {
     /// The width here does not contain the quiet zone paddings.
     pub const fn width(&self) -> usize {
         self.width
+    }
+
+    /// Gets the number of modules per side, i.e. the height of this QR code.
+    ///
+    /// The height here does not contain the quiet zone paddings.
+    pub const fn height(&self) -> usize {
+        self.height
     }
 
     /// Gets the maximum number of allowed erratic modules can be introduced
@@ -266,8 +282,8 @@ impl QrCode {
     /// Note: the `image` crate itself also provides method to rotate the image,
     /// or overlay a logo on top of the QR code.
     pub fn render<P: Pixel>(&self) -> Renderer<'_, P> {
-        let quiet_zone = if self.version.is_micro() { 2 } else { 4 };
-        Renderer::new(&self.content, self.width, quiet_zone)
+        let quiet_zone = if self.version.is_normal() { 4 } else { 2 };
+        Renderer::new(&self.content, self.width, self.height, quiet_zone)
     }
 }
 
@@ -336,6 +352,30 @@ mod tests {
              ###.#..##.###"
         );
     }
+
+    #[test]
+    fn test_annex_i_rmqr() {
+        let code = QrCode::with_version(b"01234567", Version::RectMicro(15, 43), EcLevel::M).unwrap();
+        assert_eq!(
+            &*code.to_debug_str('#', '.'),
+            "\
+             #######.#.#.#.#.#.#.###.#.#.#.#.#.#.#.#.###\n\
+             #.....#.##.#.#.#.#.##.######..####..##.#..#\n\
+             #.###.#.##...####.#####..#.###..##.###.####\n\
+             #.###.#...#...#.#..#......#.#..##.##.#####.\n\
+             #.###.#.#..#..#.##..###.##.##.##.##.......#\n\
+             #.....#.##.##.###.##...##...##..#.####.....\n\
+             #######...##.#.#.#...####.....##..#..#...##\n\
+             .........###.#..#.#...####.####..#..#.####.\n\
+             ##.####.....##...#####.#..#..##.#...#####.#\n\
+             .###.###.##.##.....##...####..####..#..##..\n\
+             #.###...##..#.##.###.#...#.###..####..#####\n\
+             ...##...###.#.####.##.....#.#..##.#.#.#...#\n\
+             ##.#....###...#.#...###.##.##.##.##..##.#.#\n\
+             #.##..#.#.###.#...###.###...##..#..####...#\n\
+             ###.#.#.#.#.#.#.#.#.###.#.#.#.#.#.#.#.#####"
+        );
+    }
 }
 
 #[cfg(all(test, feature = "image"))]
@@ -362,6 +402,15 @@ mod image_tests {
             .light_color(Rgb([255, 255, 128]))
             .build();
         let expected = load_from_memory(include_bytes!("test_annex_i_micro_qr_as_image.png")).unwrap().into_rgb8();
+        assert_eq!(image.dimensions(), expected.dimensions());
+        assert_eq!(image.into_raw(), expected.into_raw());
+    }
+
+    #[test]
+    fn test_annex_i_rmqr_as_image() {
+        let code = QrCode::with_version(b"01234567", Version::RectMicro(15, 43), EcLevel::M).unwrap();
+        let image = code.render::<Luma<u8>>().build();
+        let expected = load_from_memory(include_bytes!("test_annex_i_rmqr_as_image.png")).unwrap().into_luma8();
         assert_eq!(image.dimensions(), expected.dimensions());
         assert_eq!(image.into_raw(), expected.into_raw());
     }
@@ -392,6 +441,14 @@ mod svg_tests {
         let expected = include_str!("test_annex_i_micro_qr_as_svg.svg");
         assert_eq!(&image, expected);
     }
+
+    #[test]
+    fn test_annex_i_rmqr_as_svg() {
+        let code = QrCode::with_version(b"01234567", Version::RectMicro(15, 43), EcLevel::M).unwrap();
+        let image = code.render::<SvgColor>().build();
+        let expected = include_str!("test_annex_i_rmqr_as_svg.svg");
+        assert_eq!(&image, expected);
+    }
 }
 
 #[cfg(all(test, feature = "pic"))]
@@ -412,6 +469,14 @@ mod pic_tests {
         let code = QrCode::with_version(b"01234567", Version::Micro(2), EcLevel::L).unwrap();
         let image = code.render::<PicColor>().min_dimensions(1, 1).build();
         let expected = include_str!("test_annex_i_micro_qr_as_pic.pic");
+        assert_eq!(&image, expected);
+    }
+
+    #[test]
+    fn test_annex_i_rmqr_as_pic() {
+        let code = QrCode::with_version(b"01234567", Version::RectMicro(15, 43), EcLevel::M).unwrap();
+        let image = code.render::<PicColor>().build();
+        let expected = include_str!("test_annex_i_rmqr_as_pic.pic");
         assert_eq!(&image, expected);
     }
 }
@@ -439,6 +504,14 @@ mod eps_tests {
             .light_color(EpsColor([1.0, 1.0, 0.5]))
             .build();
         let expected = include_str!("test_annex_i_micro_qr_as_eps.eps");
+        assert_eq!(&image, expected);
+    }
+
+    #[test]
+    fn test_annex_i_rmqr_as_eps() {
+        let code = QrCode::with_version(b"01234567", Version::RectMicro(15, 43), EcLevel::M).unwrap();
+        let image = code.render::<EpsColor>().build();
+        let expected = include_str!("test_annex_i_rmqr_as_eps.eps");
         assert_eq!(&image, expected);
     }
 }

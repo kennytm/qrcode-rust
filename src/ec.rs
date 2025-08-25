@@ -212,6 +212,18 @@ mod max_allowed_errors_test {
         assert_eq!(Ok(5), max_allowed_errors(Version::Micro(4), EcLevel::M));
         assert_eq!(Ok(7), max_allowed_errors(Version::Micro(4), EcLevel::Q));
 
+        assert_eq!(Ok(3), max_allowed_errors(Version::RectMicro(7, 43), EcLevel::M));
+        assert_eq!(Ok(5), max_allowed_errors(Version::RectMicro(7, 43), EcLevel::H));
+
+        assert_eq!(Ok(4), max_allowed_errors(Version::RectMicro(7, 59), EcLevel::M));
+        assert_eq!(Ok(7), max_allowed_errors(Version::RectMicro(7, 59), EcLevel::H));
+
+        assert_eq!(Ok(6), max_allowed_errors(Version::RectMicro(7, 77), EcLevel::M));
+        assert_eq!(Ok(11), max_allowed_errors(Version::RectMicro(7, 77), EcLevel::H));
+
+        assert_eq!(Ok(8), max_allowed_errors(Version::RectMicro(7, 99), EcLevel::M));
+        assert_eq!(Ok(15), max_allowed_errors(Version::RectMicro(7, 99), EcLevel::H));
+
         assert_eq!(Ok(2), max_allowed_errors(Version::Normal(1), EcLevel::L));
         assert_eq!(Ok(4), max_allowed_errors(Version::Normal(1), EcLevel::M));
         assert_eq!(Ok(6), max_allowed_errors(Version::Normal(1), EcLevel::Q));
@@ -235,6 +247,9 @@ mod max_allowed_errors_test {
 
     #[test]
     fn test_high_versions() {
+        assert_eq!(Ok(40), max_allowed_errors(Version::RectMicro(17, 139), EcLevel::M));
+        assert_eq!(Ok(78), max_allowed_errors(Version::RectMicro(17, 139), EcLevel::H));
+
         assert_eq!(Ok(375), max_allowed_errors(Version::Normal(40), EcLevel::L));
         assert_eq!(Ok(686), max_allowed_errors(Version::Normal(40), EcLevel::M));
         assert_eq!(Ok(1020), max_allowed_errors(Version::Normal(40), EcLevel::Q));
@@ -376,8 +391,8 @@ static GENERATOR_POLYNOMIALS: [&[u8]; 70] = [
 /// correction per block in each version.
 ///
 /// This is a copy of ISO/IEC 18004:2006, §6.5.1, Table 9 (The 4th column divide
-/// by the sum of the 6th column).
-static EC_BYTES_PER_BLOCK: [[usize; 4]; 44] = [
+/// by the sum of the 6th column), and ISO/IEC 23941:2022, §7.5.1, Table 8.
+static EC_BYTES_PER_BLOCK: [[usize; 4]; 76] = [
     // Normal versions.
     [7, 10, 13, 17],  // 1
     [10, 16, 22, 28], // 2
@@ -424,18 +439,52 @@ static EC_BYTES_PER_BLOCK: [[usize; 4]; 44] = [
     [5, 6, 0, 0],   // M2
     [6, 8, 0, 0],   // M3
     [8, 10, 14, 0], // M4
+    // rMQR versions.
+    [0, 7, 0, 10],  // R7x43
+    [0, 9, 0, 14],  // R7x59
+    [0, 12, 0, 22], // R7x77
+    [0, 16, 0, 30], // R7x99
+    [0, 24, 0, 22], // R7x139
+    [0, 9, 0, 14],  // R9x43
+    [0, 12, 0, 22], // R9x59
+    [0, 18, 0, 16], // R9x77
+    [0, 24, 0, 22], // R9x99
+    [0, 18, 0, 22], // R9x139
+    [0, 8, 0, 10],  // R11x27
+    [0, 12, 0, 20], // R11x43
+    [0, 16, 0, 16], // R11x59
+    [0, 24, 0, 22], // R11x77
+    [0, 16, 0, 30], // R11x99
+    [0, 24, 0, 30], // R11x139
+    [0, 9, 0, 14],  // R13x27
+    [0, 14, 0, 28], // R13x43
+    [0, 22, 0, 20], // R13x59
+    [0, 16, 0, 28], // R13x77
+    [0, 20, 0, 26], // R13x99
+    [0, 20, 0, 28], // R13x139
+    [0, 18, 0, 18], // R15x43
+    [0, 26, 0, 24], // R15x59
+    [0, 18, 0, 24], // R15x77
+    [0, 24, 0, 22], // R15x99
+    [0, 24, 0, 26], // R15x139
+    [0, 21, 0, 20], // R17x43
+    [0, 16, 0, 30], // R17x59
+    [0, 22, 0, 28], // R17x77
+    [0, 20, 0, 26], // R17x99
+    [0, 20, 0, 26], // R17x139
 ];
 
 /// `DATA_BYTES_PER_BLOCK` provides the number of codewords (bytes) used for
 /// real data per block in each version.
 ///
 /// This is a copy of ISO/IEC 18004:2006, §6.5.1, Table 9 (The value "k" of the
-/// 7th column, followed by the 6th column).
+/// 7th column, followed by the 6th column), and ISO/IEC 23941:2022, §7.5.1,
+/// Table 8.
 ///
 /// Every entry is a 4-tuple. Take `DATA_BYTES_PER_BLOCK[39][3] == (15, 20, 16, 61)`
 /// as an example, this means in version 40 with correction level H, there are
 /// 20 blocks with 15 bytes in size, and 61 blocks with 16 bytes in size.
-static DATA_BYTES_PER_BLOCK: [[(usize, usize, usize, usize); 4]; 44] = [
+static DATA_BYTES_PER_BLOCK: [[(usize, usize, usize, usize); 4]; 76] = [
     // Normal versions.
     [(19, 1, 0, 0), (16, 1, 0, 0), (13, 1, 0, 0), (9, 1, 0, 0)], // 1
     [(34, 1, 0, 0), (28, 1, 0, 0), (22, 1, 0, 0), (16, 1, 0, 0)], // 2
@@ -482,6 +531,39 @@ static DATA_BYTES_PER_BLOCK: [[(usize, usize, usize, usize); 4]; 44] = [
     [(5, 1, 0, 0), (4, 1, 0, 0), (0, 0, 0, 0), (0, 0, 0, 0)], // M2
     [(11, 1, 0, 0), (9, 1, 0, 0), (0, 0, 0, 0), (0, 0, 0, 0)], // M3
     [(16, 1, 0, 0), (14, 1, 0, 0), (10, 1, 0, 0), (0, 0, 0, 0)], // M4
+    // rMQR versions.
+    [(0, 0, 0, 0), (6, 1, 0, 0), (0, 0, 0, 0), (3, 1, 0, 0)], // R7x43
+    [(0, 0, 0, 0), (12, 1, 0, 0), (0, 0, 0, 0), (7, 1, 0, 0)], // R7x59
+    [(0, 0, 0, 0), (20, 1, 0, 0), (0, 0, 0, 0), (10, 1, 0, 0)], // R7x77
+    [(0, 0, 0, 0), (28, 1, 0, 0), (0, 0, 0, 0), (14, 1, 0, 0)], // R7x99
+    [(0, 0, 0, 0), (44, 1, 0, 0), (0, 0, 0, 0), (12, 2, 0, 0)], // R7x139
+    [(0, 0, 0, 0), (12, 1, 0, 0), (0, 0, 0, 0), (7, 1, 0, 0)], // R9x43
+    [(0, 0, 0, 0), (21, 1, 0, 0), (0, 0, 0, 0), (11, 1, 0, 0)], // R9x59
+    [(0, 0, 0, 0), (31, 1, 0, 0), (0, 0, 0, 0), (8, 1, 9, 1)], // R9x77
+    [(0, 0, 0, 0), (42, 1, 0, 0), (0, 0, 0, 0), (11, 2, 0, 0)], // R9x99
+    [(0, 0, 0, 0), (31, 1, 32, 1), (0, 0, 0, 0), (11, 3, 0, 0)], // R9x139
+    [(0, 0, 0, 0), (7, 1, 0, 0), (0, 0, 0, 0), (5, 1, 0, 0)], // R11x27
+    [(0, 0, 0, 0), (19, 1, 0, 0), (0, 0, 0, 0), (11, 1, 0, 0)], // R11x43
+    [(0, 0, 0, 0), (31, 1, 0, 0), (0, 0, 0, 0), (7, 1, 8, 1)], // R11x59
+    [(0, 0, 0, 0), (43, 1, 0, 0), (0, 0, 0, 0), (11, 1, 12, 1)], // R11x77
+    [(0, 0, 0, 0), (28, 1, 29, 1), (0, 0, 0, 0), (14, 1, 15, 1)], // R11x99
+    [(0, 0, 0, 0), (42, 2, 0, 0), (0, 0, 0, 0), (14, 3, 0, 0)], // R11x139
+    [(0, 0, 0, 0), (12, 1, 0, 0), (0, 0, 0, 0), (7, 1, 0, 0)], // R13x27
+    [(0, 0, 0, 0), (27, 1, 0, 0), (0, 0, 0, 0), (13, 1, 0, 0)], // R13x43
+    [(0, 0, 0, 0), (38, 1, 0, 0), (0, 0, 0, 0), (10, 2, 0, 0)], // R13x59
+    [(0, 0, 0, 0), (26, 1, 27, 1), (0, 0, 0, 0), (14, 1, 15, 1)], // R13x77
+    [(0, 0, 0, 0), (36, 1, 37, 1), (0, 0, 0, 0), (11, 1, 12, 2)], // R13x99
+    [(0, 0, 0, 0), (35, 2, 36, 1), (0, 0, 0, 0), (13, 2, 14, 2)], // R13x139
+    [(0, 0, 0, 0), (33, 1, 0, 0), (0, 0, 0, 0), (7, 1, 8, 1)], // R15x43
+    [(0, 0, 0, 0), (48, 1, 0, 0), (0, 0, 0, 0), (13, 2, 0, 0)], // R15x59
+    [(0, 0, 0, 0), (33, 1, 34, 1), (0, 0, 0, 0), (10, 2, 11, 1)], // R15x77
+    [(0, 0, 0, 0), (44, 2, 0, 0), (0, 0, 0, 0), (12, 4, 0, 0)], // R15x99
+    [(0, 0, 0, 0), (42, 2, 43, 1), (0, 0, 0, 0), (13, 1, 14, 4)], // R15x139
+    [(0, 0, 0, 0), (39, 1, 0, 0), (0, 0, 0, 0), (10, 1, 11, 1)], // R17x43
+    [(0, 0, 0, 0), (28, 2, 0, 0), (0, 0, 0, 0), (14, 2, 0, 0)], // R17x59
+    [(0, 0, 0, 0), (39, 2, 0, 0), (0, 0, 0, 0), (12, 1, 13, 2)], // R17x77
+    [(0, 0, 0, 0), (33, 2, 34, 1), (0, 0, 0, 0), (14, 4, 0, 0)], // R17x99
+    [(0, 0, 0, 0), (38, 4, 0, 0), (0, 0, 0, 0), (12, 2, 13, 4)], // R17x139
 ];
 
 //}}}
