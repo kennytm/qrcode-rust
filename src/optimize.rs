@@ -340,7 +340,7 @@ pub fn total_encoded_len(segments: &[Segment], version: Version) -> usize {
 
 #[cfg(test)]
 mod optimize_tests {
-    use crate::optimize::{total_encoded_len, Optimizer, Segment};
+    use crate::optimize::{Optimizer, Segment, total_encoded_len};
     use crate::types::{Mode, Version};
     use alloc::vec::Vec;
 

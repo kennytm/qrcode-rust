@@ -7,7 +7,7 @@ use core::cmp::min;
 extern crate test;
 
 use crate::cast::{As, Truncate};
-use crate::optimize::{total_encoded_len, Optimizer, Parser, Segment};
+use crate::optimize::{Optimizer, Parser, Segment, total_encoded_len};
 use crate::types::{EcLevel, Mode, QrError, QrResult, Version};
 
 //------------------------------------------------------------------------------
@@ -86,11 +86,7 @@ impl Bits {
 
     /// Total number of bits currently pushed.
     pub fn len(&self) -> usize {
-        if self.bit_offset == 0 {
-            self.data.len() * 8
-        } else {
-            (self.data.len() - 1) * 8 + self.bit_offset
-        }
+        if self.bit_offset == 0 { self.data.len() * 8 } else { (self.data.len() - 1) * 8 + self.bit_offset }
     }
 
     /// Whether there are any bits pushed.

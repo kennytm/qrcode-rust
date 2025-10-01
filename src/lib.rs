@@ -341,7 +341,7 @@ mod tests {
 #[cfg(all(test, feature = "image"))]
 mod image_tests {
     use crate::{EcLevel, QrCode, Version};
-    use image::{load_from_memory, Luma, Rgb};
+    use image::{Luma, Rgb, load_from_memory};
 
     #[test]
     fn test_annex_i_qr_as_image() {

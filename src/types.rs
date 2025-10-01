@@ -175,11 +175,7 @@ impl Version {
 
     /// The number of bits needed to encode the mode indicator.
     pub fn mode_bits_count(self) -> usize {
-        if let Self::Micro(a) = self {
-            (a - 1).as_usize()
-        } else {
-            4
-        }
+        if let Self::Micro(a) = self { (a - 1).as_usize() } else { 4 }
     }
 
     /// Checks whether is version refers to a Micro QR code.
@@ -262,8 +258,8 @@ impl Mode {
     /// i.e. half the total size of bytes.
     pub const fn data_bits_count(self, raw_data_len: usize) -> usize {
         match self {
-            Self::Numeric => (raw_data_len * 10 + 2) / 3,
-            Self::Alphanumeric => (raw_data_len * 11 + 1) / 2,
+            Self::Numeric => (raw_data_len * 10).div_ceil(3),
+            Self::Alphanumeric => (raw_data_len * 11).div_ceil(2),
             Self::Byte => raw_data_len * 8,
             Self::Kanji => raw_data_len * 13,
         }
