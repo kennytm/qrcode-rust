@@ -82,8 +82,11 @@ impl Module {
 /// into a QR code.
 #[derive(Clone)]
 pub struct Canvas {
-    /// The width and height of the canvas (cached as it is needed frequently).
+    /// The width of the canvas (cached as it is needed frequently).
     width: i16,
+
+    /// The height of the canvas (cached as it is needed frequently).
+    height: i16,
 
     /// The version of the QR code.
     version: Version,
@@ -99,8 +102,9 @@ pub struct Canvas {
 impl Canvas {
     /// Constructs a new canvas big enough for a QR code of the given version.
     pub fn new(version: Version, ec_level: EcLevel) -> Self {
-        let width = version.width();
-        Self { width, version, ec_level, modules: vec![Module::Empty; (width * width).as_usize()] }
+        let (width, height) = (version.width(), version.height());
+        let modules = vec![Module::Empty; (width * height).as_usize()];
+        Self { width, height, version, ec_level, modules }
     }
 
     /// Converts the canvas into a human-readable string.
@@ -108,7 +112,7 @@ impl Canvas {
     fn to_debug_str(&self) -> alloc::string::String {
         let width = self.width;
         let mut res = alloc::string::String::with_capacity((width * (width + 1)) as usize);
-        for y in 0..width {
+        for y in 0..self.height {
             res.push('\n');
             for x in 0..width {
                 res.push(match self.get(x, y) {
@@ -123,9 +127,29 @@ impl Canvas {
         res
     }
 
+    /// Converts the canvas into a human-readable string.
+    #[cfg(test)]
+    fn to_debug_str_mask_same(&self) -> alloc::string::String {
+        let width = self.width;
+        let mut res = alloc::string::String::with_capacity((width * (width + 1)) as usize);
+        for y in 0..self.height {
+            res.push('\n');
+            for x in 0..width {
+                res.push(match self.get(x, y) {
+                    Module::Empty => '?',
+                    Module::Masked(Color::Light) => '.',
+                    Module::Masked(Color::Dark) => '#',
+                    Module::Unmasked(Color::Light) => '.',
+                    Module::Unmasked(Color::Dark) => '#',
+                });
+            }
+        }
+        res
+    }
+
     fn coords_to_index(&self, x: i16, y: i16) -> usize {
         let x = if x < 0 { x + self.width } else { x }.as_usize();
-        let y = if y < 0 { y + self.width } else { y }.as_usize();
+        let y = if y < 0 { y + self.height } else { y }.as_usize();
         y * self.width.as_usize() + x
     }
 
@@ -222,7 +246,13 @@ impl Canvas {
     /// Draws a single finder pattern with the center at (x, y).
     fn draw_finder_pattern_at(&mut self, x: i16, y: i16) {
         let (dx_left, dx_right) = if x >= 0 { (-3, 4) } else { (-4, 3) };
-        let (dy_top, dy_bottom) = if y >= 0 { (-3, 4) } else { (-4, 3) };
+        let (dy_top, dy_bottom) = if self.height == 7 {
+            (-3, 3)
+        } else if y >= 0 {
+            (-3, 4)
+        } else {
+            (-4, 3)
+        };
         for j in dy_top..=dy_bottom {
             for i in dx_left..=dx_right {
                 self.put(
@@ -240,6 +270,14 @@ impl Canvas {
         }
     }
 
+    /// Draws a single finder pattern for rMQR code.
+    ///
+    /// In rMQR code, there is one finder pattern that has the same shape as the
+    /// alignment pattern located in the bottom right corner.
+    fn draw_finder_pattern_rmqr_at(&mut self) {
+        self.draw_alignment_pattern_at(self.width - 3, self.height - 3);
+    }
+
     /// Draws the finder patterns.
     ///
     /// The finder patterns is are 7×7 square patterns appearing at the three
@@ -254,6 +292,7 @@ impl Canvas {
                 self.draw_finder_pattern_at(-4, 3);
                 self.draw_finder_pattern_at(3, -4);
             }
+            Version::RectMicro(..) => self.draw_finder_pattern_rmqr_at(),
         }
     }
 }
@@ -314,6 +353,23 @@ mod finder_pattern_tests {
              ???????????"
         );
     }
+
+    #[test]
+    fn test_rmqr() {
+        let mut c = Canvas::new(Version::RectMicro(7, 43), EcLevel::M);
+        c.draw_finder_patterns();
+        assert_eq!(
+            &*c.to_debug_str(),
+            "\n\
+             #######.???????????????????????????????????\n\
+             #.....#.???????????????????????????????????\n\
+             #.###.#.??????????????????????????????#####\n\
+             #.###.#.??????????????????????????????#...#\n\
+             #.###.#.??????????????????????????????#.#.#\n\
+             #.....#.??????????????????????????????#...#\n\
+             #######.??????????????????????????????#####"
+        );
+    }
 }
 
 //}}}
@@ -340,13 +396,26 @@ impl Canvas {
         }
     }
 
-    /// Draws the alignment patterns.
+    /// Draws a alignment pattern in rMQR code with the center at (x, y).
+    fn draw_alignment_pattern_rmqr_at(&mut self, x: i16, y: i16) {
+        if self.get(x, y) != Module::Empty {
+            return;
+        }
+        for j in -1..=1 {
+            for i in -1..=1 {
+                self.put(x + i, y + j, Color::Dark);
+            }
+        }
+        self.put(x, y, Color::Light);
+    }
+
+    /// Draws the alignment patterns except for rMQR code.
     ///
     /// The alignment patterns are 5×5 square patterns inside the QR code symbol
     /// to help the scanner create the square grid.
     fn draw_alignment_patterns(&mut self) {
         match self.version {
-            Version::Micro(_) | Version::Normal(1) => {}
+            Version::Micro(_) | Version::Normal(1) | Version::RectMicro(..) => {}
             Version::Normal(2..=6) => self.draw_alignment_pattern_at(-7, -7),
             Version::Normal(a) => {
                 let positions = ALIGNMENT_PATTERN_POSITIONS[(a - 7).as_usize()];
@@ -355,6 +424,18 @@ impl Canvas {
                         self.draw_alignment_pattern_at(*x, *y);
                     }
                 }
+            }
+        }
+    }
+
+    /// Draws the alignment patterns in rMQR code.
+    fn draw_alignment_patterns_rmqr(&mut self) {
+        if self.version.is_rect_micro() {
+            let index = self.version.rect_micro_width_index().unwrap() + 34;
+            let x_positons = ALIGNMENT_PATTERN_POSITIONS[index];
+            for x in x_positons {
+                self.draw_alignment_pattern_rmqr_at(*x, 1);
+                self.draw_alignment_pattern_rmqr_at(*x, self.height - 2);
             }
         }
     }
@@ -492,12 +573,31 @@ mod alignment_pattern_tests {
              #######.?????????????????????????????????????"
         );
     }
+
+    #[test]
+    fn test_draw_alignment_patterns_rmqr_7x77() {
+        let mut c = Canvas::new(Version::RectMicro(7, 77), EcLevel::L);
+        c.draw_finder_patterns();
+        c.draw_alignment_patterns_rmqr();
+        assert_eq!(
+            &*c.to_debug_str(),
+            "\n\
+            #######.????????????????###???????????????????????###????????????????????????\n\
+            #.....#.????????????????#.#???????????????????????#.#????????????????????????\n\
+            #.###.#.????????????????###???????????????????????###???????????????????#####\n\
+            #.###.#.????????????????????????????????????????????????????????????????#...#\n\
+            #.###.#.????????????????###???????????????????????###???????????????????#.#.#\n\
+            #.....#.????????????????#.#???????????????????????#.#???????????????????#...#\n\
+            #######.????????????????###???????????????????????###???????????????????#####"
+        );
+    }
 }
 
 /// `ALIGNMENT_PATTERN_POSITIONS` describes the x- and y-coordinates of the
 /// center of the alignment patterns. Since the QR code is symmetric, only one
-/// coordinate is needed.
-static ALIGNMENT_PATTERN_POSITIONS: [&[i16]; 34] = [
+/// coordinate is needed. rMQR code is symmetrically placed at the top and
+/// bottom, so only one coordinate is needed.
+static ALIGNMENT_PATTERN_POSITIONS: [&[i16]; 40] = [
     &[6, 22, 38],
     &[6, 24, 42],
     &[6, 26, 46],
@@ -532,7 +632,42 @@ static ALIGNMENT_PATTERN_POSITIONS: [&[i16]; 34] = [
     &[6, 32, 58, 84, 110, 136, 162],
     &[6, 26, 54, 82, 110, 138, 166],
     &[6, 30, 58, 86, 114, 142, 170],
+    // rMQR versions.
+    &[],                // 27
+    &[21],              // 43
+    &[19, 39],          // 59
+    &[25, 51],          // 77
+    &[23, 49, 75],      // 99
+    &[27, 55, 83, 111], // 139
 ];
+
+//}}}
+//------------------------------------------------------------------------------
+//{{{ Corner finder patterns for rMQR code
+
+impl Canvas {
+    /// Draws the rMQR corner finder pattern.
+    fn draw_corner_finder_pattern(&mut self) {
+        if !self.version.is_rect_micro() {
+            return;
+        }
+        // Bottom left
+        self.put(0, -1, Color::Dark);
+        self.put(1, -1, Color::Dark);
+        self.put(2, -1, Color::Dark);
+
+        // Top right
+        self.put(-1, 0, Color::Dark);
+        self.put(-1, 1, Color::Dark);
+        self.put(-2, 0, Color::Dark);
+        self.put(-2, 1, Color::Light);
+
+        if self.height >= 11 {
+            self.put(0, -2, Color::Dark);
+            self.put(1, -2, Color::Light);
+        }
+    }
+}
 
 //}}}
 //------------------------------------------------------------------------------
@@ -564,19 +699,53 @@ impl Canvas {
         }
     }
 
+    fn draw_rmqr_line(&mut self) {
+        let (width, height) = (self.width, self.height);
+
+        // Top.
+        self.draw_line(8, 0, width - 3, 0, Color::Dark, Color::Light);
+
+        // Bottom.
+        if height == 7 {
+            self.draw_line(8, height - 1, width - 6, height - 1, Color::Dark, Color::Light);
+        } else {
+            self.draw_line(3, height - 1, width - 6, height - 1, Color::Dark, Color::Light);
+        }
+
+        // Left.
+        if height >= 11 {
+            self.draw_line(0, 8, 0, height - 3, Color::Dark, Color::Light);
+        }
+
+        // Right.
+        if height >= 9 {
+            self.draw_line(width - 1, 2, width - 1, height - 6, Color::Dark, Color::Light);
+        }
+
+        let position_index = self.version.rect_micro_width_index().unwrap() + 34;
+        for x in ALIGNMENT_PATTERN_POSITIONS[position_index] {
+            self.draw_line(*x, 3, *x, height - 4, Color::Dark, Color::Light);
+        }
+    }
+
     /// Draws the timing patterns.
     ///
     /// The timing patterns are checkboard-colored lines near the edge of the QR
     /// code symbol, to establish the fine-grained module coordinates when
     /// scanning.
     fn draw_timing_patterns(&mut self) {
-        let width = self.width;
-        let (y, x1, x2) = match self.version {
-            Version::Micro(_) => (0, 8, width - 1),
-            Version::Normal(_) => (6, 8, width - 9),
-        };
-        self.draw_line(x1, y, x2, y, Color::Dark, Color::Light);
-        self.draw_line(y, x1, y, x2, Color::Dark, Color::Light);
+        if let Version::RectMicro(..) = self.version {
+            self.draw_rmqr_line();
+        } else {
+            let width = self.width;
+            let (y, x1, x2) = match self.version {
+                Version::Micro(_) => (0, 8, width - 1),
+                Version::Normal(_) => (6, 8, width - 9),
+                Version::RectMicro(..) => unreachable!(),
+            };
+            self.draw_line(x1, y, x2, y, Color::Dark, Color::Light);
+            self.draw_line(y, x1, y, x2, Color::Dark, Color::Light);
+        }
     }
 }
 
@@ -636,6 +805,63 @@ mod timing_pattern_tests {
              #??????????"
         );
     }
+
+    #[test]
+    fn test_draw_timing_patterns_rmqr_7x77() {
+        let mut c = Canvas::new(Version::RectMicro(7, 77), EcLevel::L);
+        c.draw_timing_patterns();
+        assert_eq!(
+            &*c.to_debug_str(),
+            "\n\
+            ????????#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#??\n\
+            ?????????????????????????????????????????????????????????????????????????????\n\
+            ?????????????????????????????????????????????????????????????????????????????\n\
+            ?????????????????????????.?????????????????????????.?????????????????????????\n\
+            ?????????????????????????????????????????????????????????????????????????????\n\
+            ?????????????????????????????????????????????????????????????????????????????\n\
+            ????????#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.?????"
+        );
+    }
+
+    #[test]
+    fn test_draw_timing_patterns_rmqr_9x77() {
+        let mut c = Canvas::new(Version::RectMicro(9, 77), EcLevel::L);
+        c.draw_timing_patterns();
+        assert_eq!(
+            &*c.to_debug_str(),
+            "\n\
+            ????????#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#??\n\
+            ?????????????????????????????????????????????????????????????????????????????\n\
+            ????????????????????????????????????????????????????????????????????????????#\n\
+            ?????????????????????????.?????????????????????????.????????????????????????.\n\
+            ?????????????????????????#?????????????????????????#?????????????????????????\n\
+            ?????????????????????????.?????????????????????????.?????????????????????????\n\
+            ?????????????????????????????????????????????????????????????????????????????\n\
+            ?????????????????????????????????????????????????????????????????????????????\n\
+            ???.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.?????"
+        );
+    }
+
+    #[test]
+    fn test_draw_timing_patterns_rmqr_11x77() {
+        let mut c = Canvas::new(Version::RectMicro(11, 77), EcLevel::L);
+        c.draw_timing_patterns();
+        assert_eq!(
+            &*c.to_debug_str(),
+            "\n\
+            ????????#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#??\n\
+            ?????????????????????????????????????????????????????????????????????????????\n\
+            ????????????????????????????????????????????????????????????????????????????#\n\
+            ?????????????????????????.?????????????????????????.????????????????????????.\n\
+            ?????????????????????????#?????????????????????????#????????????????????????#\n\
+            ?????????????????????????.?????????????????????????.????????????????????????.\n\
+            ?????????????????????????#?????????????????????????#?????????????????????????\n\
+            ?????????????????????????.?????????????????????????.?????????????????????????\n\
+            #????????????????????????????????????????????????????????????????????????????\n\
+            ?????????????????????????????????????????????????????????????????????????????\n\
+            ???.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.?????"
+        );
+    }
 }
 
 //}}}
@@ -670,6 +896,7 @@ impl Canvas {
                 self.draw_number(format_info, 15, Color::Dark, Color::Light, &FORMAT_INFO_COORDS_QR_SIDE);
                 self.put(8, -8, Color::Dark); // Dark module.
             }
+            Version::RectMicro(..) => {}
         }
     }
 
@@ -686,6 +913,14 @@ impl Canvas {
                 let version_info = VERSION_INFOS[(a - 7).as_usize()];
                 self.draw_number(version_info, 18, Color::Dark, Color::Light, &VERSION_INFO_COORDS_BL);
                 self.draw_number(version_info, 18, Color::Dark, Color::Light, &VERSION_INFO_COORDS_TR);
+            }
+            Version::RectMicro(..) => {
+                let index = self.version.rect_micro_index().unwrap();
+                let ec_level = usize::from(self.ec_level != EcLevel::M);
+                let version_info_left = RMQR_VERSION_INFOS_L[index][ec_level];
+                let version_info_right = RMQR_VERSION_INFOS_R[index][ec_level];
+                self.draw_number(version_info_left, 18, Color::Dark, Color::Light, &RMQR_VERSION_INFO_COORDS_L);
+                self.draw_number(version_info_right, 18, Color::Dark, Color::Light, &RMQR_VERSION_INFO_COORDS_R);
             }
         }
     }
@@ -959,6 +1194,121 @@ static VERSION_INFOS: [u32; 34] = [
     0x1f250, 0x209d5, 0x216f0, 0x228ba, 0x2379f, 0x24b0b, 0x2542e, 0x26a64, 0x27541, 0x28c69,
 ];
 
+static RMQR_VERSION_INFO_COORDS_L: [(i16, i16); 18] = [
+    (11, 3),
+    (11, 2),
+    (11, 1),
+    (10, 5),
+    (10, 4),
+    (10, 3),
+    (10, 2),
+    (10, 1),
+    (9, 5),
+    (9, 4),
+    (9, 3),
+    (9, 2),
+    (9, 1),
+    (8, 5),
+    (8, 4),
+    (8, 3),
+    (8, 2),
+    (8, 1),
+];
+
+static RMQR_VERSION_INFO_COORDS_R: [(i16, i16); 18] = [
+    (-3, -6),
+    (-4, -6),
+    (-5, -6),
+    (-6, -2),
+    (-6, -3),
+    (-6, -4),
+    (-6, -5),
+    (-6, -6),
+    (-7, -2),
+    (-7, -3),
+    (-7, -4),
+    (-7, -5),
+    (-7, -6),
+    (-8, -2),
+    (-8, -3),
+    (-8, -4),
+    (-8, -5),
+    (-8, -6),
+];
+
+/// Version information for finder pattern side. Error correction level (M, H).
+static RMQR_VERSION_INFOS_L: [[u32; 2]; 32] = [
+    [0x1fab2, 0x3f367], // R7x43
+    [0x1e597, 0x3ec42], // R7x59
+    [0x1dbdd, 0x3d208], // R7x77
+    [0x1c4f8, 0x3cd2d], // R7x99
+    [0x1b86c, 0x3b1b9], // R7x139
+    [0x1a749, 0x3ae9c], // R9x43
+    [0x19903, 0x390d6], // R9x59
+    [0x18626, 0x38ff3], // R9x77
+    [0x17f0e, 0x376db], // R9x99
+    [0x1602b, 0x369fe], // R9x139
+    [0x15e61, 0x357b4], // R11x27
+    [0x14144, 0x34891], // R11x43
+    [0x13dd0, 0x33405], // R11x59
+    [0x122f5, 0x32b20], // R11x77
+    [0x11cbf, 0x3156a], // R11x99
+    [0x1039a, 0x30a4f], // R11x139
+    [0xf1ca, 0x2f81f],  // R13x27
+    [0xeeef, 0x2e73a],  // R13x43
+    [0xd0a5, 0x2d970],  // R13x59
+    [0xcf80, 0x2c655],  // R13x77
+    [0xb314, 0x2bac1],  // R13x99
+    [0xac31, 0x2a5e4],  // R13x139
+    [0x927b, 0x29bae],  // R15x43
+    [0x8d5e, 0x2848b],  // R15x59
+    [0x7476, 0x27da3],  // R15x77
+    [0x6b53, 0x26286],  // R15x99
+    [0x5519, 0x25ccc],  // R15x139
+    [0x4a3c, 0x243e9],  // R17x43
+    [0x36a8, 0x23f7d],  // R17x59
+    [0x298d, 0x22058],  // R17x77
+    [0x17c7, 0x21e12],  // R17x99
+    [0x8e2, 0x20137],   // R17x139
+];
+
+/// Version information for finder sub pattern side. Error correction level (M,
+/// H).
+static RMQR_VERSION_INFOS_R: [[u32; 2]; 32] = [
+    [0x20a7b, 0x3ae],   // R7x43
+    [0x2155e, 0x1c8b],  // R7x59
+    [0x22b14, 0x22c1],  // R7x77
+    [0x23431, 0x3de4],  // R7x99
+    [0x248a5, 0x4170],  // R7x139
+    [0x25780, 0x5e55],  // R9x43
+    [0x269ca, 0x601f],  // R9x59
+    [0x276ef, 0x7f3a],  // R9x77
+    [0x28fc7, 0x8612],  // R9x99
+    [0x290e2, 0x9937],  // R9x139
+    [0x2aea8, 0xa77d],  // R11x27
+    [0x2b18d, 0xb858],  // R11x43
+    [0x2cd19, 0xc4cc],  // R11x59
+    [0x2d23c, 0xdbe9],  // R11x77
+    [0x2ec76, 0xe5a3],  // R11x99
+    [0x2f353, 0xfa86],  // R11x139
+    [0x30103, 0x108d6], // R13x27
+    [0x31e26, 0x117f3], // R13x43
+    [0x3206c, 0x129b9], // R13x59
+    [0x33f49, 0x1369c], // R13x77
+    [0x343dd, 0x14a08], // R13x99
+    [0x35cf8, 0x1552d], // R13x139
+    [0x362b2, 0x16b67], // R15x43
+    [0x37d97, 0x17442], // R15x59
+    [0x384bf, 0x18d6a], // R15x77
+    [0x39b9a, 0x1924f], // R15x99
+    [0x3a5d0, 0x1ac05], // R15x139
+    [0x3baf5, 0x1b320], // R17x43
+    [0x3c661, 0x1cfb4], // R17x59
+    [0x3d944, 0x1d091], // R17x77
+    [0x3e70e, 0x1eedb], // R17x99
+    [0x3f82b, 0x1f1fe], // R17x139
+];
+
 //}}}
 //------------------------------------------------------------------------------
 //{{{ All functional patterns before data placement
@@ -975,6 +1325,8 @@ impl Canvas {
         self.draw_alignment_patterns();
         self.draw_reserved_format_info_patterns();
         self.draw_timing_patterns();
+        self.draw_corner_finder_pattern();
+        self.draw_alignment_patterns_rmqr();
         self.draw_version_info_patterns();
     }
 }
@@ -989,6 +1341,7 @@ pub fn is_functional(version: Version, width: i16, x: i16, y: i16) -> bool {
 
     match version {
         Version::Micro(_) => x == 0 || y == 0 || (x < 9 && y < 9),
+        Version::RectMicro(..) => unimplemented!(),
         Version::Normal(a) => {
             let non_alignment_test = x == 6 || y == 6 || // Timing patterns
                     (x < 9 && y < 9) ||                  // Top-left finder pattern
@@ -1137,21 +1490,22 @@ struct DataModuleIter {
     x: i16,
     y: i16,
     width: i16,
+    height: i16,
     timing_pattern_column: i16,
 }
 
 impl DataModuleIter {
     const fn new(version: Version) -> Self {
-        let width = version.width();
-        Self {
-            x: width - 1,
-            y: width - 1,
-            width,
-            timing_pattern_column: match version {
-                Version::Micro(_) => 0,
-                Version::Normal(_) => 6,
-            },
-        }
+        // In rMQR code, disregarding the bottom and right alignment patterns works
+        // well.
+        let (width, height) = if let Version::RectMicro(..) = version {
+            (version.width() - 1, version.height() - 1)
+        } else {
+            (version.width(), version.height())
+        };
+        let timing_pattern_column = if let Version::Normal(_) = version { 6 } else { 0 };
+
+        Self { x: width - 1, y: height - 1, width, height, timing_pattern_column }
     }
 }
 
@@ -1172,7 +1526,7 @@ impl Iterator for DataModuleIter {
                 self.y -= 1;
                 self.x += 1;
             }
-            0 if self.y < self.width - 1 => {
+            0 if self.y < self.height - 1 => {
                 self.y += 1;
                 self.x += 1;
             }
@@ -1459,6 +1813,27 @@ mod draw_codewords_test {
              #######..*---*--*----*--*"
         );
     }
+
+    #[test]
+    fn test_rmqr() {
+        let mut c = Canvas::new(Version::RectMicro(7, 77), EcLevel::M);
+        c.draw_all_functional_patterns();
+        c.draw_data(
+            b"\x71\x68\x74\x74\x70\x73\x3a\x2f\x2f\x6f\x75\x64\x6f\x6e\x2e\x78\x79\x7a\x00\xec\xff\x6b\xc6\xcb\x02\x06\xa5\xfe\x36\x6e\x55\xff",
+            b"",
+        );
+        assert_eq!(
+            &*c.to_debug_str_mask_same(),
+            "\n\
+            #######.#.#.#.#.#.#.#.#.###.#.#.#.#.#.#.#.#.#.#.#.###.#.#.#.#.#.#.#.#.#.#.###\n\
+            #.....#.#..#######.##.#.#.#..##.####.#.####.#######.#.##..#..###..........#.#\n\
+            #.###.#..#####.#..#...#####.##..##....##.#.##..##.####.##.##....###.#..######\n\
+            #.###.#.###.##.###...#..#.....######..#...##.##.#.#.#####.#....#.#####..#...#\n\
+            #.###.#.##.??#.##.####..###..####..#..#.#..###..#.#####.##.###.#.#.##.###.#.#\n\
+            #.....#.###???..######..#.#.##.#.###...###...##..##.#.#..##..###.....##.#...#\n\
+            #######.#.#.#.#.#.#.#.#.###.#.#.#.#.#.#.#.#.#.#.#.###.#.#.#.#.#.#.#.#.#.#####"
+        );
+    }
 }
 //}}}
 //------------------------------------------------------------------------------
@@ -1539,7 +1914,7 @@ impl Canvas {
     pub fn apply_mask(&mut self, pattern: MaskPattern) {
         let mask_fn = get_mask_function(pattern);
         for x in 0..self.width {
-            for y in 0..self.width {
+            for y in 0..self.height {
                 let module = self.get_mut(x, y);
                 *module = module.mask(mask_fn(x, y));
             }
@@ -1554,6 +1929,10 @@ impl Canvas {
     /// If the error correction level or mask pattern is not supported in the
     /// current QR code version, this method will fail.
     fn draw_format_info_patterns(&mut self, pattern: MaskPattern) {
+        if self.version.is_rect_micro() {
+            return;
+        }
+
         let format_number = match self.version {
             Version::Normal(_) => {
                 let simple_format_number = ((self.ec_level as usize) ^ 1) << 3 | (pattern as usize);
@@ -1581,6 +1960,7 @@ impl Canvas {
                 let simple_format_number = symbol_number << 2 | micro_pattern_number;
                 FORMAT_INFOS_MICRO_QR[simple_format_number]
             }
+            Version::RectMicro(..) => return,
         };
         self.draw_format_info_patterns_with_number(format_number);
     }
@@ -1827,6 +2207,7 @@ impl Canvas {
                 s1_a + s1_b + s2 + s3_a + s3_b + s4
             }
             Version::Micro(_) => self.compute_light_side_penalty_score(),
+            Version::RectMicro(..) => 0,
         }
     }
 }
@@ -1972,6 +2353,8 @@ static ALL_PATTERNS_QR: [MaskPattern; 8] = [
 static ALL_PATTERNS_MICRO_QR: [MaskPattern; 4] =
     [MaskPattern::HorizontalLines, MaskPattern::LargeCheckerboard, MaskPattern::Diamonds, MaskPattern::Meadow];
 
+static ALL_PATTERNS_RMQR: [MaskPattern; 1] = [MaskPattern::LargeCheckerboard];
+
 impl Canvas {
     /// Construct a new canvas and apply the best masking that gives the lowest
     /// penalty score.
@@ -1981,6 +2364,7 @@ impl Canvas {
         match self.version {
             Version::Normal(_) => ALL_PATTERNS_QR.iter(),
             Version::Micro(_) => ALL_PATTERNS_MICRO_QR.iter(),
+            Version::RectMicro(..) => ALL_PATTERNS_RMQR.iter(),
         }
         .map(|ptn| {
             let mut c = self.clone();

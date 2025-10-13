@@ -413,6 +413,15 @@ mod optimize_tests {
     }
 
     #[test]
+    fn test_example_5() {
+        test_optimization_result(
+            &[Segment { mode: Mode::Kanji, begin: 0, end: 10 }, Segment { mode: Mode::Byte, begin: 10, end: 11 }],
+            &[Segment { mode: Mode::Kanji, begin: 0, end: 10 }, Segment { mode: Mode::Byte, begin: 10, end: 11 }],
+            Version::RectMicro(17, 139),
+        );
+    }
+
+    #[test]
     fn test_annex_j_guideline_1a() {
         test_optimization_result(
             &[

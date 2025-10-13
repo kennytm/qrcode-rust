@@ -112,10 +112,10 @@ fn test_render_to_string() {
     use crate::render::Renderer;
 
     let colors = &[Color::Dark, Color::Light, Color::Light, Color::Dark];
-    let image: String = Renderer::<char>::new(colors, 2, 1).build();
+    let image: String = Renderer::<char>::new(colors, 2, 2, 1).build();
     assert_eq!(&image, "    \n \u{2588}  \n  \u{2588} \n    ");
 
-    let image2 = Renderer::new(colors, 2, 1).light_color("A").dark_color("!B!").module_dimensions(2, 2).build();
+    let image2 = Renderer::new(colors, 2, 2, 1).light_color("A").dark_color("!B!").module_dimensions(2, 2).build();
 
     assert_eq!(
         &image2,
