@@ -1004,3 +1004,69 @@ fn bench_find_min_version(bencher: &mut test::Bencher) {
 
 //}}}
 //------------------------------------------------------------------------------
+//{{{ Auto Micro QR code's version minimization
+
+/// Automatically determines the minimum version to store the data, and encode
+/// the result.
+///
+/// This method will not consider any QR code versions.
+///
+/// # Errors
+///
+/// Returns `Err(QrError::DataTooLong)` if the data is too long to fit even the
+/// highest Micro QR code version.
+pub fn encode_auto_micro(data: &[u8], ec_level: EcLevel) -> QrResult<Bits> {
+    let segments = Parser::new(data).collect::<Vec<Segment>>();
+    let mut possible_versions = Vec::new();
+    for version in 1..=4 {
+        let version = Version::Micro(version);
+        let opt_segments = Optimizer::new(segments.iter().copied(), version).collect::<Vec<_>>();
+        let total_len = total_encoded_len(&opt_segments, version);
+        let data_capacity = version.fetch(ec_level, &DATA_LENGTHS);
+        if let Ok(capacity) = data_capacity {
+            if total_len <= capacity {
+                possible_versions.push(version);
+                break;
+            }
+        }
+    }
+
+    let min_version = possible_versions.iter().min_by_key(|v| v.width());
+
+    if let Some(version) = min_version {
+        let mut bits = Bits::new(*version);
+        let opt_segments = Optimizer::new(segments.iter().copied(), *version).collect::<Vec<_>>();
+        bits.reserve(total_encoded_len(&opt_segments, *version));
+        bits.push_segments(data, opt_segments.into_iter())?;
+        bits.push_terminator(ec_level)?;
+        return Ok(bits);
+    }
+    Err(QrError::DataTooLong)
+}
+
+#[cfg(test)]
+mod encode_auto_micro_tests {
+    use crate::bits::encode_auto_micro;
+    use crate::types::{EcLevel, Version};
+
+    #[test]
+    fn test_alpha_l() {
+        let bits = encode_auto_micro(b"HELLO WORLD", EcLevel::L).unwrap();
+        assert_eq!(bits.version(), Version::Micro(3));
+    }
+
+    #[test]
+    fn test_alpha_q() {
+        let bits = encode_auto_micro(b"HELLO WORLD", EcLevel::Q).unwrap();
+        assert_eq!(bits.version(), Version::Micro(4));
+    }
+
+    #[test]
+    fn test_mixed() {
+        let bits = encode_auto_micro(b"Mixed. 1234567890", EcLevel::M).unwrap();
+        assert_eq!(bits.version(), Version::Micro(4));
+    }
+}
+
+//}}}
+//------------------------------------------------------------------------------
