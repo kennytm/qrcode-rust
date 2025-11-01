@@ -1385,8 +1385,10 @@ impl Canvas {
 
     /// Draws the encoded data and error correction codes to the empty modules.
     pub fn draw_data(&mut self, data: &[u8], ec: &[u8]) {
-        let is_half_codeword_at_end =
-            matches!((self.version, self.ec_level), (Version::Micro(1), EcLevel::L) | (Version::Micro(3), EcLevel::M));
+        let is_half_codeword_at_end = matches!(
+            (self.version, self.ec_level),
+            (Version::Micro(1 | 3), EcLevel::L) | (Version::Micro(3), EcLevel::M)
+        );
         let mut coords = DataModuleIter::new(self.version);
         self.draw_codewords(data, is_half_codeword_at_end, &mut coords);
         self.draw_codewords(ec, false, &mut coords);
