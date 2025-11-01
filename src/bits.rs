@@ -748,7 +748,7 @@ impl Bits {
 
             self.bit_offset = 0;
             let data_bytes_length = data_length / 8;
-            let padding_bytes_count = data_bytes_length - self.data.len();
+            let padding_bytes_count = data_bytes_length.saturating_sub(self.data.len());
             let padding = PADDING_BYTES.iter().copied().cycle().take(padding_bytes_count);
             self.data.extend(padding);
         }
