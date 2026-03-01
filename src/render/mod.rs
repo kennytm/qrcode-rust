@@ -1,11 +1,15 @@
 //! Render a QR code into image.
 
-use std::cmp::max;
-use types::Color;
+use crate::cast::As;
+use crate::types::Color;
+use core::cmp::max;
 
+pub mod eps;
 pub mod image;
+pub mod pic;
 pub mod string;
 pub mod svg;
+pub mod unicode;
 
 //------------------------------------------------------------------------------
 //{{{ Pixel trait
@@ -17,7 +21,7 @@ pub trait Pixel: Copy + Sized {
 
     /// The type that stores an intermediate buffer before finalizing to a
     /// concrete image
-    type Canvas: Canvas<Pixel=Self, Image=Self::Image>;
+    type Canvas: Canvas<Pixel = Self, Image = Self::Image>;
 
     /// Obtains the default module size. The result must be at least 1×1.
     fn default_unit_size() -> (u32, u32) {
@@ -30,7 +34,10 @@ pub trait Pixel: Copy + Sized {
 
 /// Rendering canvas of a QR code image.
 pub trait Canvas: Sized {
+    /// Type of an image pixel.
     type Pixel: Sized;
+
+    /// Type of the finalized image.
     type Image: Sized;
 
     /// Constructs a new canvas of the given dimensions.
@@ -39,9 +46,11 @@ pub trait Canvas: Sized {
     /// Draws a single dark pixel at the (x, y) coordinate.
     fn draw_dark_pixel(&mut self, x: u32, y: u32);
 
+    /// Draws a dark rectangle with dimensions `width`×`height` at the (`left`,
+    /// `top`) coordinate.
     fn draw_dark_rect(&mut self, left: u32, top: u32, width: u32, height: u32) {
-        for y in top .. (top + height) {
-            for x in left .. (left + width) {
+        for y in top..(top + height) {
+            for x in left..(left + width) {
                 self.draw_dark_pixel(x, y);
             }
         }
@@ -70,11 +79,15 @@ pub struct Renderer<'a, P: Pixel> {
 
 impl<'a, P: Pixel> Renderer<'a, P> {
     /// Creates a new renderer.
-    pub fn new(content: &'a [Color], modules_count: usize, quiet_zone: u32) -> Renderer<'a, P> {
+    ///
+    /// # Panics
+    ///
+    /// Panics if the length of `content` is not exactly `modules_count * modules_count`.
+    pub fn new(content: &'a [Color], modules_count: usize, quiet_zone: u32) -> Self {
         assert!(modules_count * modules_count == content.len());
         Renderer {
             content,
-            modules_count: modules_count as u32,
+            modules_count: modules_count.as_u32(),
             quiet_zone,
             module_size: P::default_unit_size(),
             dark_color: P::default_color(Color::Dark),
@@ -102,7 +115,7 @@ impl<'a, P: Pixel> Renderer<'a, P> {
     }
 
     /// Sets the size of each module in pixels. Default is 8px.
-    #[deprecated(since="0.4.0", note="use `.module_dimensions(width, width)` instead")]
+    #[deprecated(since = "0.4.0", note = "use `.module_dimensions(width, width)` instead")]
     pub fn module_size(&mut self, width: u32) -> &mut Self {
         self.module_dimensions(width, width)
     }
@@ -113,7 +126,15 @@ impl<'a, P: Pixel> Renderer<'a, P> {
         self
     }
 
-    #[deprecated(since="0.4.0", note="use `.min_dimensions(width, width)` instead")]
+    /// Sets the minimum total image width (and thus height) in pixels,
+    /// including the quiet zone if applicable. The renderer will try to find
+    /// the dimension as small as possible, such that each module in the QR code
+    /// has uniform size (no distortion).
+    ///
+    /// For instance, a version 1 QR code has 19 modules across including the
+    /// quiet zone. If we request an image of width ≥200px, we get that each
+    /// module's size should be 11px, so the actual image size will be 209px.
+    #[deprecated(since = "0.4.0", note = "use `.min_dimensions(width, width)` instead")]
     pub fn min_width(&mut self, width: u32) -> &mut Self {
         self.min_dimensions(width, width)
     }
@@ -154,7 +175,7 @@ impl<'a, P: Pixel> Renderer<'a, P> {
     }
 
     /// Renders the QR code into an image.
-    #[deprecated(since="0.4.0", note="renamed to `.build()` to de-emphasize the image connection")]
+    #[deprecated(since = "0.4.0", note = "renamed to `.build()` to de-emphasize the image connection")]
     pub fn to_image(&self) -> P::Image {
         self.build()
     }
@@ -171,11 +192,11 @@ impl<'a, P: Pixel> Renderer<'a, P> {
 
         let mut canvas = P::Canvas::new(real_width, real_height, self.dark_color, self.light_color);
         let mut i = 0;
-        for y in 0 .. width {
-            for x in 0 .. width {
+        for y in 0..width {
+            for x in 0..width {
                 if qz <= x && x < w + qz && qz <= y && y < w + qz {
                     if self.content[i] != Color::Light {
-                        canvas.draw_dark_rect(x*mw, y*mh, mw, mh);
+                        canvas.draw_dark_rect(x * mw, y * mh, mw, mh);
                     }
                     i += 1;
                 }

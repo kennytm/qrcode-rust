@@ -3,24 +3,22 @@
 //! # Example
 //!
 //! ```
-//! extern crate qrcode;
-//!
 //! use qrcode::QrCode;
 //! use qrcode::render::svg;
 //!
-//! fn main() {
-//!     let code = QrCode::new(b"Hello").unwrap();
-//!     let svg_xml = code.render::<svg::Color>().build();
-//!     println!("{}", svg_xml);
-//! }
+//! let code = QrCode::new(b"Hello").unwrap();
+//! let svg_xml = code.render::<svg::Color>().build();
+//! println!("{svg_xml}");
 
-#![cfg(feature="svg")]
+#![cfg(feature = "svg")]
 
-use std::fmt::Write;
-use std::marker::PhantomData;
+use alloc::format;
+use alloc::string::String;
+use core::fmt::Write;
+use core::marker::PhantomData;
 
-use render::{Pixel, Canvas as RenderCanvas};
-use types::Color as ModuleColor;
+use crate::render::{Canvas as RenderCanvas, Pixel};
+use crate::types::Color as ModuleColor;
 
 /// An SVG color.
 #[derive(Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -48,22 +46,33 @@ impl<'a> RenderCanvas for Canvas<'a> {
     fn new(width: u32, height: u32, dark_pixel: Color<'a>, light_pixel: Color<'a>) -> Self {
         Canvas {
             svg: format!(
-                r#"<?xml version="1.0" standalone="yes"?><svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="{w}" height="{h}" shape-rendering="crispEdges"><rect x="0" y="0" width="{w}" height="{h}" fill="{bg}"/><path fill="{fg}" d=""#,
-                w=width, h=height, fg=dark_pixel.0, bg=light_pixel.0
+                concat!(
+                    r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>"#,
+                    r#"<svg xmlns="http://www.w3.org/2000/svg""#,
+                    r#" version="1.1" width="{w}" height="{h}""#,
+                    r#" viewBox="0 0 {w} {h}" shape-rendering="crispEdges">"#,
+                    r#"<path d="M0 0h{w}v{h}H0z" fill="{bg}"/>"#,
+                    r#"<path fill="{fg}" d=""#,
+                ),
+                w = width,
+                h = height,
+                fg = dark_pixel.0,
+                bg = light_pixel.0
             ),
             marker: PhantomData,
         }
     }
 
     fn draw_dark_pixel(&mut self, x: u32, y: u32) {
-        self.draw_dark_rect(x, y, 1, 1)
+        self.draw_dark_rect(x, y, 1, 1);
     }
 
     fn draw_dark_rect(&mut self, left: u32, top: u32, width: u32, height: u32) {
-        write!(self.svg, "M{l} {t}h{w}v{h}H{l}V{t}", l=left, t=top, w=width, h=height).unwrap();
+        write!(self.svg, "M{left} {top}h{width}v{height}h-{width}z").unwrap();
     }
 
-    fn into_image(self) -> String {
-        self.svg + r#""/></svg>"#
+    fn into_image(mut self) -> String {
+        self.svg.push_str(r#""/></svg>"#);
+        self.svg
     }
 }

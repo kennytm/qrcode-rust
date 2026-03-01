@@ -1,10 +1,13 @@
 [package]
 name = "qrcode"
 description = "QR code encoder in Rust"
-license = "MIT / Apache-2.0"
-version = "0.4.0"
+license = "MIT OR Apache-2.0"
+version = "0.14.1"
+edition = "2021"
+rust-version = "1.70.0"
 authors = ["kennytm <kennytm@gmail.com>"]
 keywords = ["qrcode"]
+categories = ["encoding", "multimedia::images"]
 repository = "https://github.com/kennytm/qrcode-rust"
 readme = "README.md"
 documentation = "http://docs.rs/qrcode"
@@ -13,15 +16,22 @@ exclude = [
 ]
 
 [badges]
-travis-ci = { repository = "kennytm/qrcode-rust" }
+maintenance = { status = "passively-maintained" }
 
 [dependencies]
-image = { version = "0.13", optional = true }
+image = { version = "0.25", default-features = false, optional = true }
+
+[dev-dependencies]
+image = "0.25"
 
 [features]
-default = ["image", "svg"]
+default = ["std", "image", "svg", "pic", "eps"]
+image = ["dep:image", "std"]
+std = []
 bench = []
 svg = []
+pic = []
+eps = []
 
 [[bin]]
 name = "qrencode"
@@ -36,3 +46,11 @@ name = "encode_string"
 [[example]]
 name = "encode_svg"
 required-features = ["svg"]
+
+[[example]]
+name = "encode_pic"
+required-features = ["pic"]
+
+[[example]]
+name = "encode_eps"
+required-features = ["eps"]

@@ -1,31 +1,41 @@
-#![cfg(feature="image")]
+//! Raster image rendering support powered by the [`image`] crate.
 
-use render::{Pixel, Canvas};
-use types::Color;
+#![cfg(feature = "image")]
 
-use image::{Pixel as ImagePixel, Rgb, Rgba, Luma, LumaA, Primitive, ImageBuffer};
+use crate::render::{Canvas, Pixel};
+use crate::types::Color;
 
+use image::{ImageBuffer, Luma, LumaA, Primitive, Rgb, Rgba};
+
+use alloc::vec::Vec;
+
+// need to keep using this macro to implement Pixel separately for each color model,
+// otherwise we'll have conflicting impl with `impl Pixel for impl Element` 🤷
 macro_rules! impl_pixel_for_image_pixel {
     ($p:ident<$s:ident>: $c:pat => $d:expr) => {
-        impl<$s: Primitive + 'static> Pixel for $p<$s> {
-            type Image = ImageBuffer<Self, Vec<S>>;
+        impl<$s> Pixel for $p<$s>
+        where
+            $s: Primitive + 'static,
+            $p<$s>: image::Pixel<Subpixel = $s>,
+        {
+            type Image = ImageBuffer<Self, Vec<$s>>;
             type Canvas = (Self, Self::Image);
 
             fn default_color(color: Color) -> Self {
                 match color.select($s::zero(), $s::max_value()) {
-                    $c => $p { data: $d }
+                    $c => $p($d),
                 }
             }
         }
-    }
+    };
 }
 
-impl_pixel_for_image_pixel!{ Luma<S>: p => [p] }
-impl_pixel_for_image_pixel!{ LumaA<S>: p => [p, S::max_value()] }
-impl_pixel_for_image_pixel!{ Rgb<S>: p => [p, p, p] }
-impl_pixel_for_image_pixel!{ Rgba<S>: p => [p, p, p, S::max_value()] }
+impl_pixel_for_image_pixel! { Luma<S>: p => [p] }
+impl_pixel_for_image_pixel! { LumaA<S>: p => [p, S::max_value()] }
+impl_pixel_for_image_pixel! { Rgb<S>: p => [p, p, p] }
+impl_pixel_for_image_pixel! { Rgba<S>: p => [p, p, p, S::max_value()] }
 
-impl<P: ImagePixel + 'static> Canvas for (P, ImageBuffer<P, Vec<P::Subpixel>>) {
+impl<P: image::Pixel + 'static> Canvas for (P, ImageBuffer<P, Vec<P::Subpixel>>) {
     type Pixel = P;
     type Image = ImageBuffer<P, Vec<P::Subpixel>>;
 
@@ -44,18 +54,33 @@ impl<P: ImagePixel + 'static> Canvas for (P, ImageBuffer<P, Vec<P::Subpixel>>) {
 
 #[cfg(test)]
 mod render_tests {
-    use render::Renderer;
+    use crate::render::Renderer;
+    use crate::types::Color;
     use image::{Luma, Rgba};
-    use types::Color;
 
     #[test]
     fn test_render_luma8_unsized() {
-        let image = Renderer::<Luma<u8>>::new(&[
-            Color::Light, Color::Dark, Color::Dark,
-            Color::Dark, Color::Light, Color::Light,
-            Color::Light, Color::Dark, Color::Light,
-        ], 3, 1).module_dimensions(1, 1).build();
+        let image = Renderer::<Luma<u8>>::new(
+            &[
+                Color::Light,
+                Color::Dark,
+                Color::Dark,
+                //
+                Color::Dark,
+                Color::Light,
+                Color::Light,
+                //
+                Color::Light,
+                Color::Dark,
+                Color::Light,
+            ],
+            3,
+            1,
+        )
+        .module_dimensions(1, 1)
+        .build();
 
+        #[rustfmt::skip]
         let expected = [
             255, 255, 255, 255, 255,
             255, 255,   0,   0, 255,
@@ -68,11 +93,11 @@ mod render_tests {
 
     #[test]
     fn test_render_rgba_unsized() {
-        let image = Renderer::<Rgba<u8>>::new(&[
-            Color::Light, Color::Dark,
-            Color::Dark, Color::Dark,
-        ], 2, 1).module_dimensions(1, 1).build();
+        let image = Renderer::<Rgba<u8>>::new(&[Color::Light, Color::Dark, Color::Dark, Color::Dark], 2, 1)
+            .module_dimensions(1, 1)
+            .build();
 
+        #[rustfmt::skip]
         let expected: &[u8] = &[
             255,255,255,255, 255,255,255,255, 255,255,255,255, 255,255,255,255,
             255,255,255,255, 255,255,255,255,   0,  0,  0,255, 255,255,255,255,
@@ -85,11 +110,11 @@ mod render_tests {
 
     #[test]
     fn test_render_resized_min() {
-        let image = Renderer::<Luma<u8>>::new(&[
-            Color::Dark, Color::Light,
-            Color::Light, Color::Dark,
-        ], 2, 1).min_dimensions(10, 10).build();
+        let image = Renderer::<Luma<u8>>::new(&[Color::Dark, Color::Light, Color::Light, Color::Dark], 2, 1)
+            .min_dimensions(10, 10)
+            .build();
 
+        #[rustfmt::skip]
         let expected: &[u8] = &[
             255,255,255, 255,255,255, 255,255,255, 255,255,255,
             255,255,255, 255,255,255, 255,255,255, 255,255,255,
@@ -114,11 +139,11 @@ mod render_tests {
 
     #[test]
     fn test_render_resized_max() {
-        let image = Renderer::<Luma<u8>>::new(&[
-            Color::Dark, Color::Light,
-            Color::Light, Color::Dark,
-        ], 2, 1).max_dimensions(10, 5).build();
+        let image = Renderer::<Luma<u8>>::new(&[Color::Dark, Color::Light, Color::Light, Color::Dark], 2, 1)
+            .max_dimensions(10, 5)
+            .build();
 
+        #[rustfmt::skip]
         let expected: &[u8] = &[
             255,255, 255,255, 255,255, 255,255,
 
