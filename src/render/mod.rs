@@ -180,6 +180,19 @@ impl<'a, P: Pixel> Renderer<'a, P> {
         self.build()
     }
 
+    /// Gets actual pixel width and height of the image.
+    pub fn real_size(&self) -> (u32, u32) {
+        let w = self.modules_count;
+        let qz = if self.has_quiet_zone { self.quiet_zone } else { 0 };
+        let width = w + 2 * qz;
+
+        let (mw, mh) = self.module_size;
+        let real_width = width * mw;
+        let real_height = width * mh;
+
+        (real_width, real_height)
+    }
+
     /// Renders the QR code into an image.
     pub fn build(&self) -> P::Image {
         let w = self.modules_count;
