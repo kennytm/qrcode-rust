@@ -84,7 +84,7 @@ impl<'a, P: Pixel> Renderer<'a, P> {
     ///
     /// Panics if the length of `content` is not exactly `modules_count * modules_count`.
     pub fn new(content: &'a [Color], modules_count: usize, quiet_zone: u32) -> Self {
-        assert!(modules_count * modules_count == content.len());
+        assert_eq!(modules_count * modules_count, content.len());
         Renderer {
             content,
             modules_count: modules_count.as_u32(),
@@ -150,8 +150,8 @@ impl<'a, P: Pixel> Renderer<'a, P> {
     pub fn min_dimensions(&mut self, width: u32, height: u32) -> &mut Self {
         let quiet_zone = if self.has_quiet_zone { 2 } else { 0 } * self.quiet_zone;
         let width_in_modules = self.modules_count + quiet_zone;
-        let unit_width = (width + width_in_modules - 1) / width_in_modules;
-        let unit_height = (height + width_in_modules - 1) / width_in_modules;
+        let unit_width = width.div_ceil(width_in_modules);
+        let unit_height = height.div_ceil(width_in_modules);
         self.module_dimensions(unit_width, unit_height)
     }
 

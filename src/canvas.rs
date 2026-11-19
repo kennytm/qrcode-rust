@@ -982,7 +982,7 @@ impl Canvas {
 /// Gets whether the module at the given coordinates represents a functional
 /// module.
 pub fn is_functional(version: Version, width: i16, x: i16, y: i16) -> bool {
-    debug_assert!(width == version.width());
+    debug_assert_eq!(width, version.width());
 
     let x = if x < 0 { x + width } else { x };
     let y = if y < 0 { y + width } else { y };
@@ -1020,7 +1020,7 @@ pub fn is_functional(version: Version, width: i16, x: i16, y: i16) -> bool {
 
 #[cfg(test)]
 mod all_functional_patterns_tests {
-    use crate::canvas::{is_functional, Canvas};
+    use crate::canvas::{Canvas, is_functional};
     use crate::types::{EcLevel, Version};
 
     #[test]
