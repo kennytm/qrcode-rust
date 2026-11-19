@@ -2,7 +2,7 @@
 name = "qrcode"
 description = "QR code encoder in Rust"
 license = "MIT OR Apache-2.0"
-version = "0.14.1"
+version = "0.15.0"
 edition = "2021"
 rust-version = "1.70.0"
 authors = ["kennytm <kennytm@gmail.com>"]
@@ -11,9 +11,7 @@ categories = ["encoding", "multimedia::images"]
 repository = "https://github.com/kennytm/qrcode-rust"
 readme = "README.md"
 documentation = "http://docs.rs/qrcode"
-exclude = [
-    ".travis.yml", ".gitignore", "test-data/**"
-]
+exclude = [".gitignore", "test-data/**"]
 
 [badges]
 maintenance = { status = "passively-maintained" }
