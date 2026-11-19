@@ -563,7 +563,11 @@ impl Bits {
                 return Err(QrError::InvalidCharacter);
             }
             let cp = u16::from(kanji[0]) * 256 + u16::from(kanji[1]);
-            let bytes = if cp < 0xe040 { cp - 0x8140 } else { cp - 0xc140 };
+            let bytes = match cp {
+                0x8140..=0x9ffc => cp - 0x8140,
+                0xe040..=0xebbf => cp - 0xc140,
+                _ => return Err(QrError::InvalidCharacter),
+            };
             let number = (bytes >> 8) * 0xc0 + (bytes & 0xff);
             self.push_number(13, number);
         }
@@ -588,6 +592,12 @@ mod kanji_tests {
     fn test_micro_qr_unsupported() {
         let mut bits = Bits::new(Version::Micro(2));
         assert_eq!(bits.push_kanji_data(b"?"), Err(QrError::UnsupportedCharacterSet));
+    }
+
+    #[test]
+    fn test_non_shift_jis_is_invalid() {
+        let mut bits = Bits::new(Version::Normal(1));
+        assert_eq!(bits.push_kanji_data(b"\x00\x00"), Err(QrError::InvalidCharacter));
     }
 
     #[test]
