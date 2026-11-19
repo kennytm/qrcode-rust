@@ -1020,7 +1020,7 @@ pub fn is_functional(version: Version, width: i16, x: i16, y: i16) -> bool {
 
 #[cfg(test)]
 mod all_functional_patterns_tests {
-    use crate::canvas::{is_functional, Canvas};
+    use crate::canvas::{Canvas, is_functional};
     use crate::types::{EcLevel, Version};
 
     #[test]

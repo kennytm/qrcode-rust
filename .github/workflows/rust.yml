@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        rustc: [1.70.0, stable] # MSVR and current stable rustc
+        rustc: [1.85.0, stable] # MSVR and current stable rustc
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -86,6 +86,5 @@ jobs:
           components: clippy
       - name: Run cargo clippy
         uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          # args: --all-features # TODO use `criterion` instead for benchmarks.
+#       with:
+#         args: --all-features # TODO use `criterion` instead for benchmarks.
